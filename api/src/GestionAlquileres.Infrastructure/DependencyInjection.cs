@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentTenant, CurrentTenantService>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IIndexRepository, IndexRepository>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddScoped<IJwtService, JwtService>();
