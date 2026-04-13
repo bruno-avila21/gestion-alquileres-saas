@@ -1,25 +1,63 @@
+using Hangfire;
+using Hangfire.PostgreSql;
+using Serilog;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Serilog — structured logging (INFRA-05)
+builder.Host.UseSerilog((context, services, configuration) =>
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .Enrich.WithMachineName()
+        .WriteTo.Console(outputTemplate:
+            "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+        .WriteTo.File("logs/app-.log",
+            rollingInterval: RollingInterval.Day,
+            outputTemplate:
+            "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"));
 
+// Controllers + Swagger
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// HttpContextAccessor (required by ICurrentTenant in Plan 1-02)
+builder.Services.AddHttpContextAccessor();
+
+// Hangfire (INFRA-04) — PostgreSQL storage
+var hangfireConn = builder.Configuration.GetConnectionString("HangfireConnection")
+    ?? throw new InvalidOperationException("HangfireConnection missing");
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(hangfireConn)));
+builder.Services.AddHangfireServer();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseSerilogRequestLogging();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
+// Hangfire dashboard — read-only outside Development
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    IsReadOnlyFunc = _ => !app.Environment.IsDevelopment()
+});
+
+// Health probe — lets tests verify Program.cs bootstraps
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
 app.Run();
+
+public partial class Program { } // for WebApplicationFactory<Program> in tests
