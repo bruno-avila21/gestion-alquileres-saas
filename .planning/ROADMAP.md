@@ -65,6 +65,13 @@ Auth JWT con roles. Base de datos inicializada.
 - Valores persistidos en DB con período y fuente correctos
 - Si API BCRA está caída, sistema usa valor anterior y loguea warning
 
+**Plans:** 5 plans
+- [ ] 02-01-PLAN.md — Domain Entity + EF Core Config + Repository + Migration (Wave 1)
+- [ ] 02-02-PLAN.md — BCRA + INDEC HTTP Clients with Resilience (Wave 1, parallel to 02-01)
+- [ ] 02-03-PLAN.md — Application CQRS: SyncIndexCommand + GetIndexByPeriodQuery (Wave 2)
+- [ ] 02-04-PLAN.md — IndexesController + Integration Tests + Live API Verification (Wave 3)
+- [ ] 02-05-PLAN.md — Frontend Indexes Feature (React): Table + Sync Dialog + Admin Route (Wave 3, parallel to 02-04)
+
 ---
 
 ## Phase 3 — Properties & Tenants
@@ -241,4 +248,4 @@ Auth JWT con roles. Base de datos inicializada.
 
 ---
 *Roadmap created: 2026-04-12*
-*Current milestone: v1.0 — Phase 1 ready to start*
+*Current milestone: v1.0 — Phase 2 planned, ready to execute*
