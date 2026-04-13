@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
         _currentTenant = currentTenant;
     }
 
+    public DbSet<IndexValue> Indexes => Set<IndexValue>();
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<User> Users => Set<User>();
 
@@ -25,5 +26,8 @@ public class AppDbContext : DbContext
         // User and all future ITenantEntity implementations are filtered.
         modelBuilder.Entity<User>()
             .HasQueryFilter(u => u.OrganizationId == _currentTenant.OrganizationId);
+
+        // IndexValue is GLOBAL reference data (BCRA/INDEC) — no tenant filter.
+        // Do NOT add HasQueryFilter for IndexValue.
     }
 }
