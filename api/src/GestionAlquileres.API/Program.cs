@@ -1,3 +1,4 @@
+using GestionAlquileres.Application;
 using GestionAlquileres.Infrastructure;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -29,6 +30,9 @@ builder.Services.AddHttpContextAccessor();
 
 // Infrastructure: DbContext, ICurrentTenant, repositories
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Application: MediatR CQRS pipeline, FluentValidation, AutoMapper
+builder.Services.AddApplication();
 
 // Hangfire (INFRA-04) — PostgreSQL storage
 var hangfireConn = builder.Configuration.GetConnectionString("HangfireConnection")
