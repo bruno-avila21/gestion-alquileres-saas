@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git branch*)",
+      "Bash(ls*)",
+      "Bash(wc*)"
+    ],
+    "deny": [
+      "Bash(rm -rf*)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(DROP TABLE*)",
+      "Bash(dotnet ef database drop*)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "command": "echo '[GestionAlquileres] Recordar: leer AGENTS.md de la app afectada antes de escribir código. Multi-tenancy: OrganizationId siempre del JWT, nunca del body.'"
+      }
+    ],
+    "PostToolCall": [
+      {
+        "matcher": "Write",
+        "command": "echo '[GestionAlquileres] Archivo creado. Verificar: 1) Filtro OrganizationId, 2) No SQL raw, 3) Documentos privados sin URL directa.'"
+      }
+    ]
+  }
+}

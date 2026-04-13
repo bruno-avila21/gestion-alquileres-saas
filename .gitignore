@@ -1,0 +1,44 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.nupkg
+TestResults/
+coverage/
+*.pfx
+*.p12
+
+# Secrets locales — NUNCA commitear
+api/src/GestionAlquileres.API/appsettings.Development.json
+api/src/GestionAlquileres.API/appsettings.Production.json
+**/secrets.json
+
+# Node / Frontend
+node_modules/
+dist/
+.vite/
+.next/
+
+# Claude Code settings locales
+.claude/settings.local.json
+
+# Entorno
+.env
+.env.local
+.env.*.local
+
+# Storage local
+uploads/
+storage/
+minio-data/
+
+# Logs
+logs/
+*.log
+
+# IDE
+.idea/
+.vscode/settings.json
+*.swp

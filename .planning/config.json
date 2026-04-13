@@ -1,0 +1,13 @@
+{
+  "project": "gestion-alquileres-saas",
+  "version": "v1.0",
+  "currentPhase": 1,
+  "autoApprovePhaseTransitions": false,
+  "requireVerificationBeforePhaseComplete": true,
+  "commitStrategy": "atomic-per-task",
+  "testRequirement": "required",
+  "research": {
+    "enabled": true,
+    "topics": ["bcra-api", "dotnet8-clean-architecture", "ef-core-multitenancy"]
+  }
+}

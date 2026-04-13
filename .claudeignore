@@ -1,0 +1,60 @@
+# Build outputs
+api/bin/
+api/obj/
+web/dist/
+web/.vite/
+web/node_modules/
+**/.next/
+
+# Paquetes
+**/node_modules/
+**/packages/
+
+# Logs
+**/*.log
+**/logs/
+
+# .NET artifacts
+**/*.user
+**/*.suo
+**/.vs/
+**/*.nupkg
+**/TestResults/
+**/coverage/
+
+# Secrets y configs locales
+**/.env
+**/.env.local
+**/.env.*.local
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/secrets.json
+**/*.pfx
+**/*.p12
+
+# Storage local de documentos (subidos por admins/inquilinos)
+**/uploads/
+**/storage/
+
+# Git
+**/.git/
+**/.gitignore
+
+# IDE
+**/.idea/
+**/.vscode/settings.json
+**/*.swp
+
+# Testing artifacts
+**/TestResults/
+**/.coverage/
+**/lcov.info
+**/coverage.xml
+
+# EF Core migrations snapshot (lectura costosa, rara vez necesaria)
+# Comentar si necesitás revisar el snapshot
+# api/src/GestionAlquileres.Infrastructure/Migrations/
+
+# Temporales
+**/tmp/
+**/*.tmp
