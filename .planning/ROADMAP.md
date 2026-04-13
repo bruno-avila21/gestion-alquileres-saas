@@ -32,6 +32,12 @@ Auth JWT con roles. Base de datos inicializada.
 - OrganizationId en JWT, global filter aisla datos por tenant
 - `dotnet build` + `pnpm build` sin errores
 
+**Plans:** 4 plans
+- [x] 01-PLAN.md — .NET 8 Solution Scaffold + Core Infrastructure (Wave 1)
+- [x] 02-PLAN.md — Domain Entities + EF Core Multi-tenancy + Initial Migration (Wave 2)
+- [x] 03-PLAN.md — CQRS Pipeline + JWT Auth + Auth Endpoints (Wave 3)
+- [x] 04-PLAN.md — React 19 + Vite + Frontend Foundation + Login Page (Wave 1, parallel to 01)
+
 ---
 
 ## Phase 2 — Gestión de Índices BCRA/INDEC

@@ -8,6 +8,13 @@
   "testRequirement": "required",
   "research": {
     "enabled": true,
-    "topics": ["bcra-api", "dotnet8-clean-architecture", "ef-core-multitenancy"]
+    "topics": [
+      "bcra-api",
+      "dotnet8-clean-architecture",
+      "ef-core-multitenancy"
+    ]
+  },
+  "workflow": {
+    "_auto_chain_active": false
   }
 }
