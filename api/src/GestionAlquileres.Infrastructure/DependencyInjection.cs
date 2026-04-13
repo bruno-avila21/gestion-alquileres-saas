@@ -35,7 +35,7 @@ public static class DependencyInjection
 
         // External APIs for Phase 2 (ICL from BCRA, IPC from INDEC/datos.gob.ar)
         // Base URLs are hardcoded here — NEVER taken from user input (prevents SSRF, threat T-02-06).
-        services.AddHttpClient<BcraApiClient>(client =>
+        services.AddHttpClient<IBcraApiClient, BcraApiClient>(client =>
         {
             client.BaseAddress = new Uri("https://api.bcra.gob.ar");
             client.DefaultRequestHeaders.Add("Accept", "application/json");
@@ -50,7 +50,7 @@ public static class DependencyInjection
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
         });
 
-        services.AddHttpClient<IndecApiClient>(client =>
+        services.AddHttpClient<IIndecApiClient, IndecApiClient>(client =>
         {
             client.BaseAddress = new Uri("https://apis.datos.gob.ar");
             client.DefaultRequestHeaders.Add("Accept", "application/json");

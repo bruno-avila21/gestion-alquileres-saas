@@ -1,10 +1,11 @@
 using System.Globalization;
 using System.Net.Http.Json;
+using GestionAlquileres.Domain.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 
 namespace GestionAlquileres.Infrastructure.ExternalServices;
 
-public class IndecApiClient
+public class IndecApiClient : IIndecApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<IndecApiClient> _logger;
@@ -18,7 +19,7 @@ public class IndecApiClient
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<IndecDataPoint>> GetIpcAsync(
+    public async Task<IReadOnlyList<IndecIndexPoint>> GetIpcAsync(
         DateOnly desde, DateOnly hasta, CancellationToken ct = default)
     {
         var url = $"/series/api/series/?ids={IpcSeriesId}" +
@@ -33,9 +34,9 @@ public class IndecApiClient
 
         var raw = await response.Content.ReadFromJsonAsync<IndecRawResponse>(cancellationToken: ct);
         if (raw?.Data is null || raw.Data.Count == 0)
-            return Array.Empty<IndecDataPoint>();
+            return Array.Empty<IndecIndexPoint>();
 
-        var result = new List<IndecDataPoint>(raw.Data.Count);
+        var result = new List<IndecIndexPoint>(raw.Data.Count);
         foreach (var row in raw.Data)
         {
             if (row.Length < 2) continue;
@@ -43,7 +44,7 @@ public class IndecApiClient
             if (string.IsNullOrWhiteSpace(dateStr)) continue;
             var fecha = DateOnly.ParseExact(dateStr, "yyyy-MM-dd", CultureInfo.InvariantCulture);
             var valor = row[1].GetDecimal();
-            result.Add(new IndecDataPoint(fecha, valor));
+            result.Add(new IndecIndexPoint(fecha, valor));
         }
         return result;
     }

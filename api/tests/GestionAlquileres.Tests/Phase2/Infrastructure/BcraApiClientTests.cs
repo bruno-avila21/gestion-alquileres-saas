@@ -1,4 +1,5 @@
 using System.Net;
+using GestionAlquileres.Domain.Interfaces.Services;
 using GestionAlquileres.Infrastructure.ExternalServices;
 using Microsoft.Extensions.Logging.Abstractions;
 
