@@ -20,4 +20,11 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\GestionAlquileres.API\GestionAlquileres.API.csproj" />
+    <ProjectReference Include="..\..\src\GestionAlquileres.Infrastructure\GestionAlquileres.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\GestionAlquileres.Application\GestionAlquileres.Application.csproj" />
+    <ProjectReference Include="..\..\src\GestionAlquileres.Domain\GestionAlquileres.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
