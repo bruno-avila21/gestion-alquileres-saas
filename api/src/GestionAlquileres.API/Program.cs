@@ -1,3 +1,4 @@
+using GestionAlquileres.Infrastructure;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Serilog;
@@ -26,6 +27,9 @@ builder.Services.AddSwaggerGen();
 // HttpContextAccessor (required by ICurrentTenant in Plan 1-02)
 builder.Services.AddHttpContextAccessor();
 
+// Infrastructure: DbContext, ICurrentTenant, repositories
+builder.Services.AddInfrastructure(builder.Configuration);
+
 // Hangfire (INFRA-04) — PostgreSQL storage
 var hangfireConn = builder.Configuration.GetConnectionString("HangfireConnection")
     ?? throw new InvalidOperationException("HangfireConnection missing");
@@ -46,6 +50,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<GestionAlquileres.API.Middleware.TenantMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 
