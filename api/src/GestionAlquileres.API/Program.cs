@@ -1,7 +1,11 @@
+using System.Text;
 using GestionAlquileres.Application;
+using GestionAlquileres.Application.Common.Settings;
 using GestionAlquileres.Infrastructure;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,11 +32,33 @@ builder.Services.AddSwaggerGen();
 // HttpContextAccessor (required by ICurrentTenant in Plan 1-02)
 builder.Services.AddHttpContextAccessor();
 
-// Infrastructure: DbContext, ICurrentTenant, repositories
+// Infrastructure: DbContext, ICurrentTenant, repositories, JwtService, JwtSettings
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // Application: MediatR CQRS pipeline, FluentValidation, AutoMapper
 builder.Services.AddApplication();
+
+// JWT Authentication (ORG-04, ORG-05)
+var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JwtSettings section missing");
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 // Hangfire (INFRA-04) — PostgreSQL storage
 var hangfireConn = builder.Configuration.GetConnectionString("HangfireConnection")
@@ -46,6 +72,8 @@ builder.Services.AddHangfireServer();
 
 var app = builder.Build();
 
+// ExceptionMiddleware must be first to catch all unhandled exceptions
+app.UseMiddleware<GestionAlquileres.API.Middleware.ExceptionMiddleware>();
 app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
@@ -55,6 +83,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<GestionAlquileres.API.Middleware.TenantMiddleware>();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

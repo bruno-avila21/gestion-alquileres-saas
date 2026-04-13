@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Settings;
 using GestionAlquileres.Domain.Interfaces.Repositories;
 using GestionAlquileres.Domain.Interfaces.Services;
 using GestionAlquileres.Infrastructure.Persistence;
@@ -25,6 +26,9 @@ public static class DependencyInjection
         services.AddScoped<ICurrentTenant, CurrentTenantService>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+
+        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        services.AddScoped<IJwtService, JwtService>();
 
         return services;
     }
