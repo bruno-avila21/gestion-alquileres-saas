@@ -42,3 +42,7 @@ logs/
 .idea/
 .vscode/settings.json
 *.swp
+
+# Dev scripts runtime
+.pids/
+logs/
