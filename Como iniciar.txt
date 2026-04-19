@@ -1,0 +1,8 @@
+ Iniciar:
+  ./start.sh
+  Levanta Docker (Postgres + MinIO), la API en http://localhost:5000 y el Web en http://localhost:5173. Los logs van a
+  ./logs/api.log y ./logs/web.log.
+
+  Detener:
+  ./stop.sh
+  Mata la API y el Web (por PID guardado) y detiene los contenedores Docker.
