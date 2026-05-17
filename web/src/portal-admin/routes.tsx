@@ -6,6 +6,8 @@ import DashboardPage from './pages/DashboardPage'
 import ContratosPage from './pages/ContratosPage'
 import ContratoDetailPage from './pages/ContratoDetailPage'
 import IndexesPage from './pages/IndexesPage'
+import PropiedadesPage from './pages/PropiedadesPage'
+import InquilinosPage from './pages/InquilinosPage'
 
 export const adminRoutes: RouteObject[] = [
   { path: 'login', element: <AdminLoginPage /> },
@@ -19,6 +21,8 @@ export const adminRoutes: RouteObject[] = [
       { path: 'contratos', element: <ContratosPage /> },
       { path: 'contratos/:id', element: <ContratoDetailPage /> },
       { path: 'indices', element: <IndexesPage /> },
+      { path: 'propiedades', element: <PropiedadesPage /> },
+      { path: 'inquilinos', element: <InquilinosPage /> },
     ],
   },
 ]
