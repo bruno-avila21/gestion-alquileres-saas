@@ -17,6 +17,8 @@ public class AppDbContext : DbContext
     public DbSet<IndexValue> Indexes => Set<IndexValue>();
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Property> Properties => Set<Property>();
+    public DbSet<AppTenant> AppTenants => Set<AppTenant>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +28,12 @@ public class AppDbContext : DbContext
         // User and all future ITenantEntity implementations are filtered.
         modelBuilder.Entity<User>()
             .HasQueryFilter(u => u.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<Property>()
+            .HasQueryFilter(p => p.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<AppTenant>()
+            .HasQueryFilter(t => t.OrganizationId == _currentTenant.OrganizationId);
 
         // IndexValue is GLOBAL reference data (BCRA/INDEC) — no tenant filter.
         // Do NOT add HasQueryFilter for IndexValue.
