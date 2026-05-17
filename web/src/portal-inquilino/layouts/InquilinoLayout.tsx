@@ -6,5 +6,9 @@ export default function InquilinoLayout() {
   if (!user || user.role !== 'Tenant') {
     return <Navigate to="/inquilino/login" replace />
   }
-  return <Outlet />
+  return (
+    <div className="app t-portal" style={{ minHeight: '100vh', background: 'var(--surface-2)' }}>
+      <Outlet />
+    </div>
+  )
 }
