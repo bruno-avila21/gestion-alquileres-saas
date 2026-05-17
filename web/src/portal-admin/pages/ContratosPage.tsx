@@ -1,75 +1,274 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { AdminTopbar } from '../layouts/AdminTopbar'
+import { useContracts, useCreateContract, useTerminateContract } from '@/features/contracts/hooks/useContracts'
+import { useProperties } from '@/features/properties/hooks/useProperties'
+import { useAppTenants } from '@/features/apptenants/hooks/useAppTenants'
+import type { AdjustmentFrequency, AdjustmentType, ContractCurrency, ContractDto, ContractStatus, CreateContractRequest } from '@/features/contracts/types/contract.types'
+import { Button } from '@/shared/components/ui/button'
+import { Input } from '@/shared/components/ui/input'
+import { Label } from '@/shared/components/ui/label'
 import {
-  IcPlus, IcSearch, IcChevDown, IcDownload, IcChev, IcArrowL, IcArrowR,
+  IcPlus, IcSearch, IcChevDown, IcDownload, IcChev, IcArrowL, IcArrowR, IcDoc,
 } from '@/shared/components/ui/Icons'
 import { formatARS, formatDateShort } from '@/shared/lib/formatters'
 
-interface MockContrato {
-  id: string
-  code: string
-  tenant: string
-  property: string
-  rent: number
-  idx: 'ICL' | 'IPC'
-  nextAdj: string
-  status: 'paid' | 'late' | 'pending' | 'partial'
-  overdue: number
+type FormState = {
+  propertyId: string
+  appTenantId: string
+  startDate: string
+  endDate: string
+  monthlyRent: string
+  currency: ContractCurrency
+  adjustmentType: AdjustmentType
+  adjustmentFrequency: AdjustmentFrequency
+  dayOfMonth: string
+  depositAmount: string
+  notes: string
 }
 
-const MOCK_CONTRATOS: MockContrato[] = [
-  { id: 'C-1042', code: 'C-1042', tenant: 'M. Álvarez', property: 'Av. Córdoba 2840 · 7B', rent: 485000, idx: 'ICL', nextAdj: '2026-07-15', status: 'paid', overdue: 0 },
-  { id: 'C-1039', code: 'C-1039', tenant: 'F. Pereyra', property: 'J. B. Justo 1190 · PB', rent: 320000, idx: 'IPC', nextAdj: '2026-06-01', status: 'late', overdue: 1 },
-  { id: 'C-1037', code: 'C-1037', tenant: 'L. Gutiérrez', property: 'Salguero 720 · 12A', rent: 612000, idx: 'ICL', nextAdj: '2026-07-15', status: 'paid', overdue: 0 },
-  { id: 'C-1031', code: 'C-1031', tenant: 'R. Domínguez', property: 'Honduras 5410 · 4C', rent: 410000, idx: 'IPC', nextAdj: '2026-06-01', status: 'pending', overdue: 0 },
-  { id: 'C-1028', code: 'C-1028', tenant: 'C. Ibáñez', property: 'Bonpland 2155 · 3B', rent: 540000, idx: 'ICL', nextAdj: '2026-07-15', status: 'paid', overdue: 0 },
-  { id: 'C-1024', code: 'C-1024', tenant: 'S. Martínez', property: 'Yerbal 312 · 8D', rent: 295000, idx: 'IPC', nextAdj: '2026-06-01', status: 'late', overdue: 2 },
-  { id: 'C-1020', code: 'C-1020', tenant: 'P. Quiroga', property: 'Charcas 4488 · 1A', rent: 720000, idx: 'ICL', nextAdj: '2026-07-15', status: 'partial', overdue: 0 },
-  { id: 'C-1018', code: 'C-1018', tenant: 'N. Ferreyra', property: 'Gascón 825 · 6F', rent: 380000, idx: 'IPC', nextAdj: '2026-06-01', status: 'paid', overdue: 0 },
-]
-
-const STATUS_MAP = {
-  paid: { cls: 'chip--ok', lbl: 'Pagado' },
-  late: { cls: 'chip--danger', lbl: 'Vencido' },
-  pending: { cls: 'chip--warn', lbl: 'Pendiente' },
-  partial: { cls: 'chip--info', lbl: 'Parcial' },
+const EMPTY_FORM: FormState = {
+  propertyId: '', appTenantId: '',
+  startDate: '', endDate: '',
+  monthlyRent: '', currency: 'ARS',
+  adjustmentType: 'ICL', adjustmentFrequency: 'Quarterly',
+  dayOfMonth: '1', depositAmount: '', notes: '',
 }
 
-const TODAY = new Date('2026-05-07')
+const STATUS_LABELS: Record<ContractStatus, { cls: string; lbl: string }> = {
+  Active: { cls: 'chip--ok', lbl: 'Vigente' },
+  Expired: { cls: 'chip--warn', lbl: 'Vencido' },
+  Terminated: { cls: 'chip--danger', lbl: 'Rescindido' },
+}
+
+const ADJ_LABELS: Record<AdjustmentType, string> = { ICL: 'ICL', IPC: 'IPC', Manual: 'Manual' }
 
 export default function ContratosPage() {
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'late' | 'ending'>('all')
+  const { data: contracts, isLoading, error } = useContracts()
+  const { data: properties } = useProperties()
+  const { data: tenants } = useAppTenants()
+  const create = useCreateContract()
+  const terminate = useTerminateContract()
 
-  const tabs = [
-    { k: 'all', lbl: 'Todos · 247' },
-    { k: 'active', lbl: 'Vigentes · 224' },
-    { k: 'late', lbl: 'Vencidos · 14' },
-    { k: 'ending', lbl: 'Finalizando · 9' },
-  ] as const
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const [search, setSearch] = useState('')
+  const [activeStatus, setActiveStatus] = useState<ContractStatus | 'all'>('all')
+  const [formErr, setFormErr] = useState('')
+
+  const filtered = (contracts ?? []).filter(c => {
+    const matchStatus = activeStatus === 'all' || c.status === activeStatus
+    const q = search.toLowerCase()
+    const matchSearch = !q || c.appTenantFullName.toLowerCase().includes(q) || c.propertyAddress.toLowerCase().includes(q)
+    return matchStatus && matchSearch
+  })
+
+  const counts = {
+    all: contracts?.length ?? 0,
+    Active: contracts?.filter(c => c.status === 'Active').length ?? 0,
+    Expired: contracts?.filter(c => c.status === 'Expired').length ?? 0,
+    Terminated: contracts?.filter(c => c.status === 'Terminated').length ?? 0,
+  }
+
+  function openCreate() {
+    setForm(EMPTY_FORM)
+    setFormErr('')
+    setShowForm(true)
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setFormErr('')
+    const payload: CreateContractRequest = {
+      propertyId: form.propertyId,
+      appTenantId: form.appTenantId,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      monthlyRent: parseFloat(form.monthlyRent),
+      currency: form.currency,
+      adjustmentType: form.adjustmentType,
+      adjustmentFrequency: form.adjustmentFrequency,
+      dayOfMonth: parseInt(form.dayOfMonth, 10),
+      depositAmount: form.depositAmount ? parseFloat(form.depositAmount) : null,
+      notes: form.notes.trim() || null,
+    }
+    try {
+      await create.mutateAsync(payload)
+      setShowForm(false)
+    } catch {
+      setFormErr('Error al crear el contrato. Verificá los datos seleccionados.')
+    }
+  }
+
+  async function handleTerminate(c: ContractDto) {
+    if (!confirm(`¿Rescindir el contrato de ${c.appTenantFullName}?`)) return
+    try {
+      await terminate.mutateAsync({ id: c.id, req: { notes: 'Rescisión manual' } })
+    } catch {
+      alert('No se pudo rescindir. El contrato puede ya estar rescindido.')
+    }
+  }
 
   return (
     <>
       <AdminTopbar
         crumbs={['Contratos']}
         right={
-          <button className="btn btn--primary btn--sm">
+          <Button size="sm" onClick={openCreate}>
             <IcPlus size={12} /> Nuevo contrato
-          </button>
+          </Button>
         }
       />
       <div className="page">
         <div className="page-h">
           <div>
             <h1>Contratos</h1>
-            <div className="lead">247 vigentes · 18 finalizan en 90 días</div>
+            <div className="lead">{counts.Active} vigentes</div>
           </div>
           <button className="btn btn--sm">
             <IcDownload size={12} /> Exportar
           </button>
         </div>
+
+        {/* Form */}
+        {showForm && (
+          <div className="card p-4 space-y-4 max-w-2xl">
+            <h2 className="font-semibold">Nuevo contrato</h2>
+            {formErr && <p className="text-sm text-destructive">{formErr}</p>}
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Propiedad *</Label>
+                  <select
+                    className="input w-full"
+                    value={form.propertyId}
+                    onChange={e => setForm(f => ({ ...f, propertyId: e.target.value }))}
+                    required
+                  >
+                    <option value="">Seleccioná una propiedad</option>
+                    {(properties ?? []).filter(p => p.isActive).map(p => (
+                      <option key={p.id} value={p.id}>{p.address} · {p.city}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Inquilino *</Label>
+                  <select
+                    className="input w-full"
+                    value={form.appTenantId}
+                    onChange={e => setForm(f => ({ ...f, appTenantId: e.target.value }))}
+                    required
+                  >
+                    <option value="">Seleccioná un inquilino</option>
+                    {(tenants ?? []).filter(t => t.isActive).map(t => (
+                      <option key={t.id} value={t.id}>{t.firstName} {t.lastName} · DNI {t.dni}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Inicio *</Label>
+                  <Input
+                    type="date"
+                    value={form.startDate}
+                    onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Fin *</Label>
+                  <Input
+                    type="date"
+                    value={form.endDate}
+                    onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label>Alquiler mensual *</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    value={form.monthlyRent}
+                    onChange={e => setForm(f => ({ ...f, monthlyRent: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Moneda *</Label>
+                  <select
+                    className="input w-full"
+                    value={form.currency}
+                    onChange={e => setForm(f => ({ ...f, currency: e.target.value as ContractCurrency }))}
+                  >
+                    <option value="ARS">ARS</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Depósito</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.depositAmount}
+                    onChange={e => setForm(f => ({ ...f, depositAmount: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label>Índice ajuste *</Label>
+                  <select
+                    className="input w-full"
+                    value={form.adjustmentType}
+                    onChange={e => setForm(f => ({ ...f, adjustmentType: e.target.value as AdjustmentType }))}
+                  >
+                    <option value="ICL">ICL</option>
+                    <option value="IPC">IPC</option>
+                    <option value="Manual">Manual</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Frecuencia *</Label>
+                  <select
+                    className="input w-full"
+                    value={form.adjustmentFrequency}
+                    onChange={e => setForm(f => ({ ...f, adjustmentFrequency: e.target.value as AdjustmentFrequency }))}
+                  >
+                    <option value="Monthly">Mensual</option>
+                    <option value="Quarterly">Trimestral</option>
+                    <option value="Annual">Anual</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Día de cobro *</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="28"
+                    value={form.dayOfMonth}
+                    onChange={e => setForm(f => ({ ...f, dayOfMonth: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Notas</Label>
+                <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
+                <Button type="submit" disabled={create.isPending}>Crear contrato</Button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* Filtros */}
         <div className="card card-b" style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '12px 14px' }}>
@@ -83,25 +282,28 @@ export default function ContratosPage() {
                 border: 'none', outline: 'none', background: 'transparent',
                 height: '100%', flex: 1, fontSize: 'var(--fs-sm)', fontFamily: 'inherit',
               }}
-              placeholder="Buscar por inquilino, propiedad o código…"
+              placeholder="Buscar por inquilino o dirección…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={e => setSearch(e.target.value)}
             />
           </div>
           <div style={{ width: 1, height: 24, background: 'var(--hairline)' }} />
           <button className="btn btn--sm">Estado <IcChevDown size={12} /></button>
           <button className="btn btn--sm">Índice <IcChevDown size={12} /></button>
-          <button className="btn btn--sm">Próximo ajuste <IcChevDown size={12} /></button>
-          <button className="btn btn--sm">Propiedad <IcChevDown size={12} /></button>
         </div>
 
         {/* Tabs */}
         <div className="row" style={{ gap: 4 }}>
-          {tabs.map((tab) => (
+          {([
+            { k: 'all', lbl: `Todos · ${counts.all}` },
+            { k: 'Active', lbl: `Vigentes · ${counts.Active}` },
+            { k: 'Expired', lbl: `Vencidos · ${counts.Expired}` },
+            { k: 'Terminated', lbl: `Rescindidos · ${counts.Terminated}` },
+          ] as const).map(tab => (
             <button
               key={tab.k}
-              onClick={() => setActiveTab(tab.k)}
-              className={activeTab === tab.k ? 'chip chip--solid' : 'chip'}
+              onClick={() => setActiveStatus(tab.k as ContractStatus | 'all')}
+              className={activeStatus === tab.k ? 'chip chip--solid' : 'chip'}
               style={{ cursor: 'pointer', border: 'none' }}
             >
               {tab.lbl}
@@ -109,81 +311,97 @@ export default function ContratosPage() {
           ))}
         </div>
 
+        {isLoading && <p className="text-sm text-muted-foreground">Cargando...</p>}
+        {error && <p className="text-sm text-destructive">Error al cargar contratos.</p>}
+
         {/* Tabla */}
         <div className="card" style={{ overflow: 'hidden' }}>
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th style={{ width: 28 }}><input type="checkbox" /></th>
-                <th>Contrato</th>
-                <th>Propiedad</th>
-                <th>Índice</th>
-                <th className="num">Alquiler vigente</th>
-                <th>Próximo ajuste</th>
-                <th>Estado</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_CONTRATOS.map((c) => {
-                const statusInfo = STATUS_MAP[c.status]
-                const initials = c.tenant.split(' ').map((s) => s[0]).slice(0, 2).join('')
-                const daysUntil = Math.round((new Date(c.nextAdj).getTime() - TODAY.getTime()) / 86400000)
-                return (
-                  <tr
-                    key={c.id}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => navigate(`/admin/contratos/${c.id}`)}
-                  >
-                    <td onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
-                    <td>
-                      <div className="row" style={{ gap: 10 }}>
-                        <div className="mono-avatar">{initials}</div>
-                        <div>
-                          <div style={{ fontWeight: 500 }}>{c.tenant}</div>
-                          <div className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>{c.code}</div>
+          {filtered.length === 0 && !isLoading ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <IcDoc size={40} style={{ margin: '0 auto 8px' }} />
+              <p>No hay contratos.</p>
+            </div>
+          ) : (
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Contrato</th>
+                  <th>Propiedad</th>
+                  <th>Índice</th>
+                  <th className="num">Alquiler</th>
+                  <th>Período</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(c => {
+                  const statusInfo = STATUS_LABELS[c.status]
+                  const initials = c.appTenantFullName.split(' ').map(s => s[0]).slice(0, 2).join('')
+                  return (
+                    <tr
+                      key={c.id}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate(`/admin/contratos/${c.id}`)}
+                    >
+                      <td>
+                        <div className="row" style={{ gap: 10 }}>
+                          <div className="mono-avatar">{initials}</div>
+                          <div>
+                            <div style={{ fontWeight: 500 }}>{c.appTenantFullName}</div>
+                            <div className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>
+                              día {c.dayOfMonth} · {c.currency}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="muted">{c.property}</td>
-                    <td>
-                      <span className={`chip chip--${c.idx === 'ICL' ? 'icl' : 'ipc'}`}>
-                        <span className="dot" />{c.idx}
-                      </span>
-                    </td>
-                    <td className="num"><b>{formatARS(c.rent)}</b></td>
-                    <td>
-                      <div>{formatDateShort(c.nextAdj)}</div>
-                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>en {daysUntil} d</div>
-                    </td>
-                    <td>
-                      <span className={`chip ${statusInfo.cls}`}>
-                        <span className="dot" />{statusInfo.lbl}
-                      </span>
-                      {c.overdue > 0 && (
-                        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)', marginTop: 2 }}>
-                          {c.overdue} mes(es)
+                      </td>
+                      <td className="muted">{c.propertyAddress} · {c.propertyCity}</td>
+                      <td>
+                        <span className={`chip chip--${c.adjustmentType === 'ICL' ? 'icl' : c.adjustmentType === 'IPC' ? 'ipc' : 'info'}`}>
+                          <span className="dot" />{ADJ_LABELS[c.adjustmentType]}
+                        </span>
+                      </td>
+                      <td className="num"><b>{formatARS(c.monthlyRent)}</b></td>
+                      <td>
+                        <div style={{ fontSize: 'var(--fs-xs)' }}>
+                          {formatDateShort(c.startDate)} → {formatDateShort(c.endDate)}
                         </div>
-                      )}
-                    </td>
-                    <td>
-                      <button className="btn btn--ghost btn--sm btn--icon">
-                        <IcChev size={12} />
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td>
+                        <span className={`chip ${statusInfo.cls}`}>
+                          <span className="dot" />{statusInfo.lbl}
+                        </span>
+                      </td>
+                      <td onClick={e => e.stopPropagation()}>
+                        <div className="row" style={{ gap: 4 }}>
+                          {c.status === 'Active' && (
+                            <button
+                              className="btn btn--ghost btn--sm"
+                              onClick={() => handleTerminate(c)}
+                              disabled={terminate.isPending}
+                              title="Rescindir"
+                            >
+                              ✕
+                            </button>
+                          )}
+                          <button className="btn btn--ghost btn--sm btn--icon">
+                            <IcChev size={12} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
           <div
             className="between hairline-t"
             style={{ padding: '10px 14px', color: 'var(--muted)', fontSize: 'var(--fs-xs)' }}
           >
-            <span>Mostrando 1–8 de 247</span>
+            <span>Mostrando {filtered.length} de {contracts?.length ?? 0}</span>
             <div className="row">
               <button className="btn btn--ghost btn--sm"><IcArrowL size={12} /></button>
-              <span>1 / 31</span>
               <button className="btn btn--ghost btn--sm"><IcArrowR size={12} /></button>
             </div>
           </div>
