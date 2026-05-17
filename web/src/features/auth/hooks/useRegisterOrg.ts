@@ -17,7 +17,7 @@ export function useRegisterOrg() {
         organizationId: data.organizationId,
         organizationSlug: data.organizationSlug,
       })
-      navigate('/admin/dashboard', { replace: true })
+      navigate('/admin', { replace: true })
     },
   })
 }
