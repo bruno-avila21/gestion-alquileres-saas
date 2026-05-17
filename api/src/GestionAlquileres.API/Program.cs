@@ -24,8 +24,23 @@ builder.Host.UseSerilog((context, services, configuration) =>
             outputTemplate:
             "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"));
 
+// CORS — permite el frontend en desarrollo
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials());
+});
+
 // Controllers + Swagger
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -82,6 +97,29 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Preflight OPTIONS handler — must run before routing so 405 doesn't fire
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == "OPTIONS")
+    {
+        var origin = context.Request.Headers.Origin.ToString();
+        if (origin.StartsWith("http://localhost:51"))
+        {
+            context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
+            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Tenant-Slug");
+            context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+            context.Response.StatusCode = 204;
+            await context.Response.CompleteAsync();
+            return;
+        }
+    }
+    await next();
+});
+
+// Routing → CORS → Auth → Endpoints (order required for preflight OPTIONS)
+app.UseRouting();
+app.UseCors();
 app.UseMiddleware<GestionAlquileres.API.Middleware.TenantMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
