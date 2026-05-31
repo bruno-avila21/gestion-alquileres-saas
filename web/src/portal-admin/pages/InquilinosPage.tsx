@@ -1,10 +1,14 @@
 import { useState } from 'react'
+import { AdminTopbar } from '../layouts/AdminTopbar'
 import { useAppTenants, useCreateAppTenant, useUpdateAppTenant, useDeleteAppTenant, useInviteTenant } from '@/features/apptenants/hooks/useAppTenants'
 import type { AppTenantDto } from '@/features/apptenants/types/apptenant.types'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { IcUsers, IcPlus, IcEdit, IcMail, IcCheck } from '@/shared/components/ui/Icons'
+import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+
+const PAGE_SIZE = 20
 
 type FormState = {
   firstName: string; lastName: string; dni: string; email: string; phone: string
@@ -25,6 +29,7 @@ export default function InquilinosPage() {
   const [search, setSearch] = useState('')
   const [err, setErr] = useState('')
   const [inviteResult, setInviteResult] = useState<{ name: string; pass: string } | null>(null)
+  const [page, setPage] = useState(0)
 
   const filtered = (tenants ?? []).filter(t => {
     const q = search.toLowerCase()
@@ -34,6 +39,9 @@ export default function InquilinosPage() {
       t.dni.includes(q)
     )
   })
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   function openCreate() {
     setEditing(null)
@@ -93,18 +101,20 @@ export default function InquilinosPage() {
   }
 
   return (
+    <>
+      <AdminTopbar
+        crumbs={['Inquilinos']}
+        right={<Button size="sm" onClick={openCreate}><IcPlus size={12} /> Nuevo inquilino</Button>}
+      />
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Inquilinos</h1>
-        <Button onClick={openCreate}>
-          <IcPlus size={16} /> Nuevo inquilino
-        </Button>
       </div>
 
       <Input
         placeholder="Buscar por nombre o DNI..."
         value={search}
-        onChange={e => setSearch(e.target.value)}
+        onChange={e => { setSearch(e.target.value); setPage(0) }}
         className="max-w-sm"
       />
 
@@ -175,7 +185,7 @@ export default function InquilinosPage() {
             <p>No hay inquilinos.</p>
           </div>
         )}
-        {filtered.map(t => (
+        {paginated.map(t => (
           <div key={t.id} className="card p-4 flex items-center gap-3">
             <div
               className="mono-avatar"
@@ -210,6 +220,10 @@ export default function InquilinosPage() {
           </div>
         ))}
       </div>
+      {totalPages > 1 && (
+        <PaginationBar page={page} totalPages={totalPages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      )}
     </div>
+    </>
   )
 }

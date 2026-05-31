@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { contractService } from '../services/contractService'
-import type { ContractStatus, CreateContractRequest, TerminateContractRequest, UpdateContractRequest } from '../types/contract.types'
+import type {
+  ApplyAdjustmentRequest,
+  ContractStatus,
+  CreateContractRequest,
+  RegisterManualTransactionRequest,
+  RegisterPaymentRequest,
+  TerminateContractRequest,
+  UpdateContractRequest,
+} from '../types/contract.types'
 
 const KEY = ['contracts']
 
@@ -29,5 +37,77 @@ export function useTerminateContract() {
   return useMutation({
     mutationFn: ({ id, req }: { id: string; req: TerminateContractRequest }) => contractService.terminate(id, req),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  })
+}
+
+export function useContractById(id: string | undefined) {
+  return useQuery({
+    queryKey: [...KEY, id],
+    queryFn: () => contractService.getById(id!),
+    enabled: !!id,
+  })
+}
+
+export function useRentHistory(contractId: string | undefined) {
+  return useQuery({
+    queryKey: ['contracts', contractId, 'history'],
+    queryFn: () => contractService.getHistory(contractId!),
+    enabled: !!contractId,
+  })
+}
+
+export function useTransactions(contractId: string | undefined) {
+  return useQuery({
+    queryKey: ['contracts', contractId, 'transactions'],
+    queryFn: () => contractService.getTransactions(contractId!),
+    enabled: !!contractId,
+  })
+}
+
+export function useApplyAdjustment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ contractId, req }: { contractId: string; req: ApplyAdjustmentRequest }) =>
+      contractService.applyAdjustment(contractId, req),
+    onSuccess: (_data, { contractId }) => {
+      qc.invalidateQueries({ queryKey: [...KEY, contractId] })
+      qc.invalidateQueries({ queryKey: ['contracts', contractId, 'history'] })
+    },
+  })
+}
+
+export function useRegisterPayment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ contractId, req }: { contractId: string; req: RegisterPaymentRequest }) =>
+      contractService.registerPayment(contractId, req),
+    onSuccess: (_data, { contractId }) => {
+      qc.invalidateQueries({ queryKey: ['contracts', contractId, 'transactions'] })
+    },
+  })
+}
+
+export function useRegisterManualCharge() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ contractId, req }: { contractId: string; req: RegisterManualTransactionRequest }) =>
+      contractService.registerManualCharge(contractId, req),
+    onSuccess: (_data, { contractId }) => {
+      qc.invalidateQueries({ queryKey: ['contracts', contractId, 'transactions'] })
+    },
+  })
+}
+
+export function useAllTransactions() {
+  return useQuery({
+    queryKey: ['transactions', 'all'],
+    queryFn: () => contractService.listAllTransactions(),
+  })
+}
+
+export function useAllRentHistory() {
+  return useQuery({
+    queryKey: ['rent-adjustments', 'all'],
+    queryFn: () => contractService.listAllRentHistory(),
   })
 }

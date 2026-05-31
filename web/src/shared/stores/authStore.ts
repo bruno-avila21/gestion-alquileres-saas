@@ -12,20 +12,29 @@ export interface AuthUser {
 }
 
 interface AuthState {
-  token: string | null
   user: AuthUser | null
-  login: (token: string, user: AuthUser) => void
+  login: (user: AuthUser) => void
   logout: () => void
 }
+
+const apiBase = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api/v1'
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      token: null,
       user: null,
-      login: (token, user) => set({ token, user }),
-      logout: () => set({ token: null, user: null }),
+      // The JWT now lives in an HttpOnly cookie set by the API — it is never stored in JS.
+      // Only the non-sensitive user profile is persisted, for UI and route guards.
+      login: (user) => set({ user }),
+      logout: () => {
+        // Best-effort: clear the HttpOnly auth cookie on the server.
+        void fetch(`${apiBase}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {})
+        set({ user: null })
+      },
     }),
-    { name: 'gestion-alquileres-auth' },
+    {
+      name: 'gestion-alquileres-auth',
+      partialize: (state) => ({ user: state.user }),
+    },
   ),
 )

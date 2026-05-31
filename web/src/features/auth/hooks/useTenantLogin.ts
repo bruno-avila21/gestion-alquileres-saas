@@ -10,7 +10,7 @@ export function useTenantLogin() {
   return useMutation({
     mutationFn: (req: LoginRequest) => authService.tenantLogin(req),
     onSuccess: (data) => {
-      login(data.token, {
+      login({
         userId: data.userId,
         email: data.email,
         role: data.role,

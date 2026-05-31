@@ -10,7 +10,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: (req: LoginRequest) => authService.login(req),
     onSuccess: (data) => {
-      login(data.token, {
+      login({
         userId: data.userId,
         email: data.email,
         role: data.role,

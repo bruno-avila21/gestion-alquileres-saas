@@ -1,13 +1,30 @@
+import { lazy, Suspense } from 'react'
 import type { RouteObject } from 'react-router'
 import AdminLayout from './layouts/AdminLayout'
 import AdminLoginPage from './pages/LoginPage'
 import RegisterOrgPage from './pages/RegisterOrgPage'
-import DashboardPage from './pages/DashboardPage'
-import ContratosPage from './pages/ContratosPage'
-import ContratoDetailPage from './pages/ContratoDetailPage'
-import IndexesPage from './pages/IndexesPage'
-import PropiedadesPage from './pages/PropiedadesPage'
-import InquilinosPage from './pages/InquilinosPage'
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const ContratosPage = lazy(() => import('./pages/ContratosPage'))
+const ContratoDetailPage = lazy(() => import('./pages/ContratoDetailPage'))
+const IndexesPage = lazy(() => import('./pages/IndexesPage'))
+const PropiedadesPage = lazy(() => import('./pages/PropiedadesPage'))
+const InquilinosPage = lazy(() => import('./pages/InquilinosPage'))
+const PagosPage = lazy(() => import('./pages/PagosPage'))
+const AjustesPage = lazy(() => import('./pages/AjustesPage'))
+const DocumentosAdminPage = lazy(() => import('./pages/DocumentosAdminPage'))
+const ConfiguracionPage = lazy(() => import('./pages/ConfiguracionPage'))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+
+function PageLoader() {
+  return (
+    <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
+  )
+}
+
+function Lazy({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>
+}
 
 export const adminRoutes: RouteObject[] = [
   { path: 'login', element: <AdminLoginPage /> },
@@ -16,13 +33,18 @@ export const adminRoutes: RouteObject[] = [
     path: '',
     element: <AdminLayout />,
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'dashboard', element: <DashboardPage /> },
-      { path: 'contratos', element: <ContratosPage /> },
-      { path: 'contratos/:id', element: <ContratoDetailPage /> },
-      { path: 'indices', element: <IndexesPage /> },
-      { path: 'propiedades', element: <PropiedadesPage /> },
-      { path: 'inquilinos', element: <InquilinosPage /> },
+      { index: true, element: <Lazy><DashboardPage /></Lazy> },
+      { path: 'dashboard', element: <Lazy><DashboardPage /></Lazy> },
+      { path: 'contratos', element: <Lazy><ContratosPage /></Lazy> },
+      { path: 'contratos/:id', element: <Lazy><ContratoDetailPage /></Lazy> },
+      { path: 'indices', element: <Lazy><IndexesPage /></Lazy> },
+      { path: 'propiedades', element: <Lazy><PropiedadesPage /></Lazy> },
+      { path: 'inquilinos', element: <Lazy><InquilinosPage /></Lazy> },
+      { path: 'pagos', element: <Lazy><PagosPage /></Lazy> },
+      { path: 'ajustes', element: <Lazy><AjustesPage /></Lazy> },
+      { path: 'documentos', element: <Lazy><DocumentosAdminPage /></Lazy> },
+      { path: 'configuracion', element: <Lazy><ConfiguracionPage /></Lazy> },
+      { path: '*', element: <Lazy><NotFoundPage /></Lazy> },
     ],
   },
 ]

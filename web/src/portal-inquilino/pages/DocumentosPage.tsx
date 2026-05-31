@@ -1,48 +1,27 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import {
-  IcDownload, IcShield, IcDoc, IcTrend, IcLink, IcClock, IcHome, IcReceipt,
+  IcDownload, IcShield, IcDoc, IcTrend, IcLink, IcClock, IcHome, IcReceipt, IcCash,
 } from '@/shared/components/ui/Icons'
 import { formatDate } from '@/shared/lib/formatters'
+import { useMyDocuments } from '@/features/documents/hooks/useDocuments'
+import { useMyContract } from '@/features/me/hooks/useMe'
+import { documentService } from '@/features/documents/services/documentService'
+import type { DocumentDownloadUrlDto } from '@/features/documents/types/document.types'
 
-interface DocItem {
-  n: string
-  d: string
-  k: 'receipt' | 'adj' | 'contract'
-}
-
-const DOCS: DocItem[] = [
-  { n: 'Recibo abril 2026', d: '2026-04-05', k: 'receipt' },
-  { n: 'Recibo marzo 2026', d: '2026-03-06', k: 'receipt' },
-  { n: 'Comprobante ajuste 15-abr', d: '2026-04-15', k: 'adj' },
-  { n: 'Recibo febrero 2026', d: '2026-02-05', k: 'receipt' },
-  { n: 'Contrato firmado', d: '2024-07-15', k: 'contract' },
-]
-
-function DocIcon({ kind }: { kind: DocItem['k'] }) {
-  if (kind === 'receipt') return <IcReceipt size={16} />
-  if (kind === 'adj') return <IcTrend size={16} />
-  return <IcDoc size={16} />
-}
-
-function docColors(k: DocItem['k']): { bg: string; fg: string } {
-  if (k === 'receipt') return { bg: 'var(--ok-50)', fg: 'var(--ok)' }
-  if (k === 'adj') return { bg: 'var(--icl-50)', fg: 'var(--icl)' }
-  return { bg: 'var(--brand-50)', fg: 'var(--brand)' }
-}
-
-function BottomNav({ active }: { active: 'home' | 'contrato' | 'documentos' }) {
+function BottomNav({ active }: { active: 'home' | 'contrato' | 'documentos' | 'pagos' }) {
   const navigate = useNavigate()
   const items = [
     { k: 'home', label: 'Inicio', to: '/inquilino' },
     { k: 'contrato', label: 'Contrato', to: '/inquilino/contrato' },
-    { k: 'documentos', label: 'Documentos', to: '/inquilino/documentos' },
+    { k: 'documentos', label: 'Docs', to: '/inquilino/documentos' },
+    { k: 'pagos', label: 'Pagos', to: '/inquilino/pagos' },
   ] as const
   return (
     <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--surface)', borderTop: '1px solid var(--hairline)', display: 'flex', justifyContent: 'space-around', padding: '8px 0 16px', zIndex: 100 }}>
       {items.map((item) => (
         <button key={item.k} onClick={() => navigate(item.to)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: active === item.k ? 'var(--brand)' : 'var(--muted)', fontFamily: 'inherit' }}>
-          {item.k === 'home' ? <IcHome size={20} /> : item.k === 'contrato' ? <IcDoc size={20} /> : <IcShield size={20} />}
+          {item.k === 'home' ? <IcHome size={20} /> : item.k === 'contrato' ? <IcDoc size={20} /> : item.k === 'documentos' ? <IcShield size={20} /> : <IcCash size={20} />}
           <span style={{ fontSize: 10, fontWeight: 500 }}>{item.label}</span>
         </button>
       ))}
@@ -50,8 +29,70 @@ function BottomNav({ active }: { active: 'home' | 'contrato' | 'documentos' }) {
   )
 }
 
+function docIcon(mimeType: string) {
+  if (mimeType.includes('pdf')) return <IcDoc size={16} />
+  if (mimeType.includes('image')) return <IcReceipt size={16} />
+  return <IcTrend size={16} />
+}
+
+function docColors(mimeType: string): { bg: string; fg: string } {
+  if (mimeType.includes('pdf')) return { bg: 'var(--brand-50)', fg: 'var(--brand)' }
+  if (mimeType.includes('image')) return { bg: 'var(--ok-50)', fg: 'var(--ok)' }
+  return { bg: 'var(--icl-50)', fg: 'var(--icl)' }
+}
+
+function fmtBytes(b: number) {
+  if (b < 1024) return `${b} B`
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`
+  return `${(b / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default function TenantDocumentosPage() {
-  const [showLink, setShowLink] = useState(false)
+  const { data: docs, isLoading } = useMyDocuments()
+  const { data: contract } = useMyContract()
+  const [urlModal, setUrlModal] = useState<DocumentDownloadUrlDto | null>(null)
+  const [countdown, setCountdown] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  function clearTick() {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }
+
+  function closeModal() {
+    clearTick()
+    setUrlModal(null)
+    setCountdown(null)
+  }
+
+  // Stop the countdown timer if the component unmounts mid-modal.
+  useEffect(() => clearTick, [])
+
+  async function handleDownload(docId: string) {
+    if (!contract?.id) return
+    setError(null)
+    clearTick() // never leak a previous timer
+    let dto: DocumentDownloadUrlDto
+    try {
+      dto = await documentService.getDownloadUrl(contract.id, docId)
+    } catch {
+      setError('No se pudo generar el link de descarga. Intentá de nuevo.')
+      return
+    }
+    setUrlModal(dto)
+
+    const expMs = new Date(dto.expiresAt).getTime()
+    intervalRef.current = setInterval(() => {
+      const remaining = Math.max(0, Math.round((expMs - Date.now()) / 1000))
+      const mm = String(Math.floor(remaining / 60)).padStart(2, '0')
+      const ss = String(remaining % 60).padStart(2, '0')
+      setCountdown(`${mm}:${ss}`)
+      if (remaining === 0) clearTick()
+    }, 1000)
+  }
 
   return (
     <div style={{ maxWidth: 420, margin: '0 auto', padding: '20px 18px 80px', display: 'flex', flexDirection: 'column', gap: 14, position: 'relative' }}>
@@ -65,33 +106,38 @@ export default function TenantDocumentosPage() {
 
       {/* Lista de documentos */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        {DOCS.map((d, i) => {
-          const colors = docColors(d.k)
+        {isLoading ? (
+          <div style={{ padding: '20px 14px', color: 'var(--muted)', fontSize: 'var(--fs-sm)', textAlign: 'center' }}>Cargando…</div>
+        ) : !docs || docs.length === 0 ? (
+          <div style={{ padding: '24px 14px', color: 'var(--muted)', fontSize: 'var(--fs-sm)', textAlign: 'center' }}>
+            <IcDoc size={28} style={{ opacity: .3, display: 'block', margin: '0 auto 8px' }} />
+            Sin documentos disponibles aún.
+          </div>
+        ) : docs.map((d, i) => {
+          const colors = docColors(d.mimeType)
           return (
             <div
-              key={i}
+              key={d.id}
               className="between"
               style={{
                 padding: '12px 14px',
-                borderBottom: i < DOCS.length - 1 ? '1px solid var(--hairline)' : 'none',
+                borderBottom: i < docs.length - 1 ? '1px solid var(--hairline)' : 'none',
                 cursor: 'pointer',
               }}
-              onClick={() => {
-                if (i === 0) setShowLink(true)
-              }}
+              onClick={() => handleDownload(d.id)}
             >
               <div className="row" style={{ gap: 10 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 8, background: colors.bg, color: colors.fg, display: 'grid', placeItems: 'center', flex: '0 0 auto' }}>
-                  <DocIcon kind={d.k} />
+                  {docIcon(d.mimeType)}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{d.n}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{formatDate(d.d)}</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{d.fileName}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{formatDate(d.createdAt.split('T')[0])} · {fmtBytes(d.sizeBytes)}</div>
                 </div>
               </div>
               <button
                 className="btn btn--ghost btn--sm btn--icon"
-                onClick={(e) => { e.stopPropagation(); setShowLink(true) }}
+                onClick={(e) => { e.stopPropagation(); handleDownload(d.id) }}
               >
                 <IcDownload size={14} />
               </button>
@@ -101,9 +147,18 @@ export default function TenantDocumentosPage() {
       </div>
 
       {/* Bottom sheet: secure link */}
-      {showLink && (
+      {error && (
+        <div role="alert" style={{
+          background: 'var(--danger-50, #fdecea)', color: 'var(--danger, #b3261e)',
+          border: '1px solid var(--danger, #b3261e)', borderRadius: 8, padding: '10px 12px', fontSize: 13,
+        }}>
+          {error}
+        </div>
+      )}
+
+      {urlModal && (
         <div
-          onClick={() => setShowLink(false)}
+          onClick={closeModal}
           style={{
             position: 'fixed', inset: 0,
             background: 'rgba(20,20,16,.4)',
@@ -138,21 +193,23 @@ export default function TenantDocumentosPage() {
               fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-soft)',
               wordBreak: 'break-all', lineHeight: 1.5,
             }}>
-              alquilar.io/d/r-2026-04?token=eyJhbGciOiJIUzI1NiI…
+              {urlModal.url}
             </div>
 
-            <div className="between" style={{ marginTop: 8, fontSize: 11 }}>
-              <span style={{ color: 'var(--muted)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <IcClock size={12} /> Expira en
-              </span>
-              <span className="mono" style={{ color: 'var(--warn)', fontWeight: 600 }}>04:42</span>
-            </div>
+            {countdown && (
+              <div className="between" style={{ marginTop: 8, fontSize: 11 }}>
+                <span style={{ color: 'var(--muted)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <IcClock size={12} /> Expira en
+                </span>
+                <span className="mono" style={{ color: 'var(--warn)', fontWeight: 600 }}>{countdown}</span>
+              </div>
+            )}
 
             <div className="row" style={{ marginTop: 14, gap: 6 }}>
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }}>
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigator.clipboard.writeText(urlModal.url)}>
                 <IcLink size={14} /> Copiar
               </button>
-              <button className="btn btn--primary" style={{ flex: 1, justifyContent: 'center' }}>
+              <button className="btn btn--primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => window.open(urlModal.url, '_blank')}>
                 <IcDownload size={14} /> Descargar
               </button>
             </div>

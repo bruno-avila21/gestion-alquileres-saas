@@ -39,8 +39,53 @@ export interface CreateContractRequest {
   notes?: string | null
 }
 
-export interface UpdateContractRequest extends CreateContractRequest {}
+export type UpdateContractRequest = CreateContractRequest
 
 export interface TerminateContractRequest {
   notes?: string | null
+}
+
+export type TransactionType = 'RentCharge' | 'Payment' | 'ManualDebit' | 'ManualCredit'
+
+export interface RentHistoryDto {
+  id: string
+  contractId: string
+  previousRent: number
+  newRent: number
+  adjustmentFactor: number
+  adjustmentType: AdjustmentType
+  indexValueId: string | null
+  effectiveDate: string
+  notes: string | null
+  createdAt: string
+}
+
+export interface TransactionDto {
+  id: string
+  contractId: string
+  type: TransactionType
+  amount: number
+  currency: ContractCurrency
+  period: string
+  notes: string | null
+  createdAt: string
+}
+
+export interface ApplyAdjustmentRequest {
+  effectiveDate?: string | null
+  manualNewRent?: number | null
+  notes?: string | null
+}
+
+export interface RegisterPaymentRequest {
+  amount: number
+  period: string
+  notes?: string | null
+}
+
+export interface RegisterManualTransactionRequest {
+  type: 'ManualDebit' | 'ManualCredit'
+  amount: number
+  period: string
+  notes: string
 }

@@ -1,18 +1,13 @@
 import { useNavigate } from 'react-router'
 import { useAuthStore } from '@/shared/stores/authStore'
 import {
-  IcArrowR, IcDownload, IcTrend, IcBuilding, IcCheck, IcHome, IcDoc, IcShield,
+  IcArrowR, IcDownload, IcTrend, IcBuilding, IcCheck, IcHome, IcDoc, IcShield, IcCash,
 } from '@/shared/components/ui/Icons'
-import { formatARS } from '@/shared/lib/formatters'
-
-const RECENT_PAYMENTS = [
-  { period: 'Abr 2026', amount: 485000, status: 'Pagado' },
-  { period: 'Mar 2026', amount: 432000, status: 'Pagado' },
-  { period: 'Feb 2026', amount: 432000, status: 'Pagado' },
-]
+import { formatARS, formatDate } from '@/shared/lib/formatters'
+import { useMyContract, useMyTransactions } from '@/features/me/hooks/useMe'
 
 interface BottomNavProps {
-  active: 'home' | 'contrato' | 'documentos'
+  active: 'home' | 'contrato' | 'documentos' | 'pagos'
 }
 
 function BottomNav({ active }: BottomNavProps) {
@@ -20,7 +15,8 @@ function BottomNav({ active }: BottomNavProps) {
   const items = [
     { k: 'home', label: 'Inicio', icon: <IcHome size={20} />, to: '/inquilino' },
     { k: 'contrato', label: 'Contrato', icon: <IcDoc size={20} />, to: '/inquilino/contrato' },
-    { k: 'documentos', label: 'Documentos', icon: <IcShield size={20} />, to: '/inquilino/documentos' },
+    { k: 'documentos', label: 'Docs', icon: <IcShield size={20} />, to: '/inquilino/documentos' },
+    { k: 'pagos', label: 'Pagos', icon: <IcCash size={20} />, to: '/inquilino/pagos' },
   ] as const
   return (
     <div
@@ -53,6 +49,10 @@ function BottomNav({ active }: BottomNavProps) {
 export default function TenantHomePage() {
   const user = useAuthStore((s) => s.user)
   const name = user?.email?.split('@')[0] ?? 'Inquilino'
+  const { data: contract, isLoading } = useMyContract()
+  const { data: transactions } = useMyTransactions()
+
+  const recentPayments = (transactions ?? []).filter(t => t.type === 'Payment').slice(0, 3)
 
   return (
     <div style={{ maxWidth: 420, margin: '0 auto', padding: '20px 18px 80px', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -72,128 +72,116 @@ export default function TenantHomePage() {
         </div>
       </div>
 
-      {/* Card próximo pago */}
-      <div
-        className="card"
-        style={{
-          padding: 16,
-          background: 'linear-gradient(160deg, var(--brand) 0%, var(--brand-700) 100%)',
-          color: 'white',
-          border: 'none',
-        }}
-      >
-        <div className="between">
-          <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', opacity: 0.8, fontWeight: 500 }}>
-            Próximo pago
-          </span>
-          <span style={{ fontSize: 11, opacity: 0.85 }}>vence en 4 días</span>
-        </div>
-        <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: '-.02em', marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>
-          {formatARS(485000)}
-        </div>
-        <div style={{ fontSize: 'var(--fs-xs)', opacity: 0.85 }}>Mayo 2026 · vence 10 may</div>
-        <div className="row" style={{ marginTop: 14, gap: 6 }}>
-          <button
-            className="btn"
-            style={{ background: 'white', color: 'var(--brand-700)', border: 'none', flex: 1, justifyContent: 'center', fontWeight: 600 }}
-          >
-            Pagar ahora <IcArrowR size={14} />
-          </button>
-          <button
-            className="btn btn--icon"
-            style={{ background: 'rgba(255,255,255,.15)', color: 'white', border: 'none' }}
-          >
-            <IcDownload size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* Próximo ajuste */}
-      <div className="card" style={{ padding: 14, border: '1px solid var(--brand-100)', background: 'var(--brand-50)' }}>
-        <div className="row">
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'white', color: 'var(--brand)', display: 'grid', placeItems: 'center', flex: '0 0 auto' }}>
-            <IcTrend size={16} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div className="between">
-              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--brand-700)', fontWeight: 500 }}>
-                Tu próximo ajuste
-              </span>
-              <span className="chip chip--icl" style={{ height: 18, fontSize: 10 }}>
-                <span className="dot" />ICL
-              </span>
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--brand-700)', marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
-              15 jul · +12,4%
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--brand-700)', opacity: 0.8, marginTop: 2 }}>
-              {formatARS(485000)} → {formatARS(545000)} (estimado)
-            </div>
-          </div>
-        </div>
-        <button
-          className="btn"
-          style={{ marginTop: 10, width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--brand-100)', color: 'var(--brand-700)' }}
-          onClick={() => window.location.href = '/inquilino/contrato'}
+      {/* Card alquiler vigente */}
+      {isLoading ? (
+        <div className="card" style={{ padding: 20, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
+      ) : contract ? (
+        <div
+          className="card"
+          style={{
+            padding: 16,
+            background: 'linear-gradient(160deg, var(--brand) 0%, var(--brand-700) 100%)',
+            color: 'white',
+            border: 'none',
+          }}
         >
-          Cómo se calcula <IcArrowR size={12} />
-        </button>
-      </div>
+          <div className="between">
+            <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', opacity: 0.8, fontWeight: 500 }}>
+              Alquiler vigente
+            </span>
+            <span className={`chip ${contract.status === 'Active' ? 'chip--ok' : 'chip--warn'}`} style={{ height: 18, fontSize: 10 }}>
+              <span className="dot" />{contract.status === 'Active' ? 'Vigente' : contract.status}
+            </span>
+          </div>
+          <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: '-.02em', marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>
+            {formatARS(contract.monthlyRent)}
+          </div>
+          <div style={{ fontSize: 'var(--fs-xs)', opacity: 0.85 }}>{contract.currency} · vence {formatDate(contract.endDate)}</div>
+          <div className="row" style={{ marginTop: 14, gap: 6 }}>
+            <button
+              className="btn"
+              style={{ background: 'white', color: 'var(--brand-700)', border: 'none', flex: 1, justifyContent: 'center', fontWeight: 600 }}
+              onClick={() => window.location.href = '/inquilino/contrato'}
+            >
+              Ver contrato <IcArrowR size={14} />
+            </button>
+            <button className="btn btn--icon" style={{ background: 'rgba(255,255,255,.15)', color: 'white', border: 'none' }}>
+              <IcDownload size={14} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="card" style={{ padding: 16 }}>
+          <div style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>Sin contrato activo en esta organización.</div>
+        </div>
+      )}
 
-      {/* Mi contrato */}
-      <div className="card">
-        <div className="card-h" style={{ padding: '12px 14px' }}>
-          <h3 style={{ fontSize: 14 }}>Tu contrato</h3>
-          <span className="chip chip--ok" style={{ height: 18, fontSize: 10 }}>
-            <span className="dot" />Vigente
-          </span>
-        </div>
-        <div className="card-b" style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div className="row" style={{ gap: 10 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 7, background: 'var(--surface-3)', color: 'var(--muted)', display: 'grid', placeItems: 'center', flex: '0 0 auto' }}>
-              <IcBuilding size={18} />
+      {/* Ajuste */}
+      {contract && (
+        <div className="card" style={{ padding: 14, border: '1px solid var(--brand-100)', background: 'var(--brand-50)' }}>
+          <div className="row">
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'white', color: 'var(--brand)', display: 'grid', placeItems: 'center', flex: '0 0 auto' }}>
+              <IcTrend size={16} />
             </div>
-            <div>
-              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>Av. Córdoba 2840 · 7B</div>
-              <div style={{ fontSize: 11, color: 'var(--muted)' }}>CABA · hasta 15 jul 2027</div>
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
-            <div className="kv">
-              <span className="k" style={{ fontSize: 10 }}>Alquiler vigente</span>
-              <span className="v" style={{ fontWeight: 600 }}>{formatARS(485000)}</span>
-            </div>
-            <div className="kv">
-              <span className="k" style={{ fontSize: 10 }}>Próximo</span>
-              <span className="v">15 jul 2026</span>
+            <div style={{ flex: 1 }}>
+              <div className="between">
+                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--brand-700)', fontWeight: 500 }}>Tipo de ajuste</span>
+                <span className={`chip chip--${contract.adjustmentType === 'ICL' ? 'icl' : contract.adjustmentType === 'IPC' ? 'ipc' : 'warn'}`} style={{ height: 18, fontSize: 10 }}>
+                  <span className="dot" />{contract.adjustmentType}
+                </span>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--brand-700)', marginTop: 2 }}>
+                {contract.adjustmentFrequency === 'Monthly' ? 'Mensual' : contract.adjustmentFrequency === 'Quarterly' ? 'Trimestral' : 'Anual'}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Tu contrato */}
+      {contract && (
+        <div className="card">
+          <div className="card-h" style={{ padding: '12px 14px' }}>
+            <h3 style={{ fontSize: 14 }}>Tu propiedad</h3>
+          </div>
+          <div className="card-b" style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="row" style={{ gap: 10 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 7, background: 'var(--surface-3)', color: 'var(--muted)', display: 'grid', placeItems: 'center', flex: '0 0 auto' }}>
+                <IcBuilding size={18} />
+              </div>
+              <div>
+                <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{contract.propertyAddress}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{contract.propertyCity} · hasta {formatDate(contract.endDate)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pagos recientes */}
       <div>
         <div className="between" style={{ padding: '0 4px 8px' }}>
-          <span className="sect-title" style={{ margin: 0 }}>Pagos recientes</span>
-          <a style={{ fontSize: 11, color: 'var(--brand)', cursor: 'pointer' }}>Ver →</a>
+          <span className="sect-title" style={{ margin: 0 }}>Pagos registrados</span>
         </div>
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          {RECENT_PAYMENTS.map((r, i) => (
+          {recentPayments.length === 0 ? (
+            <div style={{ padding: '16px 14px', color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>Sin pagos registrados aún.</div>
+          ) : recentPayments.map((t, i) => (
             <div
-              key={i}
+              key={t.id}
               className="between"
-              style={{ padding: '10px 14px', borderBottom: i < RECENT_PAYMENTS.length - 1 ? '1px solid var(--hairline)' : 'none' }}
+              style={{ padding: '10px 14px', borderBottom: i < recentPayments.length - 1 ? '1px solid var(--hairline)' : 'none' }}
             >
               <div className="row">
                 <div style={{ width: 28, height: 28, borderRadius: 50, background: 'var(--ok-50)', color: 'var(--ok)', display: 'grid', placeItems: 'center' }}>
                   <IcCheck size={12} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{r.period}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{r.status}</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{formatDate(t.period)}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{t.notes ?? 'Pago registrado'}</div>
                 </div>
               </div>
-              <div className="tnum" style={{ fontWeight: 500, fontSize: 'var(--fs-sm)' }}>{formatARS(r.amount)}</div>
+              <div className="tnum" style={{ fontWeight: 500, fontSize: 'var(--fs-sm)' }}>{formatARS(t.amount)}</div>
             </div>
           ))}
         </div>

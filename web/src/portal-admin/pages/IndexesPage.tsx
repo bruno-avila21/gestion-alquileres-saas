@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AdminTopbar } from '../layouts/AdminTopbar'
 import { useIndexes } from '@/features/indexes/hooks/useIndexes'
 import { IndexTable } from '@/features/indexes/components/IndexTable'
 import { SyncIndexDialog } from '@/features/indexes/components/SyncIndexDialog'
@@ -23,10 +24,14 @@ export default function IndexesPage() {
   const { data, isLoading, error } = useIndexes(type, from, to)
 
   return (
+    <>
+      <AdminTopbar
+        crumbs={['Índices']}
+        right={<Button size="sm" onClick={() => setDialogOpen(true)}>Sincronizar</Button>}
+      />
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Índices BCRA/INDEC</h1>
-        <Button onClick={() => setDialogOpen(true)}>Sincronizar</Button>
       </div>
 
       <div className="flex gap-4 items-end flex-wrap">
@@ -73,5 +78,6 @@ export default function IndexesPage() {
         defaultIndexType={type}
       />
     </div>
+    </>
   )
 }

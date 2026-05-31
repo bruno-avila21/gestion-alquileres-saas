@@ -9,9 +9,12 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import {
-  IcPlus, IcSearch, IcChevDown, IcDownload, IcChev, IcArrowL, IcArrowR, IcDoc,
+  IcPlus, IcSearch, IcChevDown, IcDownload, IcChev, IcDoc,
 } from '@/shared/components/ui/Icons'
 import { formatARS, formatDateShort } from '@/shared/lib/formatters'
+import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+
+const PAGE_SIZE = 20
 
 type FormState = {
   propertyId: string
@@ -56,6 +59,7 @@ export default function ContratosPage() {
   const [search, setSearch] = useState('')
   const [activeStatus, setActiveStatus] = useState<ContractStatus | 'all'>('all')
   const [formErr, setFormErr] = useState('')
+  const [page, setPage] = useState(0)
 
   const filtered = (contracts ?? []).filter(c => {
     const matchStatus = activeStatus === 'all' || c.status === activeStatus
@@ -63,6 +67,12 @@ export default function ContratosPage() {
     const matchSearch = !q || c.appTenantFullName.toLowerCase().includes(q) || c.propertyAddress.toLowerCase().includes(q)
     return matchStatus && matchSearch
   })
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
+  function handleSearch(val: string) { setSearch(val); setPage(0) }
+  function handleStatusChange(status: ContractStatus | 'all') { setActiveStatus(status); setPage(0) }
 
   const counts = {
     all: contracts?.length ?? 0,
@@ -284,7 +294,7 @@ export default function ContratosPage() {
               }}
               placeholder="Buscar por inquilino o dirección…"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => handleSearch(e.target.value)}
             />
           </div>
           <div style={{ width: 1, height: 24, background: 'var(--hairline)' }} />
@@ -302,7 +312,7 @@ export default function ContratosPage() {
           ] as const).map(tab => (
             <button
               key={tab.k}
-              onClick={() => setActiveStatus(tab.k as ContractStatus | 'all')}
+              onClick={() => handleStatusChange(tab.k as ContractStatus | 'all')}
               className={activeStatus === tab.k ? 'chip chip--solid' : 'chip'}
               style={{ cursor: 'pointer', border: 'none' }}
             >
@@ -335,7 +345,7 @@ export default function ContratosPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(c => {
+                {paginated.map(c => {
                   const statusInfo = STATUS_LABELS[c.status]
                   const initials = c.appTenantFullName.split(' ').map(s => s[0]).slice(0, 2).join('')
                   return (
@@ -395,16 +405,7 @@ export default function ContratosPage() {
               </tbody>
             </table>
           )}
-          <div
-            className="between hairline-t"
-            style={{ padding: '10px 14px', color: 'var(--muted)', fontSize: 'var(--fs-xs)' }}
-          >
-            <span>Mostrando {filtered.length} de {contracts?.length ?? 0}</span>
-            <div className="row">
-              <button className="btn btn--ghost btn--sm"><IcArrowL size={12} /></button>
-              <button className="btn btn--ghost btn--sm"><IcArrowR size={12} /></button>
-            </div>
-          </div>
+          <PaginationBar page={page} totalPages={totalPages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
         </div>
       </div>
     </>

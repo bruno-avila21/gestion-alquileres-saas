@@ -1,10 +1,14 @@
 import { useState } from 'react'
+import { AdminTopbar } from '../layouts/AdminTopbar'
 import { useProperties, useCreateProperty, useUpdateProperty, useDeleteProperty } from '@/features/properties/hooks/useProperties'
 import type { PropertyDto, PropertyType } from '@/features/properties/types/property.types'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { IcBuilding, IcPlus, IcEdit, IcCheck } from '@/shared/components/ui/Icons'
+import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+
+const PAGE_SIZE = 20
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
   { value: 'Apartment', label: 'Departamento' },
@@ -43,11 +47,15 @@ export default function PropiedadesPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [search, setSearch] = useState('')
   const [err, setErr] = useState('')
+  const [page, setPage] = useState(0)
 
   const filtered = (properties ?? []).filter(p =>
     p.address.toLowerCase().includes(search.toLowerCase()) ||
     p.city.toLowerCase().includes(search.toLowerCase())
   )
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   function openCreate() {
     setEditing(null)
@@ -95,18 +103,20 @@ export default function PropiedadesPage() {
   }
 
   return (
+    <>
+      <AdminTopbar
+        crumbs={['Propiedades']}
+        right={<Button size="sm" onClick={openCreate}><IcPlus size={12} /> Nueva propiedad</Button>}
+      />
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Propiedades</h1>
-        <Button onClick={openCreate}>
-          <IcPlus size={16} /> Nueva propiedad
-        </Button>
       </div>
 
       <Input
         placeholder="Buscar por dirección o ciudad..."
         value={search}
-        onChange={e => setSearch(e.target.value)}
+        onChange={e => { setSearch(e.target.value); setPage(0) }}
         className="max-w-sm"
       />
 
@@ -181,7 +191,7 @@ export default function PropiedadesPage() {
             <p>No hay propiedades.</p>
           </div>
         )}
-        {filtered.map(p => (
+        {paginated.map(p => (
           <div key={p.id} className="card p-4 flex items-center gap-3">
             <IcBuilding size={20} style={{ color: 'var(--brand)', flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -205,6 +215,10 @@ export default function PropiedadesPage() {
           </div>
         ))}
       </div>
+      {totalPages > 1 && (
+        <PaginationBar page={page} totalPages={totalPages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      )}
     </div>
+    </>
   )
 }
