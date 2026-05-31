@@ -89,3 +89,19 @@ export interface RegisterManualTransactionRequest {
   period: string
   notes: string
 }
+
+export interface AdjustmentProjectionItem {
+  number: number
+  from: string
+  to: string
+  rent: number | null
+  coefficient: number | null
+  variationPct: number | null
+  indexAvailable: boolean
+}
+
+export interface AdjustmentProjection {
+  currentRent: number
+  schedule: AdjustmentProjectionItem[]
+  notes: string | null
+}

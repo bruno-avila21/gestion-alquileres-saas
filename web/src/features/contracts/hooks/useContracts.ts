@@ -56,6 +56,14 @@ export function useRentHistory(contractId: string | undefined) {
   })
 }
 
+export function useAdjustmentProjection(contractId: string | undefined) {
+  return useQuery({
+    queryKey: ['contracts', contractId, 'adjustment-projection'],
+    queryFn: () => contractService.getAdjustmentProjection(contractId!),
+    enabled: !!contractId,
+  })
+}
+
 export function useTransactions(contractId: string | undefined) {
   return useQuery({
     queryKey: ['contracts', contractId, 'transactions'],

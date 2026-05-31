@@ -13,6 +13,7 @@ import {
   useTransactions,
   useRegisterPayment,
   useApplyAdjustment,
+  useAdjustmentProjection,
 } from '@/features/contracts/hooks/useContracts'
 import { useContractDocuments, useUploadDocument, useDeleteDocument } from '@/features/documents/hooks/useDocuments'
 import { documentService } from '@/features/documents/services/documentService'
@@ -55,6 +56,19 @@ function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: 
   const adjLabel = contract.adjustmentType === 'ICL' ? 'ICL' : contract.adjustmentType === 'IPC' ? 'IPC' : 'Manual'
   const freqLabel = contract.adjustmentFrequency === 'Monthly' ? 'mensual' : contract.adjustmentFrequency === 'Quarterly' ? 'trimestral' : 'anual'
 
+  // Real projection from indices-api (null for Manual contracts).
+  const { data: projection } = useAdjustmentProjection(contract.id)
+  const lastAdjusted = projection?.schedule.filter((s) => s.indexAvailable && s.coefficient != null).at(-1)
+  const baseRent = projection?.schedule[0]?.rent ?? contract.monthlyRent
+  const coeffText = lastAdjusted?.coefficient != null ? lastAdjusted.coefficient.toFixed(4) : '—'
+  const coeffSub = lastAdjusted?.coefficient != null
+    ? `+${lastAdjusted.variationPct?.toFixed(2)}%`
+    : (contract.adjustmentType === 'Manual' ? 'ajuste manual' : 'pendiente de índice')
+  const projectedText = projection ? formatARS(projection.currentRent) : '—'
+  const projectedSub = projection
+    ? `vigente · ${lastAdjusted ? `desde ${lastAdjusted.from}` : 'sin ajustes aún'}`
+    : (contract.adjustmentType === 'Manual' ? 'definido manualmente' : 'requiere índice actual')
+
   return (
     <>
       <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 'var(--s-7)' }}>
@@ -71,14 +85,14 @@ function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: 
           </div>
           <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto 1fr', alignItems: 'center', gap: 12 }}>
-              <CalcCell k="Base" v={formatARS(contract.monthlyRent)} sub={contract.startDate} />
+              <CalcCell k="Base" v={formatARS(baseRent)} sub={contract.startDate} />
               <div style={{ fontSize: 22, color: 'var(--muted)', textAlign: 'center', fontWeight: 300 }}>×</div>
-              <CalcCell k="Coeficiente" v="—" sub="pendiente de índice" accent="var(--muted)" />
+              <CalcCell k="Coeficiente" v={coeffText} sub={coeffSub} accent={lastAdjusted ? undefined : 'var(--muted)'} />
               <div style={{ fontSize: 22, color: 'var(--muted)', textAlign: 'center', fontWeight: 300 }}>=</div>
               <CalcCell
                 k="Alquiler proyectado"
-                v="—"
-                sub={<span style={{ color: 'rgba(255,255,255,.75)' }}>requiere índice actual</span>}
+                v={projectedText}
+                sub={<span style={{ color: 'rgba(255,255,255,.75)' }}>{projectedSub}</span>}
                 solid
               />
             </div>

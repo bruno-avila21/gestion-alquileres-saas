@@ -1,5 +1,6 @@
 import { api } from '@/shared/lib/api'
 import type {
+  AdjustmentProjection,
   ApplyAdjustmentRequest,
   ContractDto,
   ContractStatus,
@@ -36,6 +37,11 @@ export const contractService = {
   async getHistory(contractId: string): Promise<RentHistoryDto[]> {
     const { data } = await api.get<RentHistoryDto[]>(`/contracts/${contractId}/history`)
     return data
+  },
+  async getAdjustmentProjection(contractId: string): Promise<AdjustmentProjection | null> {
+    const res = await api.get<AdjustmentProjection>(`/contracts/${contractId}/adjustment-projection`)
+    // 204 No Content (Manual contracts) → no projection.
+    return res.status === 204 ? null : res.data
   },
   async getTransactions(contractId: string): Promise<TransactionDto[]> {
     const { data } = await api.get<TransactionDto[]>(`/contracts/${contractId}/transactions`)
