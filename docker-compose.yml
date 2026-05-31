@@ -28,6 +28,24 @@ services:
       - "9001:9001"
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-shot: create the documents bucket so the API can use Storage:Provider=S3 against MinIO.
+  minio-init:
+    image: minio/mc:latest
+    container_name: gestion_alquileres_minio_init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 2; done;
+      /usr/bin/mc mb --ignore-existing local/documents;
+      exit 0;
+      "
 
 volumes:
   postgres_data:

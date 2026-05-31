@@ -36,9 +36,12 @@ public static class DependencyInjection
         services.AddScoped<IRentHistoryRepository, RentHistoryRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
-        services.AddScoped<IStorageService, LocalFileStorageService>();
         services.AddSingleton<IDocumentTokenService, DocumentTokenService>();
         services.AddScoped<IEmailService, NullEmailService>();
+
+        // Document storage: S3-compatible object store (AWS S3 / MinIO) when configured, else local FS.
+        services.Configure<StorageSettings>(configuration.GetSection(StorageSettings.SectionName));
+        AddStorage(services, configuration);
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddScoped<IJwtService, JwtService>();
@@ -70,5 +73,37 @@ public static class DependencyInjection
         services.AddScoped<IIndicesCalculator>(sp => sp.GetRequiredService<IndicesApiClient>());
 
         return services;
+    }
+
+    private static void AddStorage(IServiceCollection services, IConfiguration configuration)
+    {
+        var provider = configuration["Storage:Provider"] ?? "Local";
+
+        if (!provider.Equals("S3", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IStorageService, LocalFileStorageService>();
+            return;
+        }
+
+        services.AddSingleton<Amazon.S3.IAmazonS3>(_ =>
+        {
+            var config = new Amazon.S3.AmazonS3Config
+            {
+                ForcePathStyle = bool.TryParse(configuration["Storage:ForcePathStyle"], out var fps) ? fps : true,
+            };
+
+            var serviceUrl = configuration["Storage:ServiceUrl"]; // set for MinIO; null for AWS
+            if (!string.IsNullOrWhiteSpace(serviceUrl))
+                config.ServiceURL = serviceUrl;
+            else
+                config.RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(configuration["Storage:Region"] ?? "us-east-1");
+
+            var accessKey = configuration["Storage:AccessKey"];
+            var secretKey = configuration["Storage:SecretKey"];
+            return string.IsNullOrWhiteSpace(accessKey)
+                ? new Amazon.S3.AmazonS3Client(config) // fall back to the default AWS credential chain
+                : new Amazon.S3.AmazonS3Client(accessKey, secretKey, config);
+        });
+        services.AddScoped<IStorageService, S3StorageService>();
     }
 }
