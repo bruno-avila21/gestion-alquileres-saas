@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using FluentValidation;
+using GestionAlquileres.Application.Common.Exceptions;
 
 namespace GestionAlquileres.API.Middleware;
 
@@ -28,15 +29,18 @@ public class ExceptionMiddleware
             var errors = ex.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage });
             await ctx.Response.WriteAsync(JsonSerializer.Serialize(new { errors }));
         }
-        catch (UnauthorizedAccessException ex)
+        // Domain rule violation. Caught before the generic handler; BusinessException derives from
+        // InvalidOperationException, so its message is safe to surface. Plain InvalidOperationExceptions
+        // (framework/internal) fall through to the generic 500 and never leak their message.
+        catch (BusinessException ex)
         {
-            ctx.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            ctx.Response.StatusCode = (int)HttpStatusCode.Conflict;
             ctx.Response.ContentType = "application/json";
             await ctx.Response.WriteAsync(JsonSerializer.Serialize(new { error = ex.Message }));
         }
-        catch (InvalidOperationException ex)
+        catch (UnauthorizedAccessException ex)
         {
-            ctx.Response.StatusCode = (int)HttpStatusCode.Conflict;
+            ctx.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
             ctx.Response.ContentType = "application/json";
             await ctx.Response.WriteAsync(JsonSerializer.Serialize(new { error = ex.Message }));
         }

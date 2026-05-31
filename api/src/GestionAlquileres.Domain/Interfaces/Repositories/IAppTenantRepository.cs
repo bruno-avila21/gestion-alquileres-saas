@@ -9,5 +9,6 @@ public interface IAppTenantRepository
     Task AddAsync(AppTenant tenant, CancellationToken ct);
     Task<bool> ExistsAsync(Guid id, CancellationToken ct);
     Task<bool> DniExistsAsync(string dni, CancellationToken ct);
+    Task<AppTenant?> GetByUserIdAsync(Guid userId, CancellationToken ct);
     Task SaveChangesAsync(CancellationToken ct);
 }

@@ -1,4 +1,5 @@
 using GestionAlquileres.Application.Common.DTOs;
+using GestionAlquileres.Application.Common.Exceptions;
 using GestionAlquileres.Domain.Entities;
 using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
@@ -27,7 +28,7 @@ public class RegisterOrgCommandHandler : IRequestHandler<RegisterOrgCommand, Aut
     {
         var slug = request.Slug.ToLowerInvariant();
         if (await _orgRepo.SlugExistsAsync(slug, ct))
-            throw new InvalidOperationException($"Organization slug '{slug}' is already taken.");
+            throw new BusinessException($"Organization slug '{slug}' is already taken.");
 
         var org = new Organization
         {

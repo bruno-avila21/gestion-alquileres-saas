@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestionAlquileres.API.Controllers;
 
 [Route("api/v1/contracts")]
-public class ContractsController : BaseController
+public class ContractsController : AdminControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ContractDto>>> GetAll(

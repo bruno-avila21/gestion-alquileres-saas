@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestionAlquileres.API.Controllers;
 
 [Route("api/v1/indexes")]
-public class IndexesController : BaseController
+public class IndexesController : AdminControllerBase
 {
     /// <summary>Historical index values by type and date range. IDX-06.</summary>
     [HttpGet]

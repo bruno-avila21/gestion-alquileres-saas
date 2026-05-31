@@ -1,0 +1,13 @@
+{
+  "_comment": "Copy this file to appsettings.Development.json (git-ignored) and fill in local dev secrets. Secrets must be >= 32 chars and must NOT contain 'REPLACE_WITH'. In production, supply these via environment variables (e.g. ConnectionStrings__DefaultConnection, JwtSettings__SecretKey, DocumentToken__Secret) or a secrets manager — never commit them.",
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=gestion_alquileres;Username=appuser;Password=devpassword",
+    "HangfireConnection": "Host=localhost;Port=5432;Database=gestion_alquileres;Username=appuser;Password=devpassword"
+  },
+  "JwtSettings": {
+    "SecretKey": "generate-a-random-32+-char-secret-for-local-dev"
+  },
+  "DocumentToken": {
+    "Secret": "generate-a-random-32+-char-secret-for-local-dev"
+  }
+}

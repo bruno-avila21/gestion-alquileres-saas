@@ -188,4 +188,22 @@ public class AuthTests : IClassFixture<AuthTests.ApiFactory>
         var r = await client.GetAsync("/health");
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
     }
+
+    // Phase 0 — login issues the JWT in an HttpOnly cookie (not just the body).
+    [Fact]
+    public async Task Login_sets_httponly_auth_cookie()
+    {
+        var client = _factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/auth/register-org",
+            new RegisterOrgCommand("Iota", "iota", "admin@iota.com", "Password123", "A", "A"));
+
+        var login = await client.PostAsJsonAsync("/api/v1/auth/login",
+            new LoginCommand("admin@iota.com", "Password123", "iota"));
+        login.EnsureSuccessStatusCode();
+
+        Assert.True(login.Headers.TryGetValues("Set-Cookie", out var cookies));
+        var authCookie = cookies!.FirstOrDefault(c => c.StartsWith("access_token="));
+        Assert.NotNull(authCookie);
+        Assert.Contains("httponly", authCookie!, StringComparison.OrdinalIgnoreCase);
+    }
 }

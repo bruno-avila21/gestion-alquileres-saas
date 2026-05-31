@@ -20,6 +20,9 @@ public class AppDbContext : DbContext
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<AppTenant> AppTenants => Set<AppTenant>();
     public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<RentHistory> RentHistory => Set<RentHistory>();
+    public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<Document> Documents => Set<Document>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,6 +41,15 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Contract>()
             .HasQueryFilter(c => c.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<RentHistory>()
+            .HasQueryFilter(r => r.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<Transaction>()
+            .HasQueryFilter(t => t.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<Document>()
+            .HasQueryFilter(d => d.OrganizationId == _currentTenant.OrganizationId);
 
         // IndexValue is GLOBAL reference data (BCRA/INDEC) — no tenant filter.
         // Do NOT add HasQueryFilter for IndexValue.

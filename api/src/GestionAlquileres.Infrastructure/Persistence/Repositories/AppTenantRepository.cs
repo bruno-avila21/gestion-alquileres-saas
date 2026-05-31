@@ -24,5 +24,8 @@ public class AppTenantRepository : IAppTenantRepository
     public Task<bool> DniExistsAsync(string dni, CancellationToken ct) =>
         _db.AppTenants.AnyAsync(t => t.Dni == dni, ct);
 
+    public Task<AppTenant?> GetByUserIdAsync(Guid userId, CancellationToken ct) =>
+        _db.AppTenants.FirstOrDefaultAsync(t => t.UserId == userId, ct);
+
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 }

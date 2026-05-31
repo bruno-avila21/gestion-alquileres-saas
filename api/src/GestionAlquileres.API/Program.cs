@@ -1,11 +1,15 @@
 using System.Text;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using GestionAlquileres.Application;
 using GestionAlquileres.Application.Common.Settings;
 using GestionAlquileres.Infrastructure;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,11 +28,14 @@ builder.Host.UseSerilog((context, services, configuration) =>
             outputTemplate:
             "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"));
 
-// CORS — permite el frontend en desarrollo
+// CORS — allowed origins come from configuration (Cors:AllowedOrigins), with dev defaults.
+// Credentials are allowed, so origins must be an explicit list (never a wildcard).
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? new[] { "http://localhost:5173", "http://localhost:5174", "http://localhost:5175" };
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175")
+        policy.WithOrigins(corsOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials());
@@ -42,7 +49,30 @@ builder.Services.AddControllers()
             new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gestión Alquileres API", Version = "v1" });
+    var scheme = new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT token. Formato: Bearer {token}",
+    };
+    c.AddSecurityDefinition("Bearer", scheme);
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // HttpContextAccessor (required by ICurrentTenant in Plan 1-02)
 builder.Services.AddHttpContextAccessor();
@@ -52,6 +82,9 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // Application: MediatR CQRS pipeline, FluentValidation, AutoMapper
 builder.Services.AddApplication();
+
+// Fail-fast: reject placeholder/weak secrets and hard-coded dev passwords before wiring auth.
+GestionAlquileres.API.Configuration.SecuritySettingsValidator.Validate(builder.Configuration, builder.Environment);
 
 // JWT Authentication (ORG-04, ORG-05)
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
@@ -71,9 +104,38 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
             ClockSkew = TimeSpan.FromSeconds(30)
         };
+
+        // Browsers send the JWT via an HttpOnly cookie (not localStorage). Non-browser
+        // clients keep using the Authorization: Bearer header, which takes precedence.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (string.IsNullOrEmpty(context.Token) &&
+                    context.Request.Cookies.TryGetValue(
+                        GestionAlquileres.API.Configuration.AuthCookie.Name, out var cookieToken))
+                {
+                    context.Token = cookieToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
+
+// Rate limiting — auth endpoints (10 req/min per window)
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("auth", o =>
+    {
+        o.PermitLimit = 10;
+        o.Window = TimeSpan.FromMinutes(1);
+        o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        o.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = 429;
+});
 
 // Hangfire (INFRA-04) — PostgreSQL storage
 var hangfireConn = builder.Configuration.GetConnectionString("HangfireConnection")
@@ -91,48 +153,80 @@ var app = builder.Build();
 app.UseMiddleware<GestionAlquileres.API.Middleware.ExceptionMiddleware>();
 app.UseSerilogRequestLogging();
 
+// Security headers on every response.
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "no-referrer";
+    if (!app.Environment.IsDevelopment())
+    {
+        // Strict CSP would block Swagger UI assets, so it's production-only.
+        headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'";
+        headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+    }
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Preflight OPTIONS handler — must run before routing so 405 doesn't fire
-app.Use(async (context, next) =>
-{
-    if (context.Request.Method == "OPTIONS")
-    {
-        var origin = context.Request.Headers.Origin.ToString();
-        if (origin.StartsWith("http://localhost:51"))
-        {
-            context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
-            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-            context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Tenant-Slug");
-            context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
-            context.Response.StatusCode = 204;
-            await context.Response.CompleteAsync();
-            return;
-        }
-    }
-    await next();
-});
-
-// Routing → CORS → Auth → Endpoints (order required for preflight OPTIONS)
+// Routing → CORS → RateLimit (non-dev) → Auth → Endpoints.
+// CORS preflight is handled by UseCors (the configured policy), not a hand-rolled OPTIONS branch.
 app.UseRouting();
 app.UseCors();
+if (!app.Environment.IsDevelopment())
+    app.UseRateLimiter();
 app.UseMiddleware<GestionAlquileres.API.Middleware.TenantMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Hangfire dashboard — read-only outside Development
+// Hangfire dashboard — read-only outside Development and gated to authenticated Admins in prod.
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
-    IsReadOnlyFunc = _ => !app.Environment.IsDevelopment()
+    IsReadOnlyFunc = _ => !app.Environment.IsDevelopment(),
+    Authorization = new[]
+    {
+        new GestionAlquileres.API.Configuration.HangfireDashboardAuthFilter(app.Environment.IsDevelopment()),
+    },
 });
 
-// Health probe — lets tests verify Program.cs bootstraps
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+// Register Hangfire recurring jobs (guarded — Hangfire storage unavailable in tests)
+try
+{
+    RecurringJob.AddOrUpdate<GestionAlquileres.API.Jobs.MonthlyRentAdjustmentJob>(
+        "monthly-rent-adjustment",
+        job => job.ExecuteAsync(CancellationToken.None),
+        Cron.Monthly(1, 9)); // 1st of month at 09:00
+
+    RecurringJob.AddOrUpdate<GestionAlquileres.API.Jobs.ContractExpiryNotificationJob>(
+        "contract-expiry-notifications",
+        job => job.ExecuteAsync(CancellationToken.None),
+        Cron.Daily(10)); // daily at 10:00
+
+    RecurringJob.AddOrUpdate<GestionAlquileres.API.Jobs.SyncIndexesJob>(
+        "sync-indexes",
+        job => job.ExecuteAsync(CancellationToken.None),
+        Cron.Monthly(1, 7)); // 1st of month at 07:00 — before the adjustment job
+}
+catch (Exception ex)
+{
+    Log.Warning("Could not register Hangfire recurring jobs: {Error}", ex.Message);
+}
+
+// Health probe — verifies the app booted and the database is reachable (readiness).
+app.MapGet("/health", async (GestionAlquileres.Infrastructure.Persistence.AppDbContext db) =>
+{
+    var dbUp = await db.Database.CanConnectAsync();
+    return dbUp
+        ? Results.Ok(new { status = "ok", db = "up" })
+        : Results.Json(new { status = "degraded", db = "down" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+});
 
 app.Run();
 

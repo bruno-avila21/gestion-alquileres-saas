@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestionAlquileres.API.Controllers;
 
 [Route("api/v1/properties")]
-public class PropertiesController : BaseController
+public class PropertiesController : AdminControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<PropertyDto>>> GetAll(CancellationToken ct) =>

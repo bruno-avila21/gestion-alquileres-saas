@@ -23,4 +23,7 @@ public abstract class BaseController : ControllerBase
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub")
             ?? throw new UnauthorizedAccessException("Missing sub claim"));
+
+    /// <summary>True when the current user belongs to organization staff (Admin or Staff role).</summary>
+    protected bool IsStaff => User.IsInRole("Admin") || User.IsInRole("Staff");
 }
