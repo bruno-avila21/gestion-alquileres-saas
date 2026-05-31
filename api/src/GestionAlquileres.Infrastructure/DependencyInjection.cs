@@ -67,6 +67,7 @@ public static class DependencyInjection
         // The SaaS index-sync handler depends on these two interfaces; both are now served by indices-api.
         services.AddScoped<IBcraApiClient>(sp => sp.GetRequiredService<IndicesApiClient>());
         services.AddScoped<IIndecApiClient>(sp => sp.GetRequiredService<IndicesApiClient>());
+        services.AddScoped<IIndicesCalculator>(sp => sp.GetRequiredService<IndicesApiClient>());
 
         return services;
     }

@@ -5,6 +5,7 @@ using GestionAlquileres.Application.Features.RentHistory.Queries;
 using GestionAlquileres.Application.Features.Transactions.Commands;
 using GestionAlquileres.Application.Features.Transactions.DTOs;
 using GestionAlquileres.Application.Features.Transactions.Queries;
+using GestionAlquileres.Domain.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GestionAlquileres.API.Controllers;
@@ -25,6 +26,15 @@ public class ContractRentController : AdminControllerBase
     public async Task<ActionResult<IReadOnlyList<RentHistoryDto>>> GetHistory(
         Guid contractId, CancellationToken ct) =>
         Ok(await Mediator.Send(new ListRentHistoryQuery(contractId), ct));
+
+    /// <summary>Projected rent schedule under the contract's index (via indices-api). 204 for Manual contracts.</summary>
+    [HttpGet("adjustment-projection")]
+    public async Task<ActionResult<AdjustmentProjection>> GetAdjustmentProjection(
+        Guid contractId, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetAdjustmentProjectionQuery(contractId), ct);
+        return result is null ? NoContent() : Ok(result);
+    }
 
     [HttpGet("transactions")]
     public async Task<ActionResult<IReadOnlyList<TransactionDto>>> GetTransactions(

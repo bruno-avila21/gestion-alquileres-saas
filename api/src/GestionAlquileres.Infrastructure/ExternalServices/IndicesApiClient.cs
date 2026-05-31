@@ -9,7 +9,7 @@ namespace GestionAlquileres.Infrastructure.ExternalServices;
 /// source-client interfaces by calling indices-api's idempotent sync endpoint, which fetches and
 /// normalizes the monthly value. The SaaS still persists the value locally (its own cache).
 /// </summary>
-public class IndicesApiClient : IBcraApiClient, IIndecApiClient
+public class IndicesApiClient : IBcraApiClient, IIndecApiClient, IIndicesCalculator
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<IndicesApiClient> _logger;
@@ -32,6 +32,32 @@ public class IndicesApiClient : IBcraApiClient, IIndecApiClient
         return value is null ? Array.Empty<IndecIndexPoint>() : new[] { new IndecIndexPoint(hasta, value.Value) };
     }
 
+    public async Task<AdjustmentProjection?> CalculateAsync(
+        string index, decimal initialRent, DateOnly startDate, int frequencyMonths, DateOnly? until,
+        CancellationToken ct = default)
+    {
+        var body = new
+        {
+            index,
+            initialRent,
+            startDate = startDate.ToString("yyyy-MM-dd"),
+            frequencyMonths,
+            until = until?.ToString("yyyy-MM-dd"),
+        };
+
+        var response = await _httpClient.PostAsJsonAsync("/v1/calculate", body, ct);
+        response.EnsureSuccessStatusCode();
+
+        var dto = await response.Content.ReadFromJsonAsync<CalcResponse>(cancellationToken: ct);
+        if (dto is null) return null;
+
+        var schedule = (dto.Schedule ?? new List<CalcItem>())
+            .Select(s => new AdjustmentProjectionItem(
+                s.Number, s.From, s.To, s.Rent, s.Coefficient, s.VariationPct, s.IndexAvailable))
+            .ToList();
+        return new AdjustmentProjection(dto.CurrentRent, schedule, dto.Notes);
+    }
+
     private async Task<decimal?> SyncAsync(string type, DateOnly month, CancellationToken ct)
     {
         var period = month.ToString("yyyy-MM");
@@ -46,4 +72,8 @@ public class IndicesApiClient : IBcraApiClient, IIndecApiClient
 
     private sealed record SyncResponse(SyncValue? Value);
     private sealed record SyncValue(decimal Value);
+
+    private sealed record CalcResponse(decimal CurrentRent, List<CalcItem>? Schedule, string? Notes);
+    private sealed record CalcItem(
+        int Number, DateOnly From, DateOnly To, decimal? Rent, decimal? Coefficient, decimal? VariationPct, bool IndexAvailable);
 }
