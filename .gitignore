@@ -46,3 +46,17 @@ logs/
 # Dev scripts runtime
 .pids/
 logs/
+
+# Local admin/dev tools (contain dev credentials — never commit)
+reset-password.csx
+reset-tool/
+
+# Downloaded scaffold / template artifacts
+Template/
+
+# Local screenshots & MCP tool output
+/*.png
+.playwright-mcp/
+
+# Claude worktrees
+.claude/worktrees/
