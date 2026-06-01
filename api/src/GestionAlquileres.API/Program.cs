@@ -10,6 +10,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -146,6 +149,29 @@ builder.Services.AddHangfire(config => config
     .UseRecommendedSerializerSettings()
     .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(hangfireConn)));
 builder.Services.AddHangfireServer();
+
+// OpenTelemetry — traces + metrics for ASP.NET Core, outbound HTTP (indices-api) and the runtime.
+// Exports via OTLP only when an endpoint is configured (Otlp:Endpoint or OTEL_EXPORTER_OTLP_ENDPOINT),
+// so local runs and the test host don't try to reach a collector.
+var otlpEndpoint = builder.Configuration["Otlp:Endpoint"]
+    ?? builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("GestionAlquileres.API"))
+    .WithTracing(t =>
+    {
+        t.AddAspNetCoreInstrumentation();
+        t.AddHttpClientInstrumentation();
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+            t.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
+    })
+    .WithMetrics(m =>
+    {
+        m.AddAspNetCoreInstrumentation();
+        m.AddHttpClientInstrumentation();
+        m.AddRuntimeInstrumentation();
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+            m.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
+    });
 
 var app = builder.Build();
 
