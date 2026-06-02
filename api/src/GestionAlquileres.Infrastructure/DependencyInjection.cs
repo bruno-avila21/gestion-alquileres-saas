@@ -36,7 +36,9 @@ public static class DependencyInjection
         services.AddScoped<IRentHistoryRepository, RentHistoryRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddSingleton<IDocumentTokenService, DocumentTokenService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<IEmailService, NullEmailService>();
 
         // Document storage: S3-compatible object store (AWS S3 / MinIO) when configured, else local FS.

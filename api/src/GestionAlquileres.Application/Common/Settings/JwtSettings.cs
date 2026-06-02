@@ -7,4 +7,7 @@ public class JwtSettings
     public string Audience { get; set; } = string.Empty;
     public string SecretKey { get; set; } = string.Empty;
     public int ExpiryHours { get; set; } = 8;
+
+    /// <summary>How long an issued refresh token stays valid, in days.</summary>
+    public int RefreshTokenDays { get; set; } = 14;
 }

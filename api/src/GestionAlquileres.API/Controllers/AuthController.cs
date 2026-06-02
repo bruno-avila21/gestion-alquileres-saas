@@ -4,6 +4,7 @@ using GestionAlquileres.Application.Common.Settings;
 using GestionAlquileres.Application.Features.Auth.Commands;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
@@ -18,6 +19,9 @@ public class AuthController : BaseController
 
     public AuthController(IOptions<JwtSettings> jwt) => _jwt = jwt.Value;
 
+    /// <summary>Body fallback so non-browser API clients can refresh without a cookie jar.</summary>
+    public record RefreshRequest(string? RefreshToken);
+
     [HttpPost("register-org")]
     public async Task<ActionResult<AuthResponseDto>> RegisterOrg(
         [FromBody] RegisterOrgCommand command,
@@ -25,6 +29,7 @@ public class AuthController : BaseController
     {
         var result = await Mediator.Send(command, ct);
         SetAuthCookie(result.Token);
+        await IssueRefreshCookieAsync(result.UserId, result.OrganizationId, ct);
         return Ok(result);
     }
 
@@ -35,6 +40,7 @@ public class AuthController : BaseController
     {
         var result = await Mediator.Send(command, ct);
         SetAuthCookie(result.Token);
+        await IssueRefreshCookieAsync(result.UserId, result.OrganizationId, ct);
         return Ok(result);
     }
 
@@ -45,12 +51,42 @@ public class AuthController : BaseController
     {
         var result = await Mediator.Send(command, ct);
         SetAuthCookie(result.Token);
+        await IssueRefreshCookieAsync(result.UserId, result.OrganizationId, ct);
         return Ok(result);
     }
 
-    [HttpPost("logout")]
-    public IActionResult Logout()
+    /// <summary>
+    /// Exchanges a refresh token (cookie or body) for a fresh access token, rotating the refresh token.
+    /// </summary>
+    [HttpPost("refresh")]
+    public async Task<ActionResult<AuthResponseDto>> Refresh(
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefreshRequest? body,
+        CancellationToken ct)
     {
+        var rawToken = Request.Cookies.TryGetValue(AuthCookie.RefreshName, out var cookie) && !string.IsNullOrEmpty(cookie)
+            ? cookie
+            : body?.RefreshToken;
+
+        if (string.IsNullOrWhiteSpace(rawToken))
+            return Unauthorized();
+
+        var result = await Mediator.Send(new RefreshAccessTokenCommand(rawToken), ct);
+
+        SetAuthCookie(result.Auth.Token);
+        SetRefreshCookie(result.RawToken, result.ExpiresAt);
+        return Ok(result.Auth);
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefreshRequest? body, CancellationToken ct)
+    {
+        var refresh = Request.Cookies.TryGetValue(AuthCookie.RefreshName, out var cookie) && !string.IsNullOrEmpty(cookie)
+            ? cookie
+            : body?.RefreshToken;
+        if (!string.IsNullOrWhiteSpace(refresh))
+            await Mediator.Send(new RevokeRefreshTokenCommand(refresh), ct);
+
         Response.Cookies.Delete(AuthCookie.Name, new CookieOptions
         {
             HttpOnly = true,
@@ -58,7 +94,20 @@ public class AuthController : BaseController
             SameSite = SameSiteMode.Lax,
             Path = "/",
         });
+        Response.Cookies.Delete(AuthCookie.RefreshName, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Path = AuthCookie.RefreshPath,
+        });
         return NoContent();
+    }
+
+    private async Task IssueRefreshCookieAsync(Guid userId, Guid organizationId, CancellationToken ct)
+    {
+        var issued = await Mediator.Send(new IssueRefreshTokenCommand(userId, organizationId), ct);
+        SetRefreshCookie(issued.RawToken, issued.ExpiresAt);
     }
 
     /// <summary>
@@ -75,6 +124,22 @@ public class AuthController : BaseController
             SameSite = SameSiteMode.Lax,     // cross-site deployments should override to None + Secure
             Path = "/",
             MaxAge = TimeSpan.FromHours(_jwt.ExpiryHours),
+        });
+    }
+
+    /// <summary>
+    /// Stores the refresh token in an HttpOnly cookie scoped to the auth path, so it is only sent
+    /// to /refresh and /logout — never on ordinary API requests.
+    /// </summary>
+    private void SetRefreshCookie(string rawToken, DateTimeOffset expiresAt)
+    {
+        Response.Cookies.Append(AuthCookie.RefreshName, rawToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Path = AuthCookie.RefreshPath,
+            Expires = expiresAt,
         });
     }
 }

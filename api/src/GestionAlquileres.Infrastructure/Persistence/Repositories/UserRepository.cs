@@ -12,6 +12,9 @@ public class UserRepository : IUserRepository
     public Task<User?> GetByIdAsync(Guid id, CancellationToken ct) =>
         _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
 
+    public Task<User?> GetByIdAcrossOrgsAsync(Guid id, CancellationToken ct) =>
+        _db.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == id, ct);
+
     public Task<User?> GetByEmailAsync(Guid organizationId, string email, CancellationToken ct) =>
         _db.Users.IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.OrganizationId == organizationId && u.Email == email, ct);

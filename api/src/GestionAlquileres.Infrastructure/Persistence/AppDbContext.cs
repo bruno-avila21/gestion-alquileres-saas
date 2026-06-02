@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<RentHistory> RentHistory => Set<RentHistory>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Document> Documents => Set<Document>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,5 +54,8 @@ public class AppDbContext : DbContext
 
         // IndexValue is GLOBAL reference data (BCRA/INDEC) — no tenant filter.
         // Do NOT add HasQueryFilter for IndexValue.
+
+        // RefreshToken has NO tenant filter on purpose: the /refresh endpoint runs without a tenant
+        // in scope. Lookup is by globally-unique token hash; the owning org is carried on the row.
     }
 }
