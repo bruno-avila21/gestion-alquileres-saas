@@ -17,7 +17,7 @@ public class GetAdjustmentProjectionQueryTests
         public Task<bool> HasActiveOverlapAsync(Guid propertyId, DateOnly s, DateOnly e, Guid? exclude, CancellationToken ct) => throw new NotImplementedException();
         public Task AddAsync(Contract c, CancellationToken ct) => throw new NotImplementedException();
         public Task SaveChangesAsync(CancellationToken ct) => throw new NotImplementedException();
-        public Task<Contract?> GetByIdRawAsync(Guid id, CancellationToken ct) => throw new NotImplementedException();
+        public Task<Contract?> GetByIdRawAsync(Guid id, Guid orgId, CancellationToken ct) => throw new NotImplementedException();
         public Task<IReadOnlyList<Contract>> ListActiveRawAsync(CancellationToken ct) => throw new NotImplementedException();
         public Task<IReadOnlyList<Contract>> GetExpiringRawAsync(int d, CancellationToken ct) => throw new NotImplementedException();
     }

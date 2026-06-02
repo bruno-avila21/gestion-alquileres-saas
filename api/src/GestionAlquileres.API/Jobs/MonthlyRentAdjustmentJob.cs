@@ -49,7 +49,8 @@ public class MonthlyRentAdjustmentJob
 
                 if (today < nextAdj) continue;
 
-                await mediator.Send(new ApplyRentAdjustmentCommand(contract.Id, today), ct);
+                await mediator.Send(
+                    new ApplyRentAdjustmentCommand(contract.Id, today, OrganizationId: contract.OrganizationId), ct);
                 _logger.LogInformation(
                     "Monthly adjustment applied to contract {ContractId} on {Date}",
                     contract.Id, today);

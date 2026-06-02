@@ -39,11 +39,24 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
 
     public async Task<RentHistoryDto> Handle(ApplyRentAdjustmentCommand request, CancellationToken ct)
     {
-        // In background jobs (Hangfire) ICurrentTenant returns Guid.Empty — fall back to raw lookup.
-        var contract = (_currentTenant.OrganizationId == Guid.Empty
-            ? await _contractRepo.GetByIdRawAsync(request.ContractId, ct)
-            : await _contractRepo.GetByIdAsync(request.ContractId, ct))
-            ?? throw new BusinessException("Contrato no encontrado.");
+        // In background jobs (Hangfire) ICurrentTenant returns Guid.Empty — fall back to a raw lookup
+        // that the job pins to the contract's organization, so it can never resolve another tenant's contract.
+        Entities.Contract? contract;
+        if (_currentTenant.OrganizationId != Guid.Empty)
+        {
+            contract = await _contractRepo.GetByIdAsync(request.ContractId, ct);
+        }
+        else if (request.OrganizationId is { } orgId && orgId != Guid.Empty)
+        {
+            contract = await _contractRepo.GetByIdRawAsync(request.ContractId, orgId, ct);
+        }
+        else
+        {
+            throw new BusinessException("No hay organización en contexto para resolver el contrato.");
+        }
+
+        if (contract is null)
+            throw new BusinessException("Contrato no encontrado.");
 
         if (contract.Status != ContractStatus.Active)
             throw new BusinessException("Solo se pueden ajustar contratos vigentes.");

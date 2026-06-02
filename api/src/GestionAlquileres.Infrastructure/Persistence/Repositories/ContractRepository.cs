@@ -45,12 +45,12 @@ public class ContractRepository : IContractRepository
 
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 
-    public Task<Contract?> GetByIdRawAsync(Guid id, CancellationToken ct) =>
+    public Task<Contract?> GetByIdRawAsync(Guid id, Guid organizationId, CancellationToken ct) =>
         _db.Contracts
             .IgnoreQueryFilters()
             .Include(c => c.Property)
             .Include(c => c.AppTenant)
-            .FirstOrDefaultAsync(c => c.Id == id, ct);
+            .FirstOrDefaultAsync(c => c.Id == id && c.OrganizationId == organizationId, ct);
 
     public async Task<IReadOnlyList<Contract>> ListActiveRawAsync(CancellationToken ct) =>
         await _db.Contracts

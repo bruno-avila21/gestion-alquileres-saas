@@ -17,8 +17,9 @@ public interface IContractRepository
     Task AddAsync(Contract contract, CancellationToken ct);
     Task SaveChangesAsync(CancellationToken ct);
 
-    // Background-job helpers — bypass tenant filter (safe only in Hangfire jobs, never HTTP handlers)
-    Task<Contract?> GetByIdRawAsync(Guid id, CancellationToken ct);
+    // Background-job helpers — bypass the global tenant filter (safe only in Hangfire jobs, never HTTP handlers).
+    // The raw by-id lookup still pins the organization explicitly so it can never cross tenants.
+    Task<Contract?> GetByIdRawAsync(Guid id, Guid organizationId, CancellationToken ct);
     Task<IReadOnlyList<Contract>> ListActiveRawAsync(CancellationToken ct);
     Task<IReadOnlyList<Contract>> GetExpiringRawAsync(int daysAhead, CancellationToken ct);
 }
