@@ -29,6 +29,10 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
         if (!await _tenantRepo.ExistsAsync(request.AppTenantId, ct))
             throw new Common.Exceptions.BusinessException("Inquilino no encontrado en esta organización.");
 
+        if (await _repo.HasActiveOverlapAsync(request.PropertyId, request.StartDate, request.EndDate, null, ct))
+            throw new Common.Exceptions.BusinessException(
+                "Ya existe un contrato activo para esta propiedad cuyo período se solapa con el indicado.");
+
         var contract = new Contract
         {
             OrganizationId = request.OrganizationId,

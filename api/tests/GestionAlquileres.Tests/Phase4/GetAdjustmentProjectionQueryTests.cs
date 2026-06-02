@@ -14,6 +14,7 @@ public class GetAdjustmentProjectionQueryTests
         public Contract? Contract;
         public Task<Contract?> GetByIdAsync(Guid id, CancellationToken ct) => Task.FromResult(Contract);
         public Task<IReadOnlyList<Contract>> ListAsync(Guid? a, Guid? p, ContractStatus? s, CancellationToken ct) => throw new NotImplementedException();
+        public Task<bool> HasActiveOverlapAsync(Guid propertyId, DateOnly s, DateOnly e, Guid? exclude, CancellationToken ct) => throw new NotImplementedException();
         public Task AddAsync(Contract c, CancellationToken ct) => throw new NotImplementedException();
         public Task SaveChangesAsync(CancellationToken ct) => throw new NotImplementedException();
         public Task<Contract?> GetByIdRawAsync(Guid id, CancellationToken ct) => throw new NotImplementedException();

@@ -15,6 +15,10 @@ public class UpdateContractCommandHandler : IRequestHandler<UpdateContractComman
         var contract = await _repo.GetByIdAsync(request.Id, ct);
         if (contract is null) return null;
 
+        if (await _repo.HasActiveOverlapAsync(request.PropertyId, request.StartDate, request.EndDate, contract.Id, ct))
+            throw new Common.Exceptions.BusinessException(
+                "Ya existe un contrato activo para esta propiedad cuyo período se solapa con el indicado.");
+
         contract.PropertyId = request.PropertyId;
         contract.AppTenantId = request.AppTenantId;
         contract.StartDate = request.StartDate;

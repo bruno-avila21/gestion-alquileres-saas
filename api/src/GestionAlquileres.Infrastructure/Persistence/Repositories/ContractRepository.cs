@@ -31,6 +31,15 @@ public class ContractRepository : IContractRepository
         return await q.OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
     }
 
+    public Task<bool> HasActiveOverlapAsync(
+        Guid propertyId, DateOnly startDate, DateOnly endDate, Guid? excludeContractId, CancellationToken ct) =>
+        _db.Contracts
+            .Where(c => c.PropertyId == propertyId && c.Status == ContractStatus.Active)
+            .Where(c => excludeContractId == null || c.Id != excludeContractId.Value)
+            // Dos rangos [s1,e1] y [s2,e2] se solapan sii  s1 <= e2  &&  s2 <= e1.
+            .Where(c => startDate <= c.EndDate && c.StartDate <= endDate)
+            .AnyAsync(ct);
+
     public async Task AddAsync(Contract contract, CancellationToken ct) =>
         await _db.Contracts.AddAsync(contract, ct);
 

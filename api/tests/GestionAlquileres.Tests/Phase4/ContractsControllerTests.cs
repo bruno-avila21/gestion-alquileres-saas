@@ -266,6 +266,58 @@ public class ContractsControllerTests : IClassFixture<Phase4ApiFactory>
     }
 
     [Fact]
+    public async Task T14_Create_overlapping_active_contract_on_same_property_returns_409()
+    {
+        var c = await _factory.AuthedClientAsync("cont-t14");
+        var (property, tenant) = await SetupAsync(c);
+
+        // First contract 2026-01-01 → 2028-01-01
+        var first = await c.PostAsJsonAsync("/api/v1/contracts", ContractBody(property.Id, tenant.Id));
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+
+        // Second contract on the same property overlapping (2027 falls inside the first range)
+        var second = await c.PostAsJsonAsync("/api/v1/contracts", new
+        {
+            propertyId = property.Id,
+            appTenantId = tenant.Id,
+            startDate = "2027-06-01",
+            endDate = "2029-06-01",
+            monthlyRent = 180_000m,
+            currency = "ARS",
+            adjustmentType = "IPC",
+            adjustmentFrequency = "Monthly",
+            dayOfMonth = 1,
+        });
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+    }
+
+    [Fact]
+    public async Task T15_Create_non_overlapping_contract_on_same_property_succeeds()
+    {
+        var c = await _factory.AuthedClientAsync("cont-t15");
+        var (property, tenant) = await SetupAsync(c);
+
+        // First contract 2026-01-01 → 2028-01-01 (left active)
+        var first = await c.PostAsJsonAsync("/api/v1/contracts", ContractBody(property.Id, tenant.Id));
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+
+        // Second contract, same property, range starts after the first ends → no overlap, both active
+        var second = await c.PostAsJsonAsync("/api/v1/contracts", new
+        {
+            propertyId = property.Id,
+            appTenantId = tenant.Id,
+            startDate = "2028-02-01",
+            endDate = "2030-02-01",
+            monthlyRent = 180_000m,
+            currency = "ARS",
+            adjustmentType = "IPC",
+            adjustmentFrequency = "Monthly",
+            dayOfMonth = 1,
+        });
+        Assert.Equal(HttpStatusCode.Created, second.StatusCode);
+    }
+
+    [Fact]
     public async Task T13_List_filter_by_status_works()
     {
         var c = await _factory.AuthedClientAsync("cont-t13");
