@@ -88,6 +88,13 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
         else
         {
             var indexType = contract.AdjustmentType == AdjustmentType.ICL ? IndexType.ICL : IndexType.IPC;
+            // Lookback = the contract's adjustment frequency, in months. This is the per-step
+            // semantics the shipped projection engine uses too (indices-api via
+            // GetAdjustmentProjectionQuery passes frequencyMonths), so a single applied step and
+            // the projection's installment for the same date stay consistent (audit C-1/C-7).
+            // NOTE: CLAUDE.md's "ICL_T / ICL_{T-4}" is quarter-notation; T-4 quarters for a
+            // quarterly contract == the frequencyMonths step below. Confirm with product before
+            // changing this — it directly sets the rent charged.
             int lookbackMonths = contract.AdjustmentFrequency switch
             {
                 AdjustmentFrequency.Monthly => 1,
@@ -107,8 +114,13 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
             if (baseIndex is null)
                 throw new BusinessException($"No hay índice {indexType} disponible para {periodBase:yyyy-MM} (período base). Sincronice los índices primero.");
 
+            // Compute the new rent from the raw index ratio. Do NOT pre-round the factor and then
+            // multiply: rounding the ratio to 6 decimals first skews the amount (up to ~0.10 ARS on
+            // a 200k rent) and that error compounds across successive adjustments, since each
+            // adjustment reads the previous (already-rounded) rent as its base (audit C-2). The
+            // rounded factor is persisted only as informational metadata on RentHistory.
+            newRent = Math.Round(previousRent * currentIndex.Value / baseIndex.Value, 2);
             factor = Math.Round(currentIndex.Value / baseIndex.Value, 6);
-            newRent = Math.Round(previousRent * factor, 2);
             indexValueId = currentIndex.Id;
         }
 
