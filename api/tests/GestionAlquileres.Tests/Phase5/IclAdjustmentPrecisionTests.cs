@@ -68,7 +68,8 @@ public class IclAdjustmentPrecisionTests : IClassFixture<Phase5ApiFactory>
             .GetProperty("id").GetGuid();
 
         // Seed ICL index values directly (IndexValue is global reference data, no tenant filter).
-        // periodBase = 2026-01 (effective 2026-04 minus quarterly lookback of 3 months), periodT = 2026-04.
+        // ICL uses a year-over-year window (audit C-1): periodBase = 2025-04 (effective 2026-04 minus
+        // 12 months), periodT = 2026-04.
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -76,7 +77,7 @@ public class IclAdjustmentPrecisionTests : IClassFixture<Phase5ApiFactory>
                 new IndexValue
                 {
                     IndexType = IndexType.ICL,
-                    Period = new DateOnly(2026, 1, 1),
+                    Period = new DateOnly(2025, 4, 1),
                     Value = 7m,
                     Source = "BCRA",
                 },

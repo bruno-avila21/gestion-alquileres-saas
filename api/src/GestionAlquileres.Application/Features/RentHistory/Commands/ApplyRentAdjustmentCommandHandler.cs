@@ -88,20 +88,23 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
         else
         {
             var indexType = contract.AdjustmentType == AdjustmentType.ICL ? IndexType.ICL : IndexType.IPC;
-            // Lookback = the contract's adjustment frequency, in months. This is the per-step
-            // semantics the shipped projection engine uses too (indices-api via
-            // GetAdjustmentProjectionQuery passes frequencyMonths), so a single applied step and
-            // the projection's installment for the same date stay consistent (audit C-1/C-7).
-            // NOTE: CLAUDE.md's "ICL_T / ICL_{T-4}" is quarter-notation; T-4 quarters for a
-            // quarterly contract == the frequencyMonths step below. Confirm with product before
-            // changing this — it directly sets the rent charged.
-            int lookbackMonths = contract.AdjustmentFrequency switch
-            {
-                AdjustmentFrequency.Monthly => 1,
-                AdjustmentFrequency.Quarterly => 3,
-                AdjustmentFrequency.Annual => 12,
-                _ => 3,
-            };
+            // Index lookback (audit C-1, resolved with product as "T-4 literal"):
+            //   ICL → 12 months. The Ley de Alquileres ICL adjustment is a year-over-year ratio
+            //         (ICL_T / ICL_{T-4 quarters} = ICL_T / ICL_{12 months ago}), independent of how
+            //         often the rent is adjusted (the adjustment *cadence* lives in the scheduler).
+            //   IPC → accumulate the variation over the contract's adjustment period (frequency).
+            // NOTE: this lookback is the *index* window, not the adjustment cadence. The indices-api
+            // projection still uses a frequency-step window for ICL and will diverge for ICL until its
+            // calculator separates step from lookback (cross-repo follow-up — audit C-7).
+            int lookbackMonths = indexType == IndexType.ICL
+                ? 12
+                : contract.AdjustmentFrequency switch
+                {
+                    AdjustmentFrequency.Monthly => 1,
+                    AdjustmentFrequency.Quarterly => 3,
+                    AdjustmentFrequency.Annual => 12,
+                    _ => 3,
+                };
 
             var periodT = new DateOnly(effectiveDate.Year, effectiveDate.Month, 1);
             var periodBase = periodT.AddMonths(-lookbackMonths);
