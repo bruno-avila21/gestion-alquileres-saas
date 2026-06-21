@@ -88,13 +88,23 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
         else
         {
             var indexType = contract.AdjustmentType == AdjustmentType.ICL ? IndexType.ICL : IndexType.IPC;
-            int lookbackMonths = contract.AdjustmentFrequency switch
-            {
-                AdjustmentFrequency.Monthly => 1,
-                AdjustmentFrequency.Quarterly => 3,
-                AdjustmentFrequency.Annual => 12,
-                _ => 3,
-            };
+            // Index lookback (audit C-1, resolved with product as "T-4 literal"):
+            //   ICL → 12 months. The Ley de Alquileres ICL adjustment is a year-over-year ratio
+            //         (ICL_T / ICL_{T-4 quarters} = ICL_T / ICL_{12 months ago}), independent of how
+            //         often the rent is adjusted (the adjustment *cadence* lives in the scheduler).
+            //   IPC → accumulate the variation over the contract's adjustment period (frequency).
+            // NOTE: this lookback is the *index* window, not the adjustment cadence. The indices-api
+            // projection still uses a frequency-step window for ICL and will diverge for ICL until its
+            // calculator separates step from lookback (cross-repo follow-up — audit C-7).
+            int lookbackMonths = indexType == IndexType.ICL
+                ? 12
+                : contract.AdjustmentFrequency switch
+                {
+                    AdjustmentFrequency.Monthly => 1,
+                    AdjustmentFrequency.Quarterly => 3,
+                    AdjustmentFrequency.Annual => 12,
+                    _ => 3,
+                };
 
             var periodT = new DateOnly(effectiveDate.Year, effectiveDate.Month, 1);
             var periodBase = periodT.AddMonths(-lookbackMonths);
@@ -107,8 +117,13 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
             if (baseIndex is null)
                 throw new BusinessException($"No hay índice {indexType} disponible para {periodBase:yyyy-MM} (período base). Sincronice los índices primero.");
 
+            // Compute the new rent from the raw index ratio. Do NOT pre-round the factor and then
+            // multiply: rounding the ratio to 6 decimals first skews the amount (up to ~0.10 ARS on
+            // a 200k rent) and that error compounds across successive adjustments, since each
+            // adjustment reads the previous (already-rounded) rent as its base (audit C-2). The
+            // rounded factor is persisted only as informational metadata on RentHistory.
+            newRent = Math.Round(previousRent * currentIndex.Value / baseIndex.Value, 2);
             factor = Math.Round(currentIndex.Value / baseIndex.Value, 6);
-            newRent = Math.Round(previousRent * factor, 2);
             indexValueId = currentIndex.Id;
         }
 

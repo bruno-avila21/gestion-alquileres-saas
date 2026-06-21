@@ -39,7 +39,13 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddSingleton<IDocumentTokenService, DocumentTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
-        services.AddScoped<IEmailService, NullEmailService>();
+
+        // Email: real SMTP relay when Email:Provider = "Smtp" (SES/Resend/etc.), else a no-op logger.
+        services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+        if (string.Equals(configuration["Email:Provider"], "Smtp", StringComparison.OrdinalIgnoreCase))
+            services.AddScoped<IEmailService, SmtpEmailService>();
+        else
+            services.AddScoped<IEmailService, NullEmailService>();
 
         // Document storage: S3-compatible object store (AWS S3 / MinIO) when configured, else local FS.
         services.Configure<StorageSettings>(configuration.GetSection(StorageSettings.SectionName));

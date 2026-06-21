@@ -15,7 +15,22 @@ RUN dotnet publish src/GestionAlquileres.API/GestionAlquileres.API.csproj -c Rel
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
+
+# curl is needed for the container HEALTHCHECK below.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/publish ./
+
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
+
+# Run as the non-root user shipped in the .NET 8 image (defense in depth — audit A-5).
+USER app
+
+# Liveness probe at the container level (audit A-5/A-11). 8080 is unprivileged, so non-root can bind it.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+    CMD curl -fsS http://localhost:8080/health/live || exit 1
+
 ENTRYPOINT ["dotnet", "GestionAlquileres.API.dll"]

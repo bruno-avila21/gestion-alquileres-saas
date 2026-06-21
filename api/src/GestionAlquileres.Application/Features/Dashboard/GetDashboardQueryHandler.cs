@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Time;
 using GestionAlquileres.Application.Features.Transactions.DTOs;
 using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
@@ -19,7 +20,7 @@ public class GetDashboardQueryHandler : IRequestHandler<GetDashboardQuery, Dashb
     public async Task<DashboardDto> Handle(GetDashboardQuery request, CancellationToken ct)
     {
         var contracts = await _contractRepo.ListAsync(null, null, ContractStatus.Active, ct);
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = ArgentinaTime.Today;
         var in30Days = today.AddDays(30);
 
         var recentTx = await _txRepo.GetRecentAsync(5, ct);
@@ -30,7 +31,9 @@ public class GetDashboardQueryHandler : IRequestHandler<GetDashboardQuery, Dashb
         return new DashboardDto(
             contracts.Count,
             contracts.Sum(c => c.MonthlyRent),
-            contracts.Count(c => c.EndDate <= in30Days),
+            // "Expiring soon" = ends within the next 30 days. Bound below by today so already-expired
+            // contracts (EndDate in the past) don't inflate the count (audit C-9).
+            contracts.Count(c => c.EndDate >= today && c.EndDate <= in30Days),
             recentDtos
         );
     }

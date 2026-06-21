@@ -19,17 +19,26 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Serilog — structured logging (INFRA-05)
 builder.Host.UseSerilog((context, services, configuration) =>
+{
     configuration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
         .Enrich.WithMachineName()
+        // Correlate logs with OpenTelemetry traces (TraceId/SpanId surface in {Properties:j}).
+        .Enrich.With(new GestionAlquileres.API.Configuration.ActivityEnricher())
         .WriteTo.Console(outputTemplate:
-            "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
-        .WriteTo.File("logs/app-.log",
+            "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+
+    // File sink only in Development. In containers, logs go to stdout and are aggregated by the
+    // platform; a rolling file on an ephemeral node is lost on restart and not shared across
+    // instances (audit A-8).
+    if (context.HostingEnvironment.IsDevelopment())
+        configuration.WriteTo.File("logs/app-.log",
             rollingInterval: RollingInterval.Day,
             outputTemplate:
-            "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"));
+            "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+});
 
 // CORS — allowed origins come from configuration (Cors:AllowedOrigins), with dev defaults.
 // Credentials are allowed, so origins must be an explicit list (never a wildcard).
@@ -239,13 +248,31 @@ try
         "sync-indexes",
         job => job.ExecuteAsync(CancellationToken.None),
         Cron.Monthly(1, 7)); // 1st of month at 07:00 — before the adjustment job
+
+    RecurringJob.AddOrUpdate<GestionAlquileres.API.Jobs.RefreshTokenCleanupJob>(
+        "refresh-token-cleanup",
+        job => job.ExecuteAsync(CancellationToken.None),
+        Cron.Daily(4)); // daily at 04:00 — off-peak
 }
 catch (Exception ex)
 {
     Log.Warning("Could not register Hangfire recurring jobs: {Error}", ex.Message);
 }
 
-// Health probe — verifies the app booted and the database is reachable (readiness).
+// Liveness — the process is up. No dependency checks, so a transient DB blip can't trigger a pod
+// restart loop (audit A-11).
+app.MapGet("/health/live", () => Results.Ok(new { status = "ok" }));
+
+// Readiness — safe to receive traffic: the database is reachable.
+app.MapGet("/health/ready", async (GestionAlquileres.Infrastructure.Persistence.AppDbContext db) =>
+{
+    var dbUp = await db.Database.CanConnectAsync();
+    return dbUp
+        ? Results.Ok(new { status = "ok", db = "up" })
+        : Results.Json(new { status = "degraded", db = "down" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+});
+
+// Back-compat alias for existing probes — readiness semantics.
 app.MapGet("/health", async (GestionAlquileres.Infrastructure.Persistence.AppDbContext db) =>
 {
     var dbUp = await db.Database.CanConnectAsync();

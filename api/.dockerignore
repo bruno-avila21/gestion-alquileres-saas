@@ -1,0 +1,16 @@
+# Build artifacts — never ship host bin/obj into the image (stale DLLs, bloated context).
+**/bin/
+**/obj/
+
+# Local logs and tooling
+logs/
+**/*.user
+.vs/
+.vscode/
+
+# Tests aren't published by the API project; keep them out of the build context.
+tests/
+
+# Git metadata
+.git/
+.gitignore
