@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Time;
 using GestionAlquileres.Domain.Interfaces.Repositories;
 using GestionAlquileres.Domain.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,7 +25,7 @@ public class ContractExpiryNotificationJob
         var contractRepo = scope.ServiceProvider.GetRequiredService<IContractRepository>();
         var email = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = ArgentinaTime.Today;
         // Raw query bypasses tenant filter — required for background jobs that process all orgs.
         var expiring = await contractRepo.GetExpiringRawAsync(NotifyDaysBefore, ct);
 

@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Time;
 using GestionAlquileres.Application.Features.Indexes.Commands;
 using GestionAlquileres.Domain.Enums;
 using MediatR;
@@ -22,23 +23,30 @@ public class SyncIndexesJob
         await using var scope = _sp.CreateAsyncScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
-        var period = DateOnly.FromDateTime(DateTime.UtcNow);
+        var currentMonth = new DateOnly(ArgentinaTime.Today.Year, ArgentinaTime.Today.Month, 1);
+        // INDEC publishes IPC with a ~6-week lag, so the current month is usually still empty when
+        // the job runs. Also (re)sync the previous month to pick up values that weren't available
+        // last run. The sync is idempotent — already-persisted periods are skipped (audit C-5).
+        var periods = new[] { currentMonth, currentMonth.AddMonths(-1) };
 
         foreach (var indexType in new[] { IndexType.ICL, IndexType.IPC })
         {
-            try
+            foreach (var period in periods)
             {
-                var result = await mediator.Send(new SyncIndexCommand(indexType, period), ct);
-                var status = result.AlreadyExisted ? "already-existed" : result.WasFallback ? "fallback" : "synced";
-                _logger.LogInformation(
-                    "Index sync {IndexType} {Period}: {Status}",
-                    indexType, period.ToString("yyyy-MM"), status);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "Failed to sync {IndexType} index for {Period}",
-                    indexType, period.ToString("yyyy-MM"));
+                try
+                {
+                    var result = await mediator.Send(new SyncIndexCommand(indexType, period), ct);
+                    var status = result.AlreadyExisted ? "already-existed" : result.WasFallback ? "fallback" : "synced";
+                    _logger.LogInformation(
+                        "Index sync {IndexType} {Period}: {Status}",
+                        indexType, period.ToString("yyyy-MM"), status);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Failed to sync {IndexType} index for {Period}",
+                        indexType, period.ToString("yyyy-MM"));
+                }
             }
         }
     }
