@@ -24,6 +24,8 @@ public static class SecuritySettingsValidator
         ValidateConnectionString(config.GetConnectionString("DefaultConnection"), "ConnectionStrings:DefaultConnection", isDev, problems);
         ValidateConnectionString(config.GetConnectionString("HangfireConnection"), "ConnectionStrings:HangfireConnection", isDev, problems);
 
+        ValidateStorageProvider(config["Storage:Provider"], isDev, problems);
+
         if (problems.Count == 0) return;
 
         var message = "Configuración de seguridad inválida:" + Environment.NewLine +
@@ -55,6 +57,17 @@ public static class SecuritySettingsValidator
             problems.Add($"{key} no está configurado.");
         else if (value.Length < MinSecretLength)
             problems.Add($"{key} debe tener al menos {MinSecretLength} caracteres (actual: {value.Length}).");
+    }
+
+    private static void ValidateStorageProvider(string? provider, bool isDev, List<string> problems)
+    {
+        // Local FS storage is a single point of failure: it lives on one node's disk, isn't shared
+        // across instances and is lost on a container restart. Acceptable for development only — any
+        // other environment must use the S3-compatible object store (audit A-3).
+        if (isDev) return;
+
+        if (string.IsNullOrWhiteSpace(provider) || !provider.Equals("S3", StringComparison.OrdinalIgnoreCase))
+            problems.Add("Storage:Provider debe ser 'S3' fuera de Development. El almacenamiento local es un punto único de fallo y no se comparte entre instancias.");
     }
 
     private static void ValidateConnectionString(string? value, string key, bool isDev, List<string> problems)
