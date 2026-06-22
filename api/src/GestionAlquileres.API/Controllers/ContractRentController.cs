@@ -58,4 +58,13 @@ public class ContractRentController : AdminControllerBase
             new RegisterManualTransactionCommand(contractId, request.Type, request.Amount, request.Period, request.Notes), ct);
         return Ok(result);
     }
+
+    /// <summary>Settles a pending charge (marks it Paid).</summary>
+    [HttpPost("transactions/{transactionId:guid}/mark-paid")]
+    public async Task<ActionResult<TransactionDto>> MarkTransactionPaid(
+        Guid contractId, Guid transactionId, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new MarkTransactionPaidCommand(contractId, transactionId), ct);
+        return Ok(result);
+    }
 }

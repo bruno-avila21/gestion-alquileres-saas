@@ -1,4 +1,5 @@
 using GestionAlquileres.Application.Common.Exceptions;
+using GestionAlquileres.Application.Common.Time;
 using GestionAlquileres.Application.Features.Transactions.DTOs;
 using GestionAlquileres.Domain.Entities;
 using GestionAlquileres.Domain.Enums;
@@ -32,6 +33,9 @@ public class RegisterPaymentCommandHandler : IRequestHandler<RegisterPaymentComm
             Currency = contract.Currency,
             Period = request.Period,
             Notes = request.Notes?.Trim(),
+            // A payment is settled the moment it's registered.
+            Status = TransactionStatus.Paid,
+            PaidAt = DateTimeOffset.UtcNow,
         };
 
         await _txRepo.AddAsync(tx, ct);
@@ -40,6 +44,18 @@ public class RegisterPaymentCommandHandler : IRequestHandler<RegisterPaymentComm
         return ToDto(tx);
     }
 
-    internal static TransactionDto ToDto(Transaction t) =>
-        new(t.Id, t.ContractId, t.Type, t.Amount, t.Currency, t.Period, t.Notes, t.CreatedAt);
+    /// <summary>
+    /// Shared mapper. Derives the Overdue view state on read (a Pending charge past its due date)
+    /// rather than persisting it, so the stored status stays Pending/Paid/Cancelled.
+    /// </summary>
+    internal static TransactionDto ToDto(Transaction t)
+    {
+        var status = t.Status == TransactionStatus.Pending
+                     && t.DueDate is { } due && due < ArgentinaTime.Today
+            ? TransactionStatus.Overdue
+            : t.Status;
+
+        return new(t.Id, t.ContractId, t.Type, t.Amount, t.Currency, t.Period, t.Notes, t.CreatedAt,
+            status, t.DueDate, t.PaidAt);
+    }
 }
