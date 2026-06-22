@@ -10,5 +10,8 @@ public record TransactionDto(
     Currency Currency,
     DateOnly Period,
     string? Notes,
-    DateTimeOffset CreatedAt
+    DateTimeOffset CreatedAt,
+    TransactionStatus Status,
+    DateOnly? DueDate,
+    DateTimeOffset? PaidAt
 );

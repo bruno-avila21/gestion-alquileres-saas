@@ -9,6 +9,9 @@ public class TransactionRepository : ITransactionRepository
     private readonly AppDbContext _db;
     public TransactionRepository(AppDbContext db) => _db = db;
 
+    public Task<Transaction?> GetByIdAsync(Guid id, CancellationToken ct) =>
+        _db.Transactions.FirstOrDefaultAsync(t => t.Id == id, ct);
+
     public async Task<IReadOnlyList<Transaction>> GetByContractAsync(Guid contractId, CancellationToken ct) =>
         await _db.Transactions
             .Where(t => t.ContractId == contractId)

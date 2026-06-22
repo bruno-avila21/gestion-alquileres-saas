@@ -1,5 +1,5 @@
 using GestionAlquileres.Application.Common.Time;
-using GestionAlquileres.Application.Features.Transactions.DTOs;
+using GestionAlquileres.Application.Features.Transactions.Commands;
 using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
 using MediatR;
@@ -24,9 +24,7 @@ public class GetDashboardQueryHandler : IRequestHandler<GetDashboardQuery, Dashb
         var in30Days = today.AddDays(30);
 
         var recentTx = await _txRepo.GetRecentAsync(5, ct);
-        var recentDtos = recentTx.Select(t => new TransactionDto(
-            t.Id, t.ContractId, t.Type, t.Amount, t.Currency, t.Period, t.Notes, t.CreatedAt
-        )).ToList();
+        var recentDtos = recentTx.Select(RegisterPaymentCommandHandler.ToDto).ToList();
 
         return new DashboardDto(
             contracts.Count,

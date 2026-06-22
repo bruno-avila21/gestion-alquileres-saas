@@ -145,7 +145,7 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
         };
         await _historyRepo.AddAsync(history, ct);
 
-        // Create RentCharge transaction for the new period
+        // Create RentCharge transaction for the new period — a charge owed by the tenant.
         var tx = new Entities.Transaction
         {
             OrganizationId = contract.OrganizationId,
@@ -154,6 +154,8 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
             Amount = newRent,
             Currency = contract.Currency,
             Period = effectiveDate,
+            Status = TransactionStatus.Pending,
+            DueDate = Entities.Transaction.DueDateFor(effectiveDate, contract.DayOfMonth),
             Notes = $"Ajuste {contract.AdjustmentType} · factor {factor}",
         };
         await _txRepo.AddAsync(tx, ct);

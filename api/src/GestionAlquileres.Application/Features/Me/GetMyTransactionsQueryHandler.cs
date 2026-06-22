@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Features.Transactions.Commands;
 using GestionAlquileres.Application.Features.Transactions.DTOs;
 using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
@@ -31,8 +32,6 @@ public class GetMyTransactionsQueryHandler : IRequestHandler<GetMyTransactionsQu
         if (contract is null) return [];
 
         var txs = await _txRepo.GetByContractAsync(contract.Id, ct);
-        return txs.Select(t => new TransactionDto(
-            t.Id, t.ContractId, t.Type, t.Amount, t.Currency, t.Period, t.Notes, t.CreatedAt
-        )).ToList();
+        return txs.Select(RegisterPaymentCommandHandler.ToDto).ToList();
     }
 }

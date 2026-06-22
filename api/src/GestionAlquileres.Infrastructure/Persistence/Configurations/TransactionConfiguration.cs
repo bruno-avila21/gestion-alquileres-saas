@@ -1,4 +1,5 @@
 using GestionAlquileres.Domain.Entities;
+using GestionAlquileres.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,9 +17,12 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.Property(t => t.Amount).HasPrecision(14, 2).IsRequired();
         builder.Property(t => t.Notes).HasMaxLength(2000);
         builder.Property(t => t.CreatedAt).HasDefaultValueSql("now()");
+        builder.Property(t => t.Status).IsRequired().HasDefaultValue(TransactionStatus.Pending);
 
         builder.HasIndex(t => t.ContractId);
         builder.HasIndex(t => new { t.ContractId, t.Period });
+        // Supports aging/morosidad queries over pending charges past their due date.
+        builder.HasIndex(t => new { t.Status, t.DueDate });
 
         builder.HasOne<Contract>()
             .WithMany()
