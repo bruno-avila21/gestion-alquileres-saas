@@ -8,4 +8,6 @@ public record CreatePropertyRequest(
     string Province,
     PropertyType PropertyType,
     decimal? AreaM2,
-    string? Notes);
+    string? Notes,
+    Guid? OwnerId,
+    decimal? CommissionPct);

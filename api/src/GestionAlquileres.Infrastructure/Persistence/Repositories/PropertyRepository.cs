@@ -15,6 +15,9 @@ public class PropertyRepository : IPropertyRepository
     public async Task<IReadOnlyList<Property>> GetAllAsync(CancellationToken ct) =>
         await _db.Properties.OrderBy(p => p.Address).ToListAsync(ct);
 
+    public async Task<IReadOnlyList<Property>> GetByOwnerAsync(Guid ownerId, CancellationToken ct) =>
+        await _db.Properties.Where(p => p.OwnerId == ownerId).OrderBy(p => p.Address).ToListAsync(ct);
+
     public async Task AddAsync(Property property, CancellationToken ct) =>
         await _db.Properties.AddAsync(property, ct);
 

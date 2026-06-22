@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<IndexValue> Indexes => Set<IndexValue>();
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Owner> Owners => Set<Owner>();
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<AppTenant> AppTenants => Set<AppTenant>();
     public DbSet<Contract> Contracts => Set<Contract>();
@@ -33,6 +34,9 @@ public class AppDbContext : DbContext
         // User and all future ITenantEntity implementations are filtered.
         modelBuilder.Entity<User>()
             .HasQueryFilter(u => u.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<Owner>()
+            .HasQueryFilter(o => o.OrganizationId == _currentTenant.OrganizationId);
 
         modelBuilder.Entity<Property>()
             .HasQueryFilter(p => p.OrganizationId == _currentTenant.OrganizationId);

@@ -9,4 +9,6 @@ public record UpdatePropertyRequest(
     PropertyType PropertyType,
     decimal? AreaM2,
     string? Notes,
+    Guid? OwnerId,
+    decimal? CommissionPct,
     bool IsActive);
