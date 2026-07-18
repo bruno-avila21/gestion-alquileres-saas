@@ -23,6 +23,10 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.HasIndex(t => new { t.ContractId, t.Period });
         // Supports aging/morosidad queries over pending charges past their due date.
         builder.HasIndex(t => new { t.Status, t.DueDate });
+        // The multi-tenant global filter adds `WHERE organization_id = @org` to every query, and the
+        // org-wide listings order by Period; without this the highest-cardinality table sequential-scans
+        // per tenant and sorts in memory (audit A4).
+        builder.HasIndex(t => new { t.OrganizationId, t.Period });
 
         builder.HasOne<Contract>()
             .WithMany()

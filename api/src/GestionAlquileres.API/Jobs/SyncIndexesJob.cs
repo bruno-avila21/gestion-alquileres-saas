@@ -1,12 +1,14 @@
 using GestionAlquileres.Application.Common.Time;
 using GestionAlquileres.Application.Features.Indexes.Commands;
 using GestionAlquileres.Domain.Enums;
+using Hangfire;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace GestionAlquileres.API.Jobs;
 
+[DisableConcurrentExecution(timeoutInSeconds: 10 * 60)]
 public class SyncIndexesJob
 {
     private readonly IServiceProvider _sp;
