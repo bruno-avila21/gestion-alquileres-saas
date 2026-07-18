@@ -1,4 +1,5 @@
 using GestionAlquileres.Domain.Entities;
+using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,15 @@ public class TransactionRepository : ITransactionRepository
             .Where(t => t.ContractId == contractId)
             .OrderByDescending(t => t.Period)
             .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Transaction>> GetPendingChargesAsync(Guid contractId, CancellationToken ct) =>
+        await _db.Transactions
+            .Where(t => t.ContractId == contractId
+                        && t.Status == TransactionStatus.Pending
+                        && (t.Type == TransactionType.RentCharge || t.Type == TransactionType.ManualDebit))
+            .OrderBy(t => t.Period)
+            .ThenBy(t => t.CreatedAt)
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<Transaction>> GetRecentAsync(int limit, CancellationToken ct) =>

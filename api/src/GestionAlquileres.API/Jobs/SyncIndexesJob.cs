@@ -25,9 +25,16 @@ public class SyncIndexesJob
 
         var currentMonth = new DateOnly(ArgentinaTime.Today.Year, ArgentinaTime.Today.Month, 1);
         // INDEC publishes IPC with a ~6-week lag, so the current month is usually still empty when
-        // the job runs. Also (re)sync the previous month to pick up values that weren't available
-        // last run. The sync is idempotent — already-persisted periods are skipped (audit C-5).
-        var periods = new[] { currentMonth, currentMonth.AddMonths(-1) };
+        // the job runs. Sync a trailing window instead of just current+previous (audit M4): the ICL
+        // adjustment reads a base index 12 months back, so those historical periods must exist or the
+        // adjustment fails with "índice base no disponible" — which is exactly what happens on a fresh
+        // deploy. Backfilling BackfillMonths covers the ICL/annual base plus margin. The sync is
+        // idempotent — already-persisted periods are skipped (audit C-5) — so after the first backfill
+        // only the one or two still-missing recent months hit the external API.
+        const int BackfillMonths = 13;
+        var periods = Enumerable.Range(0, BackfillMonths + 1)
+            .Select(i => currentMonth.AddMonths(-i))
+            .ToArray();
 
         foreach (var indexType in new[] { IndexType.ICL, IndexType.IPC })
         {

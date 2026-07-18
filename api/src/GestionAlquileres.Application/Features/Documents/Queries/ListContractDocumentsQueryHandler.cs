@@ -12,7 +12,7 @@ public class ListContractDocumentsQueryHandler : IRequestHandler<ListContractDoc
     public async Task<IReadOnlyList<DocumentDto>> Handle(ListContractDocumentsQuery req, CancellationToken ct)
     {
         var docs = await _docs.GetByContractAsync(req.ContractId, ct);
-        return docs.Select(d => new DocumentDto(d.Id, d.ContractId, d.FileName, d.MimeType, d.SizeBytes, d.CreatedAt))
+        return docs.Select(d => new DocumentDto(d.Id, d.ContractId, d.FileName, d.MimeType, d.SizeBytes, d.CreatedAt, d.IsVisibleToTenant))
                    .ToList();
     }
 }

@@ -44,7 +44,10 @@ public class GetOwnerSettlementQueryHandler : IRequestHandler<GetOwnerSettlement
             foreach (var contract in contracts)
             {
                 var txs = await _txRepo.GetByContractAsync(contract.Id, ct);
-                // Only settled rent inflows (payments) count toward what's collected for the owner.
+                // What's "collected" for the owner is money actually received — the Payment inflows in
+                // the period (cash model). Both settlement paths now produce a Payment row: RegisterPayment
+                // creates one directly, and mark-paid records a matching money-in Payment (audit A1), so
+                // the owner's commission is no longer zeroed for charges settled via mark-paid.
                 var collected = txs
                     .Where(t => t.Type == TransactionType.Payment
                                 && t.Period >= request.PeriodFrom && t.Period <= request.PeriodTo)

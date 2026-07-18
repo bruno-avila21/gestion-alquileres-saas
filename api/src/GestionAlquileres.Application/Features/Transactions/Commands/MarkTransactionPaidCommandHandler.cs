@@ -1,5 +1,6 @@
 using GestionAlquileres.Application.Common.Exceptions;
 using GestionAlquileres.Application.Features.Transactions.DTOs;
+using GestionAlquileres.Domain.Entities;
 using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
 using MediatR;
@@ -26,8 +27,26 @@ public class MarkTransactionPaidCommandHandler : IRequestHandler<MarkTransaction
         if (tx.Status == TransactionStatus.Cancelled)
             throw new BusinessException("No se puede saldar una transacción cancelada.");
 
+        var paidAt = DateTimeOffset.UtcNow;
         tx.Status = TransactionStatus.Paid;
-        tx.PaidAt = DateTimeOffset.UtcNow;
+        tx.PaidAt = paidAt;
+
+        // Record the money-in so the cash ledger stays consistent across both settlement paths
+        // (audit A1): owner settlement and the tenant balance count Payment inflows, so marking a
+        // charge paid without a matching Payment would silently drop it from those totals.
+        var payment = new Transaction
+        {
+            OrganizationId = tx.OrganizationId,
+            ContractId = tx.ContractId,
+            Type = TransactionType.Payment,
+            Amount = tx.Amount,
+            Currency = tx.Currency,
+            Period = tx.Period,
+            Status = TransactionStatus.Paid,
+            PaidAt = paidAt,
+            Notes = "Pago registrado al saldar el cargo",
+        };
+        await _txRepo.AddAsync(payment, ct);
         await _txRepo.SaveChangesAsync(ct);
 
         return RegisterPaymentCommandHandler.ToDto(tx);

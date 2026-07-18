@@ -49,12 +49,16 @@ export default function TenantPagosPage() {
   const { data: transactions, isLoading } = useMyTransactions()
   const [filter, setFilter] = useState<Filter>('all')
 
-  const filtered = (transactions ?? []).filter(
-    (t) => filter === 'all' || t.type === filter,
-  )
+  const all = transactions ?? []
 
-  const net = filtered.reduce((sum, t) => {
+  const filtered = all.filter((t) => filter === 'all' || t.type === filter)
+
+  // Net balance over ALL transactions, not the visible filter (audit M6) — otherwise the balance
+  // jumped every time the tab changed. Cash-ledger model, consistent with the backend (audit A1):
+  // money in (payments + credits) minus what's owed (charges), ignoring cancelled charges.
+  const net = all.reduce((sum, t) => {
     if (t.type === 'Payment' || t.type === 'ManualCredit') return sum + t.amount
+    if (t.status === 'Cancelled') return sum
     return sum - t.amount
   }, 0)
 

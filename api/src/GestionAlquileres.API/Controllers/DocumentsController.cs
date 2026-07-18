@@ -1,3 +1,4 @@
+using GestionAlquileres.API.Contracts;
 using GestionAlquileres.Application.Features.Documents;
 using GestionAlquileres.Application.Features.Documents.Commands;
 using GestionAlquileres.Application.Features.Documents.Queries;
@@ -23,7 +24,8 @@ public class DocumentsController : BaseController
     public async Task<ActionResult<DocumentDto>> Upload(
         Guid contractId,
         IFormFile file,
-        CancellationToken ct)
+        CancellationToken ct,
+        [FromForm] bool isVisibleToTenant = false)
     {
         if (file is null || file.Length == 0) return BadRequest("No file provided.");
 
@@ -34,10 +36,21 @@ public class DocumentsController : BaseController
             MimeType: file.ContentType,
             SizeBytes: file.Length,
             Content: stream,
-            UploadedByUserId: CurrentUserId);
+            UploadedByUserId: CurrentUserId,
+            IsVisibleToTenant: isVisibleToTenant);
 
         var dto = await Mediator.Send(cmd, ct);
         return CreatedAtAction(nameof(GetDownloadUrl), new { contractId, docId = dto.Id }, dto);
+    }
+
+    /// <summary>Staff-only: share a document with the tenant or make it private again (audit A2).</summary>
+    [HttpPatch("{docId:guid}/visibility")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<ActionResult<DocumentDto>> SetVisibility(
+        Guid contractId, Guid docId, [FromBody] SetDocumentVisibilityRequest body, CancellationToken ct)
+    {
+        var dto = await Mediator.Send(new SetDocumentVisibilityCommand(docId, body.IsVisibleToTenant), ct);
+        return dto.ContractId != contractId ? NotFound() : Ok(dto);
     }
 
     [HttpGet("{docId:guid}/download-url")]

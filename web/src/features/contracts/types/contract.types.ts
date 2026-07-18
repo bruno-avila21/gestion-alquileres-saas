@@ -46,6 +46,7 @@ export interface TerminateContractRequest {
 }
 
 export type TransactionType = 'RentCharge' | 'Payment' | 'ManualDebit' | 'ManualCredit'
+export type TransactionStatus = 'Pending' | 'Paid' | 'Overdue' | 'Cancelled'
 
 export interface RentHistoryDto {
   id: string
@@ -69,6 +70,9 @@ export interface TransactionDto {
   period: string
   notes: string | null
   createdAt: string
+  status: TransactionStatus
+  dueDate: string | null
+  paidAt: string | null
 }
 
 export interface ApplyAdjustmentRequest {

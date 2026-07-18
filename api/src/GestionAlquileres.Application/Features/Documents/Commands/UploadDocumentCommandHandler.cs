@@ -40,11 +40,12 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
             MimeType     = req.MimeType,
             SizeBytes    = req.SizeBytes,
             UploadedByUserId = req.UploadedByUserId,
+            IsVisibleToTenant = req.IsVisibleToTenant,
         };
 
         await _docs.AddAsync(doc, ct);
         await _docs.SaveChangesAsync(ct);
 
-        return new DocumentDto(doc.Id, doc.ContractId, doc.FileName, doc.MimeType, doc.SizeBytes, doc.CreatedAt);
+        return new DocumentDto(doc.Id, doc.ContractId, doc.FileName, doc.MimeType, doc.SizeBytes, doc.CreatedAt, doc.IsVisibleToTenant);
     }
 }
