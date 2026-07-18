@@ -7,12 +7,22 @@ export const documentService = {
     return data
   },
 
-  async upload(contractId: string, file: File): Promise<DocumentDto> {
+  async upload(contractId: string, file: File, isVisibleToTenant = false): Promise<DocumentDto> {
     const form = new FormData()
     form.append('file', file)
+    // Secure by default (audit A2): documents are private to staff until explicitly shared.
+    form.append('isVisibleToTenant', String(isVisibleToTenant))
     const { data } = await api.post<DocumentDto>(`/contracts/${contractId}/documents`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
+    return data
+  },
+
+  async setVisibility(contractId: string, docId: string, isVisibleToTenant: boolean): Promise<DocumentDto> {
+    const { data } = await api.patch<DocumentDto>(
+      `/contracts/${contractId}/documents/${docId}/visibility`,
+      { isVisibleToTenant },
+    )
     return data
   },
 

@@ -31,6 +31,19 @@ export function useDocumentDownloadUrl(contractId: string, docId: string) {
   })
 }
 
+export function useSetDocumentVisibility() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { contractId: string; docId: string; isVisibleToTenant: boolean }) =>
+      documentService.setVisibility(v.contractId, v.docId, v.isVisibleToTenant),
+    onSuccess: (_data, v) => {
+      qc.invalidateQueries({ queryKey: ['documents'] })
+      qc.invalidateQueries({ queryKey: ['documents', v.contractId] })
+      qc.invalidateQueries({ queryKey: ['me', 'documents'] })
+    },
+  })
+}
+
 export function useMyDocuments() {
   return useQuery({
     queryKey: ['me', 'documents'],

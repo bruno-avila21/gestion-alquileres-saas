@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { AdminTopbar } from '../layouts/AdminTopbar'
-import { IcDoc, IcDownload } from '@/shared/components/ui/Icons'
+import { IcDoc, IcDownload, IcShield } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatDate } from '@/shared/lib/formatters'
-import { useAllDocuments } from '@/features/documents/hooks/useDocuments'
-import { useDocumentDownloadUrl } from '@/features/documents/hooks/useDocuments'
+import { useAllDocuments, useDocumentDownloadUrl, useSetDocumentVisibility } from '@/features/documents/hooks/useDocuments'
 import type { DocumentDto } from '@/features/documents/types/document.types'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
 
@@ -29,14 +29,33 @@ function DownloadButton({ doc }: { doc: DocumentDto }) {
       onClick={handleDownload}
       disabled={getUrl.isPending}
       title="Descargar"
+      aria-label={`Descargar ${doc.fileName}`}
     >
       <IcDownload size={14} />
     </button>
   )
 }
 
+// Share/unshare a document with the tenant (audit A2). Documents are private by default; the tenant
+// portal only shows those toggled visible here.
+function VisibilityToggle({ doc }: { doc: DocumentDto }) {
+  const setVisibility = useSetDocumentVisibility()
+  const visible = doc.isVisibleToTenant
+  return (
+    <button
+      className={`btn btn--sm${visible ? ' btn--primary' : ''}`}
+      disabled={setVisibility.isPending}
+      onClick={() => setVisibility.mutate({ contractId: doc.contractId, docId: doc.id, isVisibleToTenant: !visible })}
+      aria-pressed={visible}
+      title={visible ? 'Visible para el inquilino — click para ocultar' : 'Privado — click para compartir con el inquilino'}
+    >
+      <IcShield size={13} /> {visible ? 'Visible' : 'Privado'}
+    </button>
+  )
+}
+
 export default function DocumentosAdminPage() {
-  const { data: documents, isLoading } = useAllDocuments()
+  const { data: documents, isLoading, isError, refetch } = useAllDocuments()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
 
@@ -72,6 +91,8 @@ export default function DocumentosAdminPage() {
 
         {isLoading ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
+        ) : isError ? (
+          <QueryError onRetry={() => refetch()} message="No pudimos cargar los documentos." />
         ) : filtered.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
             <IcDoc size={32} style={{ margin: '0 auto 8px', display: 'block' }} />
@@ -87,6 +108,7 @@ export default function DocumentosAdminPage() {
                   <th className="num">Tamaño</th>
                   <th>Contrato</th>
                   <th>Subido</th>
+                  <th>Inquilino</th>
                   <th />
                 </tr>
               </thead>
@@ -101,6 +123,9 @@ export default function DocumentosAdminPage() {
                     </td>
                     <td className="muted" style={{ fontSize: 'var(--fs-xs)' }}>
                       {formatDate(d.createdAt.split('T')[0])}
+                    </td>
+                    <td>
+                      <VisibilityToggle doc={d} />
                     </td>
                     <td>
                       <DownloadButton doc={d} />
