@@ -3,6 +3,7 @@ import { useAuthStore } from '@/shared/stores/authStore'
 import {
   IcArrowR, IcDownload, IcTrend, IcBuilding, IcCheck, IcHome, IcDoc, IcShield, IcCash,
 } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate } from '@/shared/lib/formatters'
 import { useMyContract, useMyTransactions } from '@/features/me/hooks/useMe'
 
@@ -47,9 +48,10 @@ function BottomNav({ active }: BottomNavProps) {
 }
 
 export default function TenantHomePage() {
+  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const name = user?.email?.split('@')[0] ?? 'Inquilino'
-  const { data: contract, isLoading } = useMyContract()
+  const { data: contract, isLoading, isError, refetch } = useMyContract()
   const { data: transactions } = useMyTransactions()
 
   const recentPayments = (transactions ?? []).filter(t => t.type === 'Payment').slice(0, 3)
@@ -75,6 +77,8 @@ export default function TenantHomePage() {
       {/* Card alquiler vigente */}
       {isLoading ? (
         <div className="card" style={{ padding: 20, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
+      ) : isError ? (
+        <QueryError onRetry={() => refetch()} message="No pudimos cargar tu contrato." />
       ) : contract ? (
         <div
           className="card"
@@ -101,11 +105,17 @@ export default function TenantHomePage() {
             <button
               className="btn"
               style={{ background: 'white', color: 'var(--brand-700)', border: 'none', flex: 1, justifyContent: 'center', fontWeight: 600 }}
-              onClick={() => window.location.href = '/inquilino/contrato'}
+              onClick={() => navigate('/inquilino/contrato')}
             >
               Ver contrato <IcArrowR size={14} />
             </button>
-            <button className="btn btn--icon" style={{ background: 'rgba(255,255,255,.15)', color: 'white', border: 'none' }}>
+            <button
+              className="btn btn--icon"
+              style={{ background: 'rgba(255,255,255,.15)', color: 'white', border: 'none' }}
+              onClick={() => navigate('/inquilino/documentos')}
+              aria-label="Ver documentos"
+              title="Ver documentos"
+            >
               <IcDownload size={14} />
             </button>
           </div>

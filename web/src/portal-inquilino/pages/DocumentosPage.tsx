@@ -4,6 +4,7 @@ import {
   IcDownload, IcShield, IcDoc, IcTrend, IcLink, IcClock, IcHome, IcReceipt, IcCash,
 } from '@/shared/components/ui/Icons'
 import { formatDate } from '@/shared/lib/formatters'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { useMyDocuments } from '@/features/documents/hooks/useDocuments'
 import { useMyContract } from '@/features/me/hooks/useMe'
 import { documentService } from '@/features/documents/services/documentService'
@@ -48,7 +49,7 @@ function fmtBytes(b: number) {
 }
 
 export default function TenantDocumentosPage() {
-  const { data: docs, isLoading } = useMyDocuments()
+  const { data: docs, isLoading, isError, refetch } = useMyDocuments()
   const { data: contract } = useMyContract()
   const [urlModal, setUrlModal] = useState<DocumentDownloadUrlDto | null>(null)
   const [countdown, setCountdown] = useState<string | null>(null)
@@ -108,6 +109,8 @@ export default function TenantDocumentosPage() {
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {isLoading ? (
           <div style={{ padding: '20px 14px', color: 'var(--muted)', fontSize: 'var(--fs-sm)', textAlign: 'center' }}>Cargando…</div>
+        ) : isError ? (
+          <QueryError onRetry={() => refetch()} message="No pudimos cargar tus documentos." />
         ) : !docs || docs.length === 0 ? (
           <div style={{ padding: '24px 14px', color: 'var(--muted)', fontSize: 'var(--fs-sm)', textAlign: 'center' }}>
             <IcDoc size={28} style={{ opacity: .3, display: 'block', margin: '0 auto 8px' }} />

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router'
 import { IcArrowUp, IcShield, IcDownload, IcPhone, IcHome, IcDoc, IcCash } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate } from '@/shared/lib/formatters'
 import { useMyContract, useMyTransactions, useMyRentHistory } from '@/features/me/hooks/useMe'
 
@@ -24,7 +25,8 @@ function BottomNav({ active }: { active: 'home' | 'contrato' | 'documentos' | 'p
 }
 
 export default function TenantContratoPage() {
-  const { data: contract, isLoading } = useMyContract()
+  const navigate = useNavigate()
+  const { data: contract, isLoading, isError, refetch } = useMyContract()
   const { data: transactions } = useMyTransactions()
   const { data: rentHistory } = useMyRentHistory()
 
@@ -38,6 +40,15 @@ export default function TenantContratoPage() {
     return (
       <div style={{ maxWidth: 420, margin: '0 auto', padding: '40px 18px 80px', textAlign: 'center', color: 'var(--muted)' }}>
         Cargando contrato…
+        <BottomNav active="contrato" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div style={{ maxWidth: 420, margin: '0 auto', padding: '40px 18px 80px' }}>
+        <QueryError onRetry={() => refetch()} message="No pudimos cargar tu contrato." />
         <BottomNav active="contrato" />
       </div>
     )
@@ -135,11 +146,20 @@ export default function TenantContratoPage() {
       )}
 
       {/* Acciones */}
-      <button className="btn" style={{ width: '100%', justifyContent: 'center' }}>
-        <IcDownload size={14} /> Descargar contrato
+      <button
+        className="btn"
+        style={{ width: '100%', justifyContent: 'center' }}
+        onClick={() => navigate('/inquilino/documentos')}
+      >
+        <IcDownload size={14} /> Ver documentos del contrato
       </button>
-      <button className="btn btn--ghost" style={{ width: '100%', justifyContent: 'center', color: 'var(--muted)' }}>
-        <IcPhone size={14} /> Solicitar ayuda
+      <button
+        className="btn btn--ghost"
+        style={{ width: '100%', justifyContent: 'center', color: 'var(--muted)', cursor: 'not-allowed' }}
+        disabled
+        title="Próximamente"
+      >
+        <IcPhone size={14} /> Solicitar ayuda (próximamente)
       </button>
 
       <BottomNav active="contrato" />

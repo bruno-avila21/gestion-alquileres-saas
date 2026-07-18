@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { IcCash, IcHome, IcDoc, IcShield } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
 import { useMyTransactions } from '@/features/me/hooks/useMe'
 import type { TransactionType } from '@/features/contracts/types/contract.types'
@@ -46,7 +47,7 @@ function txFg(type: TransactionType): string {
 }
 
 export default function TenantPagosPage() {
-  const { data: transactions, isLoading } = useMyTransactions()
+  const { data: transactions, isLoading, isError, refetch } = useMyTransactions()
   const [filter, setFilter] = useState<Filter>('all')
 
   const all = transactions ?? []
@@ -116,6 +117,8 @@ export default function TenantPagosPage() {
         <div className="card" style={{ padding: '24px 14px', textAlign: 'center', color: 'var(--muted)' }}>
           Cargando…
         </div>
+      ) : isError ? (
+        <QueryError onRetry={() => refetch()} message="No pudimos cargar tus transacciones." />
       ) : filtered.length === 0 ? (
         <div className="card" style={{ padding: '28px 14px', textAlign: 'center', color: 'var(--muted)' }}>
           <IcCash size={28} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
