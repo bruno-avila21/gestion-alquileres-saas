@@ -5,7 +5,7 @@ import type { AppTenantDto } from '@/features/apptenants/types/apptenant.types'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
-import { IcUsers, IcPlus, IcEdit, IcMail, IcCheck } from '@/shared/components/ui/Icons'
+import { IcUsers, IcPlus, IcEdit, IcMail, IcArchive } from '@/shared/components/ui/Icons'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
 
 const PAGE_SIZE = 20
@@ -209,12 +209,12 @@ export default function InquilinosPage() {
                 <IcMail size={14} /> Invitar
               </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={() => openEdit(t)}>
+            <Button size="sm" variant="ghost" onClick={() => openEdit(t)} aria-label="Editar inquilino" title="Editar">
               <IcEdit size={14} />
             </Button>
             {t.isActive && (
-              <Button size="sm" variant="ghost" onClick={() => handleDelete(t.id)}>
-                <IcCheck size={14} />
+              <Button size="sm" variant="ghost" onClick={() => handleDelete(t.id)} aria-label="Archivar inquilino" title="Archivar">
+                <IcArchive size={14} />
               </Button>
             )}
           </div>

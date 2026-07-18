@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AdminTopbar } from '../layouts/AdminTopbar'
 import { IcCash, IcDownload } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
 import { useAllTransactions } from '@/features/contracts/hooks/useContracts'
 import { contractService } from '@/features/contracts/services/contractService'
@@ -26,7 +27,7 @@ const TX_CHIP: Record<TransactionType, string> = {
 type Filter = 'all' | TransactionType
 
 export default function PagosPage() {
-  const { data: transactions, isLoading } = useAllTransactions()
+  const { data: transactions, isLoading, isError, refetch } = useAllTransactions()
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
@@ -105,6 +106,8 @@ export default function PagosPage() {
 
         {isLoading ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
+        ) : isError ? (
+          <QueryError onRetry={() => refetch()} message="No pudimos cargar las transacciones." />
         ) : filtered.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
             <IcCash size={32} style={{ margin: '0 auto 8px', display: 'block' }} />

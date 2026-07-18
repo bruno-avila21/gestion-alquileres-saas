@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AdminTopbar } from '../layouts/AdminTopbar'
 import { IcCalendar, IcDownload } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate } from '@/shared/lib/formatters'
 import { useAllRentHistory } from '@/features/contracts/hooks/useContracts'
 import { contractService } from '@/features/contracts/services/contractService'
@@ -16,7 +17,7 @@ const TYPE_CHIP: Record<AdjustmentType, string> = {
 }
 
 export default function AjustesPage() {
-  const { data: history, isLoading } = useAllRentHistory()
+  const { data: history, isLoading, isError, refetch } = useAllRentHistory()
   const [typeFilter, setTypeFilter] = useState<AdjustmentType | 'all'>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
@@ -79,6 +80,8 @@ export default function AjustesPage() {
 
         {isLoading ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
+        ) : isError ? (
+          <QueryError onRetry={() => refetch()} message="No pudimos cargar los ajustes." />
         ) : filtered.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
             <IcCalendar size={32} style={{ margin: '0 auto 8px', display: 'block' }} />

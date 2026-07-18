@@ -5,7 +5,7 @@ import type { PropertyDto, PropertyType } from '@/features/properties/types/prop
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
-import { IcBuilding, IcPlus, IcEdit, IcCheck } from '@/shared/components/ui/Icons'
+import { IcBuilding, IcPlus, IcEdit, IcArchive } from '@/shared/components/ui/Icons'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
 
 const PAGE_SIZE = 20
@@ -204,12 +204,12 @@ export default function PropiedadesPage() {
             {!p.isActive && (
               <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted-foreground)' }}>Archivada</span>
             )}
-            <Button size="sm" variant="ghost" onClick={() => openEdit(p)}>
+            <Button size="sm" variant="ghost" onClick={() => openEdit(p)} aria-label="Editar propiedad" title="Editar">
               <IcEdit size={14} />
             </Button>
             {p.isActive && (
-              <Button size="sm" variant="ghost" onClick={() => handleDelete(p.id)}>
-                <IcCheck size={14} />
+              <Button size="sm" variant="ghost" onClick={() => handleDelete(p.id)} aria-label="Archivar propiedad" title="Archivar">
+                <IcArchive size={14} />
               </Button>
             )}
           </div>
