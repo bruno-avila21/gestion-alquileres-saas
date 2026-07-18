@@ -121,8 +121,19 @@ export default function InquilinosPage() {
       {inviteResult && (
         <div className="card p-4 space-y-1" style={{ borderColor: 'var(--brand)', background: 'var(--brand-50)' }}>
           <p className="font-semibold">Invitación generada para {inviteResult.name}</p>
-          <p className="text-sm">Contraseña temporal: <code className="font-mono font-bold">{inviteResult.pass}</code></p>
-          <p className="text-xs text-muted-foreground">Compartí esta contraseña de forma segura. El inquilino podrá cambiarla al ingresar.</p>
+          <div className="text-sm flex items-center gap-2">
+            <span>Contraseña temporal:</span>
+            <code className="font-mono font-bold">{inviteResult.pass}</code>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigator.clipboard?.writeText(inviteResult.pass)}
+              aria-label="Copiar contraseña temporal"
+            >
+              Copiar
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">Compartí esta contraseña de forma segura. No se volverá a mostrar. El inquilino podrá cambiarla al ingresar.</p>
           <Button size="sm" variant="outline" onClick={() => setInviteResult(null)}>Cerrar</Button>
         </div>
       )}

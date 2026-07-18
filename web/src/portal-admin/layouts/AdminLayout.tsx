@@ -9,8 +9,9 @@ export default function AdminLayout() {
   }
   return (
     <div className="app shell" style={{ height: '100vh' }}>
+      <a href="#main-content" className="skip-link">Saltar al contenido</a>
       <AdminSidebar />
-      <div className="main">
+      <div className="main" id="main-content">
         <Outlet />
       </div>
     </div>
