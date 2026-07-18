@@ -199,6 +199,22 @@
 .btn--sm { height: 28px; padding: 0 10px; font-size: var(--fs-xs); border-radius: var(--r-2); }
 .btn--icon { width: var(--btn-h); padding: 0; justify-content: center; }
 
+/* ─── Foco visible por teclado (WCAG 2.4.7 AA, audit A7) ───
+   El sistema .btn/.chip y la navegación no tenían indicador de foco: navegar con Tab dejaba al
+   usuario sin saber dónde estaba. Se aplica solo a :focus-visible (teclado), no al click de mouse. */
+.btn:focus-visible,
+.chip:focus-visible,
+a:focus-visible,
+button:focus-visible,
+[role="tab"]:focus-visible,
+[role="button"]:focus-visible,
+.sidebar nav a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--r-2);
+}
+
 /* ─── Inputs ─── */
 .input, .select {
   height: var(--input-h);

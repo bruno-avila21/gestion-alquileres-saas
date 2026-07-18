@@ -6,13 +6,16 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import type { RegisterOrgRequest } from '../types/auth.types'
 
+// Mensajes en español en todas las reglas (audit A8): Zod emitía "String must contain at least 1
+// character(s)" / "Invalid email" en inglés en el primer contacto con el producto. El mínimo de la
+// contraseña sube a 12 para coincidir con la política del backend (audit B5).
 const schema = z.object({
-  organizationName: z.string().min(1).max(200),
-  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, 'Slug: solo minúsculas, números y guiones'),
-  adminEmail: z.string().email(),
-  adminPassword: z.string().min(8, 'Mínimo 8 caracteres').max(100),
-  adminFirstName: z.string().min(1).max(100),
-  adminLastName: z.string().min(1).max(100),
+  organizationName: z.string().min(1, 'Ingresá el nombre de la organización').max(200, 'Máximo 200 caracteres'),
+  slug: z.string().min(1, 'Ingresá un slug').max(100, 'Máximo 100 caracteres').regex(/^[a-z0-9-]+$/, 'Slug: solo minúsculas, números y guiones'),
+  adminEmail: z.string().min(1, 'Ingresá el email').email('Email inválido').max(320, 'Máximo 320 caracteres'),
+  adminPassword: z.string().min(12, 'Mínimo 12 caracteres').max(100, 'Máximo 100 caracteres'),
+  adminFirstName: z.string().min(1, 'Ingresá el nombre').max(100, 'Máximo 100 caracteres'),
+  adminLastName: z.string().min(1, 'Ingresá el apellido').max(100, 'Máximo 100 caracteres'),
 })
 
 type FormValues = z.infer<typeof schema>
