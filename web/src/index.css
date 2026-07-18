@@ -356,3 +356,29 @@ summary:focus-visible {
 
 /* For density transitions to feel smooth */
 .tbl td, .tbl th, .btn, .input, .topbar { transition: padding .15s, height .15s; }
+
+/* ─── Responsive del portal admin (audit A9) ───
+   Las grillas de stats/detalle eran de 4 columnas fijas y desbordaban en pantallas chicas; el
+   sidebar de 232px comprimia el contenido. Se colapsan las columnas y se angosta el sidebar en
+   tablet/mobile. (El drawer con hamburguesa queda como mejora aparte: requiere estado en el shell.) */
+@media (max-width: 900px) {
+  .sidebar { width: 180px; flex-basis: 180px; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .page { padding: var(--s-7); }
+  .topbar .search { min-width: 0; }
+}
+@media (max-width: 560px) {
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  .sidebar { width: 62px; flex-basis: 62px; }
+  /* Rail angosto: se ocultan textos de marca, labels de nav, avatar y email; se conserva el logout. */
+  .sidebar .brand .nm, .sidebar .brand .org, .sidebar nav .nav-label,
+  .sidebar .footer .mono-avatar, .sidebar .footer .user-email { display: none; }
+  .sidebar nav a { justify-content: center; gap: 0; padding: 10px 0; }
+  .sidebar .brand { justify-content: center; padding: 14px 0; }
+  .sidebar .footer { justify-content: center; padding: 10px 0; }
+  .page { padding: var(--s-6); }
+  .page-h { flex-direction: column; align-items: flex-start; }
+  /* Las tablas anchas hacen scroll horizontal dentro de su card en vez de romper el layout. */
+  .card { overflow-x: auto; }
+}

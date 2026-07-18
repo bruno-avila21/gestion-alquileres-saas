@@ -50,7 +50,7 @@ export function AdminSidebar() {
             className={({ isActive }) => isActive ? 'active' : ''}
           >
             {item.icon}
-            {item.label}
+            <span className="nav-label">{item.label}</span>
           </NavLink>
         ))}
       </nav>
@@ -62,7 +62,7 @@ export function AdminSidebar() {
         >
           {initials}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="user-email" style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user?.email ?? ''}
           </div>
