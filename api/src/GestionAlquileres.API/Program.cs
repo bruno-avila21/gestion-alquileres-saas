@@ -136,16 +136,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// Rate limiting — auth endpoints (10 req/min per window)
+// Rate limiting — auth endpoints, partitioned per client IP (audit M1). A single global fixed
+// window let one client's 10 req/min exhaust the bucket and lock out login for the whole platform
+// (DoS), and didn't isolate brute-force per source. Partitioning by IP gives each source its own
+// window so an abuser only rate-limits themselves.
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter("auth", o =>
-    {
-        o.PermitLimit = 10;
-        o.Window = TimeSpan.FromMinutes(1);
-        o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        o.QueueLimit = 0;
-    });
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+            }));
     options.RejectionStatusCode = 429;
 });
 

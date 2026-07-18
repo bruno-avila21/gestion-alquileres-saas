@@ -54,9 +54,11 @@ public class InviteTenantCommandHandler : IRequestHandler<InviteTenantCommand, I
     private static string GenerateTempPassword()
     {
         const string chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$";
-        var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
-        var bytes = new byte[12];
-        rng.GetBytes(bytes);
-        return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
+        // Use rejection sampling (RandomNumberGenerator.GetInt32) rather than `b % chars.Length`,
+        // which biases toward the first (256 % 57) characters (audit B4).
+        var result = new char[12];
+        for (var i = 0; i < result.Length; i++)
+            result[i] = chars[System.Security.Cryptography.RandomNumberGenerator.GetInt32(chars.Length)];
+        return new string(result);
     }
 }
