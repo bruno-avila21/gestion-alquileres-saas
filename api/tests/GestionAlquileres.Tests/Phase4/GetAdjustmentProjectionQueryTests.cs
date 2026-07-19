@@ -28,6 +28,8 @@ public class GetAdjustmentProjectionQueryTests
         public Task<IReadOnlyList<Domain.Entities.RentHistory>> GetByContractAsync(Guid id, CancellationToken ct) => Task.FromResult(Items);
         public Task<Domain.Entities.RentHistory?> GetLastByContractAsync(Guid id, CancellationToken ct) => throw new NotImplementedException();
         public Task<IReadOnlyList<Domain.Entities.RentHistory>> GetAllAsync(CancellationToken ct) => throw new NotImplementedException();
+        public Task<(IReadOnlyList<Domain.Entities.RentHistory> Items, int Total)> GetPagedAsync(
+            Domain.Enums.AdjustmentType? type, string? search, int page, int pageSize, CancellationToken ct) => throw new NotImplementedException();
         public Task AddAsync(Domain.Entities.RentHistory r, CancellationToken ct) => throw new NotImplementedException();
         public Task SaveChangesAsync(CancellationToken ct) => throw new NotImplementedException();
         public Task<bool> ExistsForPeriodAsync(Guid id, DateOnly d, CancellationToken ct) => throw new NotImplementedException();

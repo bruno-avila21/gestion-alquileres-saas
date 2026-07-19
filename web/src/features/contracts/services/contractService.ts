@@ -1,6 +1,7 @@
 import { api } from '@/shared/lib/api'
 import type {
   AdjustmentProjection,
+  AdjustmentType,
   ApplyAdjustmentRequest,
   ContractDto,
   ContractStatus,
@@ -12,6 +13,7 @@ import type {
   TransactionDto,
   UpdateContractRequest,
 } from '../types/contract.types'
+import type { PagedResult } from '@/shared/types/paged'
 
 export const contractService = {
   async list(params?: { tenantId?: string; propertyId?: string; status?: ContractStatus }): Promise<ContractDto[]> {
@@ -63,8 +65,8 @@ export const contractService = {
     const { data } = await api.get<TransactionDto[]>('/transactions')
     return data
   },
-  async listAllRentHistory(): Promise<RentHistoryDto[]> {
-    const { data } = await api.get<RentHistoryDto[]>('/rent-adjustments')
+  async listAllRentHistory(params: { page: number; pageSize: number; type?: AdjustmentType; search?: string }): Promise<PagedResult<RentHistoryDto>> {
+    const { data } = await api.get<PagedResult<RentHistoryDto>>('/rent-adjustments', { params })
     return data
   },
   async exportTransactionsCsv(): Promise<Blob> {

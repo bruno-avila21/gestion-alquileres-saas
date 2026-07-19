@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { contractService } from '../services/contractService'
 import type {
+  AdjustmentType,
   ApplyAdjustmentRequest,
   ContractStatus,
   CreateContractRequest,
@@ -113,9 +114,10 @@ export function useAllTransactions() {
   })
 }
 
-export function useAllRentHistory() {
+export function useAllRentHistory(params: { page: number; pageSize: number; type?: AdjustmentType; search?: string }) {
   return useQuery({
-    queryKey: ['rent-adjustments', 'all'],
-    queryFn: () => contractService.listAllRentHistory(),
+    queryKey: ['rent-adjustments', 'all', params],
+    queryFn: () => contractService.listAllRentHistory(params),
+    placeholderData: keepPreviousData,
   })
 }

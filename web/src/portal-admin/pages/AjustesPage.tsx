@@ -7,6 +7,7 @@ import { useAllRentHistory, useContracts } from '@/features/contracts/hooks/useC
 import { contractService } from '@/features/contracts/services/contractService'
 import type { AdjustmentType } from '@/features/contracts/types/contract.types'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 
 const PAGE_SIZE = 20
 
@@ -17,32 +18,28 @@ const TYPE_CHIP: Record<AdjustmentType, string> = {
 }
 
 export default function AjustesPage() {
-  const { data: history, isLoading, isError, refetch } = useAllRentHistory()
   const { data: contracts } = useContracts()
   const [typeFilter, setTypeFilter] = useState<AdjustmentType | 'all'>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
+  const debouncedSearch = useDebounce(search)
 
-  // contractId -> tenant + address, so the table/search aren't keyed off an unreadable UUID (audit B13).
+  // Server-side pagination + filter + search (audit M10): the type filter and the tenant/address/notes
+  // search run in the API (joined to contract), so they span the whole dataset — not just the loaded
+  // page. contractLabel is still used for display in the row.
+  const { data, isLoading, isError, refetch } = useAllRentHistory({
+    page: page + 1, pageSize: PAGE_SIZE,
+    type: typeFilter === 'all' ? undefined : typeFilter,
+    search: debouncedSearch || undefined,
+  })
+  const history = data?.items ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  // contractId -> tenant + address, for display (audit B13).
   const contractLabel = new Map(
     (contracts ?? []).map((c) => [c.id, `${c.appTenantFullName} · ${c.propertyAddress}`]),
   )
-
-  const filtered = (history ?? []).filter((r) => {
-    if (typeFilter !== 'all' && r.adjustmentType !== typeFilter) return false
-    if (search) {
-      const q = search.toLowerCase()
-      return (
-        (contractLabel.get(r.contractId) ?? '').toLowerCase().includes(q) ||
-        r.contractId.toLowerCase().includes(q) ||
-        (r.notes ?? '').toLowerCase().includes(q)
-      )
-    }
-    return true
-  })
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   return (
     <>
@@ -92,7 +89,7 @@ export default function AjustesPage() {
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
         ) : isError ? (
           <QueryError onRetry={() => refetch()} message="No pudimos cargar los ajustes." />
-        ) : filtered.length === 0 ? (
+        ) : history.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
             <IcCalendar size={32} style={{ margin: '0 auto 8px', display: 'block' }} />
             Sin ajustes registrados
@@ -113,7 +110,7 @@ export default function AjustesPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((r) => (
+                {history.map((r) => (
                   <tr key={r.id}>
                     <td>
                       <span className={`chip ${TYPE_CHIP[r.adjustmentType]}`}>
@@ -140,7 +137,7 @@ export default function AjustesPage() {
                 ))}
               </tbody>
             </table>
-            <PaginationBar page={page} totalPages={totalPages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+            <PaginationBar page={page} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
           </div>
         )}
       </div>

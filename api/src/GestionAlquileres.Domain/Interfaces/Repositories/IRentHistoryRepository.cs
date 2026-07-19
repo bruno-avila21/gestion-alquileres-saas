@@ -1,4 +1,5 @@
 using GestionAlquileres.Domain.Entities;
+using GestionAlquileres.Domain.Enums;
 
 namespace GestionAlquileres.Domain.Interfaces.Repositories;
 
@@ -7,6 +8,9 @@ public interface IRentHistoryRepository
     Task<IReadOnlyList<RentHistory>> GetByContractAsync(Guid contractId, CancellationToken ct);
     Task<RentHistory?> GetLastByContractAsync(Guid contractId, CancellationToken ct);
     Task<IReadOnlyList<RentHistory>> GetAllAsync(CancellationToken ct);
+    /// <summary>One page of the org's adjustments (optionally filtered by type and by tenant/address/notes), plus the total.</summary>
+    Task<(IReadOnlyList<RentHistory> Items, int Total)> GetPagedAsync(
+        AdjustmentType? type, string? search, int page, int pageSize, CancellationToken ct);
     Task AddAsync(RentHistory record, CancellationToken ct);
     Task SaveChangesAsync(CancellationToken ct);
 
