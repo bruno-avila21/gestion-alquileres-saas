@@ -2,6 +2,7 @@ using System.Text;
 using GestionAlquileres.API.Common;
 using GestionAlquileres.Application.Features.Transactions.DTOs;
 using GestionAlquileres.Application.Features.Transactions.Queries;
+using GestionAlquileres.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GestionAlquileres.API.Controllers;
@@ -10,8 +11,9 @@ namespace GestionAlquileres.API.Controllers;
 public class TransactionsController : AdminControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<TransactionDto>>> ListAll(CancellationToken ct) =>
-        Ok(await Mediator.Send(new ListAllTransactionsQuery(), ct));
+    public async Task<ActionResult<TransactionsPageDto>> ListAll(
+        CancellationToken ct, int page = 1, int pageSize = 20, TransactionType? type = null, string? search = null) =>
+        Ok(await Mediator.Send(new GetTransactionsPageQuery(page, pageSize, type, search), ct));
 
     [HttpGet("export")]
     public async Task<IActionResult> Export(CancellationToken ct)

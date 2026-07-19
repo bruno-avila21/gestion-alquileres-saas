@@ -75,6 +75,14 @@ export interface TransactionDto {
   paidAt: string | null
 }
 
+export interface TransactionsPageDto {
+  items: TransactionDto[]
+  total: number
+  page: number
+  pageSize: number
+  netBalance: number
+}
+
 export interface ApplyAdjustmentRequest {
   effectiveDate?: string | null
   manualNewRent?: number | null

@@ -7,6 +7,7 @@ import { useAllTransactions, useContracts } from '@/features/contracts/hooks/use
 import { contractService } from '@/features/contracts/services/contractService'
 import type { TransactionType } from '@/features/contracts/types/contract.types'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 
 const PAGE_SIZE = 20
 
@@ -27,38 +28,29 @@ const TX_CHIP: Record<TransactionType, string> = {
 type Filter = 'all' | TransactionType
 
 export default function PagosPage() {
-  const { data: transactions, isLoading, isError, refetch } = useAllTransactions()
   const { data: contracts } = useContracts()
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
+  const debouncedSearch = useDebounce(search)
 
-  // Map contractId -> a human label (tenant + address) so the table and search show something
-  // recognizable instead of a raw UUID the operator can't identify (audit B13).
+  // Server-side pagination + filter + search + net balance (audit M10): the filter/search run in the
+  // API (joined to contract), so they span the whole dataset, and the net balance is summed server-side
+  // over the full filtered set — a single page couldn't produce it.
+  const { data, isLoading, isError, refetch } = useAllTransactions({
+    page: page + 1, pageSize: PAGE_SIZE,
+    type: filter === 'all' ? undefined : filter,
+    search: debouncedSearch || undefined,
+  })
+  const transactions = data?.items ?? []
+  const total = data?.total ?? 0
+  const netBalance = data?.netBalance ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  // contractId -> tenant + address, for display in the row (audit B13).
   const contractLabel = new Map(
     (contracts ?? []).map((c) => [c.id, `${c.appTenantFullName} · ${c.propertyAddress}`]),
   )
-
-  const filtered = (transactions ?? []).filter((t) => {
-    if (filter !== 'all' && t.type !== filter) return false
-    if (search) {
-      const q = search.toLowerCase()
-      return (
-        (contractLabel.get(t.contractId) ?? '').toLowerCase().includes(q) ||
-        t.contractId.toLowerCase().includes(q) ||
-        (t.notes ?? '').toLowerCase().includes(q)
-      )
-    }
-    return true
-  })
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-
-  const total = filtered.reduce((sum, t) => {
-    if (t.type === 'Payment' || t.type === 'ManualCredit') return sum + t.amount
-    return sum - t.amount
-  }, 0)
 
   const FILTERS: { key: Filter; label: string }[] = [
     { key: 'all', label: 'Todos' },
@@ -116,7 +108,7 @@ export default function PagosPage() {
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
         ) : isError ? (
           <QueryError onRetry={() => refetch()} message="No pudimos cargar las transacciones." />
-        ) : filtered.length === 0 ? (
+        ) : transactions.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
             <IcCash size={32} style={{ margin: '0 auto 8px', display: 'block' }} />
             Sin transacciones
@@ -136,7 +128,7 @@ export default function PagosPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((t) => (
+                {transactions.map((t) => (
                   <tr key={t.id}>
                     <td>
                       <span className={`chip ${TX_CHIP[t.type]}`}>
@@ -162,14 +154,14 @@ export default function PagosPage() {
               <tfoot>
                 <tr>
                   <td colSpan={2} style={{ fontWeight: 600, paddingLeft: 12 }}>Balance neto</td>
-                  <td className="num" style={{ fontWeight: 700, color: total >= 0 ? 'var(--ok)' : 'var(--danger)' }}>
-                    {formatARS(Math.abs(total))}
+                  <td className="num" style={{ fontWeight: 700, color: netBalance >= 0 ? 'var(--ok)' : 'var(--danger)' }}>
+                    {formatARS(Math.abs(netBalance))}
                   </td>
                   <td colSpan={4} />
                 </tr>
               </tfoot>
             </table>
-            <PaginationBar page={page} totalPages={totalPages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+            <PaginationBar page={page} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
           </div>
         )}
       </div>

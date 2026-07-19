@@ -11,6 +11,8 @@ import type {
   RentHistoryDto,
   TerminateContractRequest,
   TransactionDto,
+  TransactionsPageDto,
+  TransactionType,
   UpdateContractRequest,
 } from '../types/contract.types'
 import type { PagedResult } from '@/shared/types/paged'
@@ -61,8 +63,8 @@ export const contractService = {
     const { data } = await api.post<TransactionDto>(`/contracts/${contractId}/charges`, req)
     return data
   },
-  async listAllTransactions(): Promise<TransactionDto[]> {
-    const { data } = await api.get<TransactionDto[]>('/transactions')
+  async listAllTransactions(params: { page: number; pageSize: number; type?: TransactionType; search?: string }): Promise<TransactionsPageDto> {
+    const { data } = await api.get<TransactionsPageDto>('/transactions', { params })
     return data
   },
   async listAllRentHistory(params: { page: number; pageSize: number; type?: AdjustmentType; search?: string }): Promise<PagedResult<RentHistoryDto>> {

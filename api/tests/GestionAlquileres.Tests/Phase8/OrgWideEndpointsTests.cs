@@ -34,8 +34,9 @@ public class OrgWideEndpointsTests : IClassFixture<Phase7ApiFactory>
         var c = await _factory.AuthedClientAsync("txall-t2");
         var r = await c.GetAsync("/api/v1/transactions");
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        var arr = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        Assert.Equal(0, arr.GetArrayLength());
+        var body = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal(0, body.GetProperty("items").GetArrayLength());
+        Assert.Equal(0, body.GetProperty("total").GetInt32());
     }
 
     [Fact]
@@ -54,12 +55,13 @@ public class OrgWideEndpointsTests : IClassFixture<Phase7ApiFactory>
 
         var r = await client.GetAsync("/api/v1/transactions");
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        var arr = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        Assert.True(arr.GetArrayLength() >= 1);
+        var body = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        var items = body.GetProperty("items");
+        Assert.True(items.GetArrayLength() >= 1);
 
         // Verify the payment appears
         var found = false;
-        foreach (var item in arr.EnumerateArray())
+        foreach (var item in items.EnumerateArray())
         {
             if (item.TryGetProperty("type", out var typeProp) && typeProp.GetString() == "Payment")
                 found = true;
@@ -84,8 +86,8 @@ public class OrgWideEndpointsTests : IClassFixture<Phase7ApiFactory>
         // Org B sees no transactions
         var r = await clientB.GetAsync("/api/v1/transactions");
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        var arr = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        Assert.Equal(0, arr.GetArrayLength());
+        var body = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal(0, body.GetProperty("items").GetArrayLength());
     }
 
     // ── /api/v1/rent-adjustments ─────────────────────────────────────────────

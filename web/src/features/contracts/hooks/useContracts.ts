@@ -4,6 +4,7 @@ import type {
   AdjustmentType,
   ApplyAdjustmentRequest,
   ContractStatus,
+  TransactionType,
   CreateContractRequest,
   RegisterManualTransactionRequest,
   RegisterPaymentRequest,
@@ -107,10 +108,11 @@ export function useRegisterManualCharge() {
   })
 }
 
-export function useAllTransactions() {
+export function useAllTransactions(params: { page: number; pageSize: number; type?: TransactionType; search?: string }) {
   return useQuery({
-    queryKey: ['transactions', 'all'],
-    queryFn: () => contractService.listAllTransactions(),
+    queryKey: ['transactions', 'all', params],
+    queryFn: () => contractService.listAllTransactions(params),
+    placeholderData: keepPreviousData,
   })
 }
 
