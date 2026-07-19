@@ -14,6 +14,7 @@ import {
 import { formatARS, formatDateShort } from '@/shared/lib/formatters'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
+import { downloadCsv } from '@/shared/lib/exportCsv'
 
 const PAGE_SIZE = 20
 
@@ -130,6 +131,17 @@ export default function ContratosPage() {
     }
   }
 
+  function handleExport() {
+    downloadCsv(
+      'contratos.csv',
+      ['Inquilino', 'Propiedad', 'Alquiler', 'Moneda', 'Ajuste', 'Estado', 'Inicio', 'Fin'],
+      filtered.map((c) => [
+        c.appTenantFullName, c.propertyAddress, c.monthlyRent, c.currency,
+        ADJ_LABELS[c.adjustmentType], STATUS_LABELS[c.status].lbl, c.startDate, c.endDate,
+      ]),
+    )
+  }
+
   return (
     <>
       <AdminTopbar
@@ -160,7 +172,7 @@ export default function ContratosPage() {
             <h1>Contratos</h1>
             <div className="lead">{counts.Active} vigentes</div>
           </div>
-          <button className="btn btn--sm">
+          <button className="btn btn--sm" onClick={handleExport} disabled={filtered.length === 0}>
             <IcDownload size={12} /> Exportar
           </button>
         </div>

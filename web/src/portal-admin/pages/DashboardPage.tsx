@@ -6,7 +6,10 @@ import {
   IcChev, IcShield, IcBell, Spark,
 } from '@/shared/components/ui/Icons'
 import { formatARS, formatDate } from '@/shared/lib/formatters'
+import { downloadCsv } from '@/shared/lib/exportCsv'
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard'
+
+const TX_LABEL = { Payment: 'Pago', RentCharge: 'Cargo', ManualDebit: 'Débito', ManualCredit: 'Crédito' } as const
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -16,6 +19,17 @@ export default function DashboardPage() {
   const monthlyRevenue = dashboard?.monthlyRevenue ?? 0
   const expiring = dashboard?.expiringIn30DaysCount ?? 0
   const recentTx = dashboard?.recentTransactions ?? []
+
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Buen día' : hour < 20 ? 'Buenas tardes' : 'Buenas noches'
+
+  function handleExport() {
+    downloadCsv(
+      'transacciones-recientes.csv',
+      ['Tipo', 'Período', 'Importe', 'Moneda', 'Estado'],
+      recentTx.map((t) => [TX_LABEL[t.type], t.period, t.amount, t.currency, t.status]),
+    )
+  }
 
   const REVENUE_SERIES = [4.2, 4.4, 4.5, 4.7, 4.9, 5.1, 5.3, 5.4, 5.7, 5.9, 6.2, activeContracts || 6.5]
   const OVERDUE_SERIES = [9, 12, 15, 18, 16, 14, 17, 15, 16, 14, 15, expiring || 0]
@@ -75,14 +89,14 @@ export default function DashboardPage() {
       <div className="page">
         <div className="page-h">
           <div>
-            <h1>Buen día</h1>
+            <h1>{greeting}</h1>
             <div className="lead">Vista consolidada de la operación</div>
           </div>
           <div className="row">
-            <button className="btn btn--sm">
+            <button className="btn btn--sm" disabled title="Filtro por fecha (próximamente)">
               <IcCalendar size={12} /> Hoy <IcChevDown size={12} />
             </button>
-            <button className="btn btn--sm">
+            <button className="btn btn--sm" onClick={handleExport} disabled={recentTx.length === 0}>
               <IcDownload size={12} /> Exportar
             </button>
           </div>
