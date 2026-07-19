@@ -2,12 +2,10 @@ import { useState } from 'react'
 import { AdminTopbar } from '../layouts/AdminTopbar'
 import { useProperties, useCreateProperty, useUpdateProperty, useDeleteProperty } from '@/features/properties/hooks/useProperties'
 import type { PropertyDto, PropertyType } from '@/features/properties/types/property.types'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
-import { Label } from '@/shared/components/ui/label'
 import { IcBuilding, IcPlus, IcEdit, IcArchive } from '@/shared/components/ui/Icons'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
+import { QueryError } from '@/shared/components/ui/QueryError'
 
 const PAGE_SIZE = 20
 
@@ -109,7 +107,7 @@ export default function PropiedadesPage() {
     <>
       <AdminTopbar
         crumbs={['Propiedades']}
-        right={<Button size="sm" onClick={openCreate}><IcPlus size={12} /> Nueva propiedad</Button>}
+        right={<button className="btn btn--sm btn--primary" onClick={openCreate}><IcPlus size={12} /> Nueva propiedad</button>}
       />
       <ConfirmDialog
         open={!!confirmArchive}
@@ -120,39 +118,42 @@ export default function PropiedadesPage() {
         onConfirm={doArchive}
         onCancel={() => setConfirmArchive(null)}
       />
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Propiedades</h1>
+    <div className="page">
+      <div className="page-h">
+        <div>
+          <h1>Propiedades</h1>
+          <div className="lead">Inmuebles administrados</div>
+        </div>
       </div>
 
-      <Input
-        placeholder="Buscar por dirección o ciudad..."
+      <input
+        className="input input--sm"
+        style={{ width: 280 }}
+        placeholder="Buscar por dirección o ciudad…"
         value={search}
         onChange={e => { setSearch(e.target.value); setPage(0) }}
-        className="max-w-sm"
       />
 
-      {isLoading && <p className="text-sm text-muted-foreground">Cargando...</p>}
-      {error && <p className="text-sm text-destructive">Error al cargar propiedades.</p>}
+      {error && <QueryError message="Error al cargar propiedades." />}
 
       {showForm && (
-        <div className="card p-4 space-y-4 max-w-xl">
-          <h2 className="font-semibold">{editing ? 'Editar propiedad' : 'Nueva propiedad'}</h2>
-          {err && <p className="text-sm text-destructive">{err}</p>}
-          <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
+          <h2 style={{ fontWeight: 600, margin: 0 }}>{editing ? 'Editar propiedad' : 'Nueva propiedad'}</h2>
+          {err && <div role="alert" style={{ fontSize: 'var(--fs-sm)', color: 'var(--danger)' }}>{err}</div>}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
-              <Label>Dirección *</Label>
-              <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} required />
+              <label className="label">Dirección *</label>
+              <input className="input" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} required />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid-2">
               <div>
-                <Label>Ciudad *</Label>
-                <Input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} required />
+                <label className="label">Ciudad *</label>
+                <input className="input" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} required />
               </div>
               <div>
-                <Label>Provincia *</Label>
+                <label className="label">Provincia *</label>
                 <select
-                  className="input w-full"
+                  className="select"
                   value={form.province}
                   onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
                 >
@@ -160,11 +161,11 @@ export default function PropiedadesPage() {
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid-2">
               <div>
-                <Label>Tipo *</Label>
+                <label className="label">Tipo *</label>
                 <select
-                  className="input w-full"
+                  className="select"
                   value={form.propertyType}
                   onChange={e => setForm(f => ({ ...f, propertyType: e.target.value as PropertyType }))}
                 >
@@ -172,8 +173,9 @@ export default function PropiedadesPage() {
                 </select>
               </div>
               <div>
-                <Label>Superficie (m²)</Label>
-                <Input
+                <label className="label">Superficie (m²)</label>
+                <input
+                  className="input"
                   type="number"
                   min="1"
                   step="0.01"
@@ -183,50 +185,53 @@ export default function PropiedadesPage() {
               </div>
             </div>
             <div>
-              <Label>Notas</Label>
-              <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+              <label className="label">Notas</label>
+              <input className="input" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
-              <Button type="submit" disabled={create.isPending || update.isPending}>
+            <div className="row" style={{ gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn--sm" onClick={() => setShowForm(false)}>Cancelar</button>
+              <button type="submit" className="btn btn--sm btn--primary" disabled={create.isPending || update.isPending}>
                 {editing ? 'Guardar cambios' : 'Crear propiedad'}
-              </Button>
+              </button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="space-y-2">
-        {filtered.length === 0 && !isLoading && (
-          <div className="text-center py-12 text-muted-foreground">
-            <IcBuilding size={40} style={{ margin: '0 auto 8px' }} />
-            <p>No hay propiedades.</p>
-          </div>
-        )}
-        {paginated.map(p => (
-          <div key={p.id} className="card p-4 flex items-center gap-3">
-            <IcBuilding size={20} style={{ color: 'var(--brand)', flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="font-medium">{p.address}</div>
-              <div className="text-sm text-muted-foreground">
-                {p.city}, {p.province} · {PROPERTY_TYPES.find(t => t.value === p.propertyType)?.label ?? p.propertyType}
-                {p.areaM2 ? ` · ${p.areaM2} m²` : ''}
+      {isLoading ? (
+        <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
+      ) : filtered.length === 0 ? (
+        <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
+          <IcBuilding size={32} style={{ margin: '0 auto 8px', display: 'block' }} />
+          No hay propiedades.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {paginated.map(p => (
+            <div key={p.id} className="card row" style={{ padding: '12px 14px', gap: 12 }}>
+              <IcBuilding size={20} style={{ color: 'var(--brand)', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 500 }}>{p.address}</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>
+                  {p.city}, {p.province} · {PROPERTY_TYPES.find(t => t.value === p.propertyType)?.label ?? p.propertyType}
+                  {p.areaM2 ? ` · ${p.areaM2} m²` : ''}
+                </div>
               </div>
+              {!p.isActive && (
+                <span className="chip chip--warn" style={{ height: 20, fontSize: 10 }}>Archivada</span>
+              )}
+              <button className="btn btn--ghost btn--sm btn--icon" onClick={() => openEdit(p)} aria-label="Editar propiedad" title="Editar">
+                <IcEdit size={14} />
+              </button>
+              {p.isActive && (
+                <button className="btn btn--ghost btn--sm btn--icon" onClick={() => setConfirmArchive(p)} aria-label="Archivar propiedad" title="Archivar">
+                  <IcArchive size={14} />
+                </button>
+              )}
             </div>
-            {!p.isActive && (
-              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted-foreground)' }}>Archivada</span>
-            )}
-            <Button size="sm" variant="ghost" onClick={() => openEdit(p)} aria-label="Editar propiedad" title="Editar">
-              <IcEdit size={14} />
-            </Button>
-            {p.isActive && (
-              <Button size="sm" variant="ghost" onClick={() => setConfirmArchive(p)} aria-label="Archivar propiedad" title="Archivar">
-                <IcArchive size={14} />
-              </Button>
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       {totalPages > 1 && (
         <PaginationBar page={page} totalPages={totalPages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       )}
