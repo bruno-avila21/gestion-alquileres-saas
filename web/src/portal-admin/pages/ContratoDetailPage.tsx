@@ -77,11 +77,12 @@ function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: 
           <div className="card-h">
             <div>
               <h3>Próximo ajuste — cómo se calcula</h3>
-              <div className="sub">{adjLabel} · {freqLabel} · auto-aplicable</div>
+              <div className="sub">{adjLabel} · {freqLabel}</div>
             </div>
             <div className="row">
               <button className="btn btn--sm" onClick={onAdjust}><IcEdit size={12} /> Ajuste manual</button>
-              <button className="btn btn--sm btn--primary" onClick={onAdjust}>Aplicar ahora <IcChev size={12} /></button>
+              {/* Solo navega a la pestaña de ajustes; no aplica nada por si mismo (audit M9). */}
+              <button className="btn btn--sm btn--primary" onClick={onAdjust}>Ver ajuste <IcChev size={12} /></button>
             </div>
           </div>
           <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -99,8 +100,16 @@ function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: 
             </div>
 
             <div className="between" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>
+              {/* El sello se muestra solo cuando corresponde y con la fuente correcta: ICL→BCRA,
+                  IPC→INDEC. Antes decia "verificado con BCRA" siempre, incluso en contratos Manual
+                  o IPC y sin proyeccion disponible (audit M9/M15). */}
               <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                <IcShield size={12} /> Datos verificados con BCRA
+                <IcShield size={12} />
+                {contract.adjustmentType === 'Manual'
+                  ? 'Ajuste manual — sin índice'
+                  : projection
+                    ? `Datos verificados con ${contract.adjustmentType === 'ICL' ? 'BCRA' : 'INDEC'}`
+                    : 'Esperando índice del período'}
               </span>
               <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
                 <IcBell size={12} /> Inquilino será notificado por email
