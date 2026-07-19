@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { documentService } from '../services/documentService'
 
 export function useContractDocuments(contractId: string) {
@@ -52,9 +52,10 @@ export function useMyDocuments() {
   })
 }
 
-export function useAllDocuments() {
+export function useAllDocuments(params: { page: number; pageSize: number; search?: string }) {
   return useQuery({
-    queryKey: ['documents', 'all'],
-    queryFn: () => documentService.listAll(),
+    queryKey: ['documents', 'all', params],
+    queryFn: () => documentService.listAll(params),
+    placeholderData: keepPreviousData,
   })
 }

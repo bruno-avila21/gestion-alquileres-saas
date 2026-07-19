@@ -1,5 +1,6 @@
 import { api } from '@/shared/lib/api'
 import type { DocumentDto, DocumentDownloadUrlDto } from '../types/document.types'
+import type { PagedResult } from '@/shared/types/paged'
 
 export const documentService = {
   async list(contractId: string): Promise<DocumentDto[]> {
@@ -41,8 +42,8 @@ export const documentService = {
     const { data } = await api.get<DocumentDto[]>('/me/documents')
     return data
   },
-  async listAll(): Promise<DocumentDto[]> {
-    const { data } = await api.get<DocumentDto[]>('/documents')
+  async listAll(params: { page: number; pageSize: number; search?: string }): Promise<PagedResult<DocumentDto>> {
+    const { data } = await api.get<PagedResult<DocumentDto>>('/documents', { params })
     return data
   },
 }

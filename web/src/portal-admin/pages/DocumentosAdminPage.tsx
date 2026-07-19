@@ -6,6 +6,7 @@ import { formatDate } from '@/shared/lib/formatters'
 import { useAllDocuments, useDocumentDownloadUrl, useSetDocumentVisibility } from '@/features/documents/hooks/useDocuments'
 import type { DocumentDto } from '@/features/documents/types/document.types'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 
 const PAGE_SIZE = 20
 
@@ -55,18 +56,19 @@ function VisibilityToggle({ doc }: { doc: DocumentDto }) {
 }
 
 export default function DocumentosAdminPage() {
-  const { data: documents, isLoading, isError, refetch } = useAllDocuments()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
+  const debouncedSearch = useDebounce(search)
 
-  const filtered = (documents ?? []).filter((d) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return d.fileName.toLowerCase().includes(q) || d.contractId.toLowerCase().includes(q)
+  // Server-side pagination (audit M10): the API returns one page + the total, so the whole dataset is
+  // pageable without loading it all. Search runs server-side too, so it spans every page, not just the
+  // rows currently loaded.
+  const { data, isLoading, isError, refetch } = useAllDocuments({
+    page: page + 1, pageSize: PAGE_SIZE, search: debouncedSearch || undefined,
   })
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+  const documents = data?.items ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <>
@@ -83,7 +85,7 @@ export default function DocumentosAdminPage() {
           <input
             className="input input--sm"
             style={{ width: 280 }}
-            placeholder="Buscar por nombre o contrato…"
+            placeholder="Buscar por nombre de archivo…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0) }}
           />
@@ -93,7 +95,7 @@ export default function DocumentosAdminPage() {
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
         ) : isError ? (
           <QueryError onRetry={() => refetch()} message="No pudimos cargar los documentos." />
-        ) : filtered.length === 0 ? (
+        ) : documents.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
             <IcDoc size={32} style={{ margin: '0 auto 8px', display: 'block' }} />
             Sin documentos
@@ -113,7 +115,7 @@ export default function DocumentosAdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((d) => (
+                {documents.map((d) => (
                   <tr key={d.id}>
                     <td style={{ fontWeight: 500 }}>{d.fileName}</td>
                     <td className="muted" style={{ fontSize: 'var(--fs-xs)' }}>{d.mimeType}</td>
@@ -134,7 +136,7 @@ export default function DocumentosAdminPage() {
                 ))}
               </tbody>
             </table>
-            <PaginationBar page={page} totalPages={totalPages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+            <PaginationBar page={page} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
           </div>
         )}
       </div>

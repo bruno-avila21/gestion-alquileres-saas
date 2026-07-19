@@ -170,8 +170,9 @@ public class OrgWideEndpointsTests : IClassFixture<Phase7ApiFactory>
         var c = await _factory.AuthedClientAsync("docall-t10");
         var r = await c.GetAsync("/api/v1/documents");
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        var arr = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        Assert.Equal(0, arr.GetArrayLength());
+        var body = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal(0, body.GetProperty("items").GetArrayLength());
+        Assert.Equal(0, body.GetProperty("total").GetInt32());
     }
 
     [Fact]
@@ -187,9 +188,11 @@ public class OrgWideEndpointsTests : IClassFixture<Phase7ApiFactory>
 
         var r = await client.GetAsync("/api/v1/documents");
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        var arr = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        Assert.Equal(1, arr.GetArrayLength());
-        Assert.Equal("contrato.pdf", arr[0].GetProperty("fileName").GetString());
+        var body = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        var items = body.GetProperty("items");
+        Assert.Equal(1, items.GetArrayLength());
+        Assert.Equal(1, body.GetProperty("total").GetInt32());
+        Assert.Equal("contrato.pdf", items[0].GetProperty("fileName").GetString());
     }
 
     [Fact]
@@ -208,8 +211,8 @@ public class OrgWideEndpointsTests : IClassFixture<Phase7ApiFactory>
         // Org B sees no documents
         var r = await clientB.GetAsync("/api/v1/documents");
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        var arr = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        Assert.Equal(0, arr.GetArrayLength());
+        var body = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal(0, body.GetProperty("items").GetArrayLength());
     }
 
     // ── GET /api/v1/transactions/export ──────────────────────────────────────
