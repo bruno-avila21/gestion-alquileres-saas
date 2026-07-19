@@ -372,7 +372,7 @@ function AdjustmentsTab({ contractId }: { contractId: string }) {
                     <td className="num">{formatARS(a.previousRent)}</td>
                     <td className="num"><b>{formatARS(a.newRent)}</b></td>
                     <td className="num">
-                      <span className="delta-pill up"><IcArrowUp size={10} />+{pct.toFixed(2)}%</span>
+                      <span className="delta-pill neutral"><IcArrowUp size={10} />+{pct.toFixed(2)}%</span>
                     </td>
                     <td style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>{a.notes ?? '—'}</td>
                   </tr>

@@ -3,7 +3,7 @@ import { AdminTopbar } from '../layouts/AdminTopbar'
 import { IcCash, IcDownload } from '@/shared/components/ui/Icons'
 import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
-import { useAllTransactions } from '@/features/contracts/hooks/useContracts'
+import { useAllTransactions, useContracts } from '@/features/contracts/hooks/useContracts'
 import { contractService } from '@/features/contracts/services/contractService'
 import type { TransactionType } from '@/features/contracts/types/contract.types'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
@@ -28,15 +28,23 @@ type Filter = 'all' | TransactionType
 
 export default function PagosPage() {
   const { data: transactions, isLoading, isError, refetch } = useAllTransactions()
+  const { data: contracts } = useContracts()
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
+
+  // Map contractId -> a human label (tenant + address) so the table and search show something
+  // recognizable instead of a raw UUID the operator can't identify (audit B13).
+  const contractLabel = new Map(
+    (contracts ?? []).map((c) => [c.id, `${c.appTenantFullName} · ${c.propertyAddress}`]),
+  )
 
   const filtered = (transactions ?? []).filter((t) => {
     if (filter !== 'all' && t.type !== filter) return false
     if (search) {
       const q = search.toLowerCase()
       return (
+        (contractLabel.get(t.contractId) ?? '').toLowerCase().includes(q) ||
         t.contractId.toLowerCase().includes(q) ||
         (t.notes ?? '').toLowerCase().includes(q)
       )
@@ -98,7 +106,7 @@ export default function PagosPage() {
           <input
             className="input input--sm"
             style={{ marginLeft: 'auto', width: 220 }}
-            placeholder="Buscar por notas…"
+            placeholder="Buscar por inquilino, dirección o notas…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0) }}
           />
@@ -139,8 +147,8 @@ export default function PagosPage() {
                     <td>{formatPeriod(t.period)}</td>
                     <td className="num"><b>{formatARS(t.amount)}</b></td>
                     <td>{t.currency}</td>
-                    <td className="muted" style={{ fontSize: 'var(--fs-xs)', fontFamily: 'monospace' }}>
-                      {t.contractId.slice(0, 8)}…
+                    <td className="muted" style={{ fontSize: 'var(--fs-xs)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {contractLabel.get(t.contractId) ?? `${t.contractId.slice(0, 8)}…`}
                     </td>
                     <td className="muted" style={{ fontSize: 'var(--fs-xs)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {t.notes ?? '—'}

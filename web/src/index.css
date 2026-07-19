@@ -345,6 +345,9 @@ summary:focus-visible {
 .delta-pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border-radius: var(--r-pill); font-size: var(--fs-xs); font-weight: var(--fw-m); }
 .delta-pill.up { background: var(--ok-50); color: var(--ok); }
 .delta-pill.down { background: var(--danger-50); color: var(--danger); }
+/* Variacion de ajuste de alquiler: color neutro, no verde/rojo (audit B12): un aumento de alquiler
+   no es "bueno"; el verde/rojo queda reservado para pagado/adeudado. */
+.delta-pill.neutral { background: var(--surface-3); color: var(--ink-soft); }
 
 /* Empty hairline divider */
 .hr { height: 1px; background: var(--hairline); margin: 12px 0; }

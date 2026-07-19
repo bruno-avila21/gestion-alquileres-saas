@@ -3,7 +3,7 @@ import { AdminTopbar } from '../layouts/AdminTopbar'
 import { IcCalendar, IcDownload } from '@/shared/components/ui/Icons'
 import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate } from '@/shared/lib/formatters'
-import { useAllRentHistory } from '@/features/contracts/hooks/useContracts'
+import { useAllRentHistory, useContracts } from '@/features/contracts/hooks/useContracts'
 import { contractService } from '@/features/contracts/services/contractService'
 import type { AdjustmentType } from '@/features/contracts/types/contract.types'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
@@ -18,15 +18,25 @@ const TYPE_CHIP: Record<AdjustmentType, string> = {
 
 export default function AjustesPage() {
   const { data: history, isLoading, isError, refetch } = useAllRentHistory()
+  const { data: contracts } = useContracts()
   const [typeFilter, setTypeFilter] = useState<AdjustmentType | 'all'>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
+
+  // contractId -> tenant + address, so the table/search aren't keyed off an unreadable UUID (audit B13).
+  const contractLabel = new Map(
+    (contracts ?? []).map((c) => [c.id, `${c.appTenantFullName} · ${c.propertyAddress}`]),
+  )
 
   const filtered = (history ?? []).filter((r) => {
     if (typeFilter !== 'all' && r.adjustmentType !== typeFilter) return false
     if (search) {
       const q = search.toLowerCase()
-      return r.contractId.toLowerCase().includes(q) || (r.notes ?? '').toLowerCase().includes(q)
+      return (
+        (contractLabel.get(r.contractId) ?? '').toLowerCase().includes(q) ||
+        r.contractId.toLowerCase().includes(q) ||
+        (r.notes ?? '').toLowerCase().includes(q)
+      )
     }
     return true
   })
@@ -72,7 +82,7 @@ export default function AjustesPage() {
           <input
             className="input input--sm"
             style={{ marginLeft: 'auto', width: 220 }}
-            placeholder="Buscar por notas…"
+            placeholder="Buscar por inquilino, dirección o notas…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0) }}
           />
@@ -117,8 +127,8 @@ export default function AjustesPage() {
                       ×{r.adjustmentFactor.toFixed(4)}
                     </td>
                     <td>{formatDate(r.effectiveDate)}</td>
-                    <td className="muted" style={{ fontSize: 'var(--fs-xs)', fontFamily: 'monospace' }}>
-                      {r.contractId.slice(0, 8)}…
+                    <td className="muted" style={{ fontSize: 'var(--fs-xs)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {contractLabel.get(r.contractId) ?? `${r.contractId.slice(0, 8)}…`}
                     </td>
                     <td className="muted" style={{ fontSize: 'var(--fs-xs)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {r.notes ?? '—'}
