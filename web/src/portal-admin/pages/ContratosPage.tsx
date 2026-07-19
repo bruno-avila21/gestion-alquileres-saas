@@ -5,15 +5,13 @@ import { useContracts, useCreateContract, useTerminateContract } from '@/feature
 import { useProperties } from '@/features/properties/hooks/useProperties'
 import { useAppTenants } from '@/features/apptenants/hooks/useAppTenants'
 import type { AdjustmentFrequency, AdjustmentType, ContractCurrency, ContractDto, ContractStatus, CreateContractRequest } from '@/features/contracts/types/contract.types'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
-import { Label } from '@/shared/components/ui/label'
 import {
   IcPlus, IcSearch, IcChevDown, IcDownload, IcChev, IcDoc,
 } from '@/shared/components/ui/Icons'
 import { formatARS, formatDateShort } from '@/shared/lib/formatters'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { downloadCsv } from '@/shared/lib/exportCsv'
 
 const PAGE_SIZE = 20
@@ -147,9 +145,9 @@ export default function ContratosPage() {
       <AdminTopbar
         crumbs={['Contratos']}
         right={
-          <Button size="sm" onClick={openCreate}>
+          <button className="btn btn--sm btn--primary" onClick={openCreate}>
             <IcPlus size={12} /> Nuevo contrato
-          </Button>
+          </button>
         }
       />
       <ConfirmDialog
@@ -179,15 +177,15 @@ export default function ContratosPage() {
 
         {/* Form */}
         {showForm && (
-          <div className="card p-4 space-y-4 max-w-2xl">
-            <h2 className="font-semibold">Nuevo contrato</h2>
-            {formErr && <p className="text-sm text-destructive">{formErr}</p>}
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+          <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 720 }}>
+            <h2 style={{ fontWeight: 600, margin: 0 }}>Nuevo contrato</h2>
+            {formErr && <div role="alert" style={{ fontSize: 'var(--fs-sm)', color: 'var(--danger)' }}>{formErr}</div>}
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className="grid-2">
                 <div>
-                  <Label>Propiedad *</Label>
+                  <label className="label">Propiedad *</label>
                   <select
-                    className="input w-full"
+                    className="select"
                     value={form.propertyId}
                     onChange={e => setForm(f => ({ ...f, propertyId: e.target.value }))}
                     required
@@ -199,9 +197,9 @@ export default function ContratosPage() {
                   </select>
                 </div>
                 <div>
-                  <Label>Inquilino *</Label>
+                  <label className="label">Inquilino *</label>
                   <select
-                    className="input w-full"
+                    className="select"
                     value={form.appTenantId}
                     onChange={e => setForm(f => ({ ...f, appTenantId: e.target.value }))}
                     required
@@ -213,10 +211,10 @@ export default function ContratosPage() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid-2">
                 <div>
-                  <Label>Inicio *</Label>
-                  <Input
+                  <label className="label">Inicio *</label>
+                  <input className="input"
                     type="date"
                     value={form.startDate}
                     onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
@@ -224,8 +222,8 @@ export default function ContratosPage() {
                   />
                 </div>
                 <div>
-                  <Label>Fin *</Label>
-                  <Input
+                  <label className="label">Fin *</label>
+                  <input className="input"
                     type="date"
                     value={form.endDate}
                     onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
@@ -233,10 +231,10 @@ export default function ContratosPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid-3">
                 <div>
-                  <Label>Alquiler mensual *</Label>
-                  <Input
+                  <label className="label">Alquiler mensual *</label>
+                  <input className="input"
                     type="number"
                     min="1"
                     step="0.01"
@@ -246,9 +244,9 @@ export default function ContratosPage() {
                   />
                 </div>
                 <div>
-                  <Label>Moneda *</Label>
+                  <label className="label">Moneda *</label>
                   <select
-                    className="input w-full"
+                    className="select"
                     value={form.currency}
                     onChange={e => setForm(f => ({ ...f, currency: e.target.value as ContractCurrency }))}
                   >
@@ -257,8 +255,8 @@ export default function ContratosPage() {
                   </select>
                 </div>
                 <div>
-                  <Label>Depósito</Label>
-                  <Input
+                  <label className="label">Depósito</label>
+                  <input className="input"
                     type="number"
                     min="0"
                     step="0.01"
@@ -267,11 +265,11 @@ export default function ContratosPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid-3">
                 <div>
-                  <Label>Índice ajuste *</Label>
+                  <label className="label">Índice ajuste *</label>
                   <select
-                    className="input w-full"
+                    className="select"
                     value={form.adjustmentType}
                     onChange={e => setForm(f => ({ ...f, adjustmentType: e.target.value as AdjustmentType }))}
                   >
@@ -281,9 +279,9 @@ export default function ContratosPage() {
                   </select>
                 </div>
                 <div>
-                  <Label>Frecuencia *</Label>
+                  <label className="label">Frecuencia *</label>
                   <select
-                    className="input w-full"
+                    className="select"
                     value={form.adjustmentFrequency}
                     onChange={e => setForm(f => ({ ...f, adjustmentFrequency: e.target.value as AdjustmentFrequency }))}
                   >
@@ -293,8 +291,8 @@ export default function ContratosPage() {
                   </select>
                 </div>
                 <div>
-                  <Label>Día de cobro *</Label>
-                  <Input
+                  <label className="label">Día de cobro *</label>
+                  <input className="input"
                     type="number"
                     min="1"
                     max="28"
@@ -305,12 +303,12 @@ export default function ContratosPage() {
                 </div>
               </div>
               <div>
-                <Label>Notas</Label>
-                <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+                <label className="label">Notas</label>
+                <input className="input" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
               </div>
-              <div className="flex gap-2 justify-end">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
-                <Button type="submit" disabled={create.isPending}>Crear contrato</Button>
+              <div className="row" style={{ gap: 8, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn--sm" onClick={() => setShowForm(false)}>Cancelar</button>
+                <button type="submit" className="btn btn--sm btn--primary" disabled={create.isPending}>Crear contrato</button>
               </div>
             </form>
           </div>
@@ -357,15 +355,16 @@ export default function ContratosPage() {
           ))}
         </div>
 
-        {isLoading && <p className="text-sm text-muted-foreground">Cargando...</p>}
-        {error && <p className="text-sm text-destructive">Error al cargar contratos.</p>}
+        {error && <QueryError message="Error al cargar contratos." />}
 
         {/* Tabla */}
         <div className="card" style={{ overflow: 'hidden' }}>
-          {filtered.length === 0 && !isLoading ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <IcDoc size={40} style={{ margin: '0 auto 8px' }} />
-              <p>No hay contratos.</p>
+          {isLoading ? (
+            <div style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
+              <IcDoc size={32} style={{ margin: '0 auto 8px', display: 'block' }} />
+              No hay contratos.
             </div>
           ) : (
             <table className="tbl">

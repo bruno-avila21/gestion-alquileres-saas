@@ -1,9 +1,6 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
-import { Label } from '@/shared/components/ui/label'
 import type { LoginRequest } from '../types/auth.types'
 
 const schema = z.object({
@@ -27,33 +24,33 @@ export function LoginForm({ onSubmit, isPending, errorMessage, submitLabel }: Pr
     defaultValues: { organizationSlug: '', email: '', password: '' },
   })
 
+  const errStyle = { fontSize: 'var(--fs-xs)', color: 'var(--danger)' } as const
+
   return (
     <form
       onSubmit={handleSubmit((values) => onSubmit(values))}
-      className="flex flex-col gap-4"
+      style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
       aria-label="login-form"
     >
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="organizationSlug">Organización</Label>
-        <Input id="organizationSlug" placeholder="acme" {...register('organizationSlug')} />
-        {errors.organizationSlug && (
-          <span role="alert" className="text-sm text-red-600">{errors.organizationSlug.message}</span>
-        )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label className="label" htmlFor="organizationSlug">Organización</label>
+        <input id="organizationSlug" className="input" placeholder="acme" {...register('organizationSlug')} />
+        {errors.organizationSlug && <span role="alert" style={errStyle}>{errors.organizationSlug.message}</span>}
       </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" autoComplete="email" {...register('email')} />
-        {errors.email && <span role="alert" className="text-sm text-red-600">{errors.email.message}</span>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label className="label" htmlFor="email">Email</label>
+        <input id="email" className="input" type="email" autoComplete="email" {...register('email')} />
+        {errors.email && <span role="alert" style={errStyle}>{errors.email.message}</span>}
       </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password">Contraseña</Label>
-        <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
-        {errors.password && <span role="alert" className="text-sm text-red-600">{errors.password.message}</span>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label className="label" htmlFor="password">Contraseña</label>
+        <input id="password" className="input" type="password" autoComplete="current-password" {...register('password')} />
+        {errors.password && <span role="alert" style={errStyle}>{errors.password.message}</span>}
       </div>
-      {errorMessage && <div role="alert" className="text-sm text-red-600">{errorMessage}</div>}
-      <Button type="submit" disabled={isPending}>
+      {errorMessage && <div role="alert" style={{ fontSize: 'var(--fs-sm)', color: 'var(--danger)' }}>{errorMessage}</div>}
+      <button type="submit" className="btn btn--primary" disabled={isPending} style={{ justifyContent: 'center' }}>
         {isPending ? 'Ingresando…' : submitLabel}
-      </Button>
+      </button>
     </form>
   )
 }
