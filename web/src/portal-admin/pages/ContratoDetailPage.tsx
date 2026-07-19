@@ -17,6 +17,7 @@ import {
 } from '@/features/contracts/hooks/useContracts'
 import { useContractDocuments, useUploadDocument, useDeleteDocument } from '@/features/documents/hooks/useDocuments'
 import { documentService } from '@/features/documents/services/documentService'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import type { ContractDto } from '@/features/contracts/types/contract.types'
 import type { DocumentDownloadUrlDto } from '@/features/documents/types/document.types'
 
@@ -383,6 +384,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [urlModal, setUrlModal] = useState<DocumentDownloadUrlDto | null>(null)
   const [loadingDocId, setLoadingDocId] = useState<string | null>(null)
+  const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<string | null>(null)
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -469,10 +471,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
                         style={{ color: 'var(--danger)' }}
                         title="Eliminar documento"
                         aria-label="Eliminar documento"
-                        onClick={() => {
-                          if (window.confirm('¿Eliminar este documento? Esta acción no se puede deshacer.'))
-                            deleteDoc.mutate(d.id)
-                        }}
+                        onClick={() => setConfirmDeleteDoc(d.id)}
                       >
                         ×
                       </button>
@@ -484,6 +483,16 @@ function DocumentsTab({ contractId }: { contractId: string }) {
           </table>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDeleteDoc}
+        title="Eliminar documento"
+        description="El documento se eliminará de forma permanente. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={() => { if (confirmDeleteDoc) deleteDoc.mutate(confirmDeleteDoc); setConfirmDeleteDoc(null) }}
+        onCancel={() => setConfirmDeleteDoc(null)}
+      />
 
       {urlModal && (
         <div

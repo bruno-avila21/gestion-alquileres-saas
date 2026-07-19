@@ -13,6 +13,7 @@ import {
 } from '@/shared/components/ui/Icons'
 import { formatARS, formatDateShort } from '@/shared/lib/formatters'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 
 const PAGE_SIZE = 20
 
@@ -60,6 +61,8 @@ export default function ContratosPage() {
   const [activeStatus, setActiveStatus] = useState<ContractStatus | 'all'>('all')
   const [formErr, setFormErr] = useState('')
   const [page, setPage] = useState(0)
+  const [confirmTerminate, setConfirmTerminate] = useState<ContractDto | null>(null)
+  const [actionErr, setActionErr] = useState<string | null>(null)
 
   const filtered = (contracts ?? []).filter(c => {
     const matchStatus = activeStatus === 'all' || c.status === activeStatus
@@ -111,12 +114,19 @@ export default function ContratosPage() {
     }
   }
 
-  async function handleTerminate(c: ContractDto) {
-    if (!confirm(`¿Rescindir el contrato de ${c.appTenantFullName}?`)) return
+  function handleTerminate(c: ContractDto) {
+    setActionErr(null)
+    setConfirmTerminate(c)
+  }
+
+  async function doTerminate() {
+    const c = confirmTerminate
+    setConfirmTerminate(null)
+    if (!c) return
     try {
       await terminate.mutateAsync({ id: c.id, req: { notes: 'Rescisión manual' } })
     } catch {
-      alert('No se pudo rescindir. El contrato puede ya estar rescindido.')
+      setActionErr('No se pudo rescindir. El contrato puede ya estar rescindido.')
     }
   }
 
@@ -130,7 +140,21 @@ export default function ContratosPage() {
           </Button>
         }
       />
+      <ConfirmDialog
+        open={!!confirmTerminate}
+        title="Rescindir contrato"
+        description={confirmTerminate ? `El contrato de ${confirmTerminate.appTenantFullName} quedará rescindido. Esta acción no se puede deshacer.` : ''}
+        confirmLabel="Rescindir"
+        destructive
+        onConfirm={doTerminate}
+        onCancel={() => setConfirmTerminate(null)}
+      />
       <div className="page">
+        {actionErr && (
+          <div role="alert" className="card" style={{ padding: '10px 14px', color: 'var(--danger)', fontSize: 'var(--fs-sm)' }}>
+            {actionErr}
+          </div>
+        )}
         <div className="page-h">
           <div>
             <h1>Contratos</h1>

@@ -7,6 +7,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { IcBuilding, IcPlus, IcEdit, IcArchive } from '@/shared/components/ui/Icons'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 
 const PAGE_SIZE = 20
 
@@ -48,6 +49,7 @@ export default function PropiedadesPage() {
   const [search, setSearch] = useState('')
   const [err, setErr] = useState('')
   const [page, setPage] = useState(0)
+  const [confirmArchive, setConfirmArchive] = useState<PropertyDto | null>(null)
 
   const filtered = (properties ?? []).filter(p =>
     p.address.toLowerCase().includes(search.toLowerCase()) ||
@@ -97,9 +99,10 @@ export default function PropiedadesPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('¿Archivar esta propiedad?')) return
-    await remove.mutateAsync(id)
+  async function doArchive() {
+    const p = confirmArchive
+    setConfirmArchive(null)
+    if (p) await remove.mutateAsync(p.id)
   }
 
   return (
@@ -107,6 +110,15 @@ export default function PropiedadesPage() {
       <AdminTopbar
         crumbs={['Propiedades']}
         right={<Button size="sm" onClick={openCreate}><IcPlus size={12} /> Nueva propiedad</Button>}
+      />
+      <ConfirmDialog
+        open={!!confirmArchive}
+        title="Archivar propiedad"
+        description={confirmArchive ? `"${confirmArchive.address}" quedará archivada y no aparecerá en los listados activos.` : ''}
+        confirmLabel="Archivar"
+        destructive
+        onConfirm={doArchive}
+        onCancel={() => setConfirmArchive(null)}
       />
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -208,7 +220,7 @@ export default function PropiedadesPage() {
               <IcEdit size={14} />
             </Button>
             {p.isActive && (
-              <Button size="sm" variant="ghost" onClick={() => handleDelete(p.id)} aria-label="Archivar propiedad" title="Archivar">
+              <Button size="sm" variant="ghost" onClick={() => setConfirmArchive(p)} aria-label="Archivar propiedad" title="Archivar">
                 <IcArchive size={14} />
               </Button>
             )}

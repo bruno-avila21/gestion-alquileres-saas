@@ -7,6 +7,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { IcUsers, IcPlus, IcEdit, IcMail, IcArchive } from '@/shared/components/ui/Icons'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 
 const PAGE_SIZE = 20
 
@@ -30,6 +31,8 @@ export default function InquilinosPage() {
   const [err, setErr] = useState('')
   const [inviteResult, setInviteResult] = useState<{ name: string; pass: string } | null>(null)
   const [page, setPage] = useState(0)
+  const [confirmArchive, setConfirmArchive] = useState<AppTenantDto | null>(null)
+  const [actionErr, setActionErr] = useState<string | null>(null)
 
   const filtered = (tenants ?? []).filter(t => {
     const q = search.toLowerCase()
@@ -83,21 +86,23 @@ export default function InquilinosPage() {
   }
 
   async function handleInvite(t: AppTenantDto) {
+    setActionErr(null)
     if (!t.email) {
-      alert('Este inquilino no tiene email. Agregá uno primero para invitarlo.')
+      setActionErr('Este inquilino no tiene email. Agregá uno primero para invitarlo.')
       return
     }
     try {
       const result = await invite.mutateAsync(t.id)
       setInviteResult({ name: `${result.tenant.firstName} ${result.tenant.lastName}`, pass: result.tempPassword })
     } catch {
-      alert('No se pudo invitar. El inquilino puede ya tener acceso al portal.')
+      setActionErr('No se pudo invitar. El inquilino puede ya tener acceso al portal.')
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('¿Archivar este inquilino?')) return
-    await remove.mutateAsync(id)
+  async function doArchive() {
+    const t = confirmArchive
+    setConfirmArchive(null)
+    if (t) await remove.mutateAsync(t.id)
   }
 
   return (
@@ -106,10 +111,25 @@ export default function InquilinosPage() {
         crumbs={['Inquilinos']}
         right={<Button size="sm" onClick={openCreate}><IcPlus size={12} /> Nuevo inquilino</Button>}
       />
+      <ConfirmDialog
+        open={!!confirmArchive}
+        title="Archivar inquilino"
+        description={confirmArchive ? `${confirmArchive.firstName} ${confirmArchive.lastName} quedará archivado y no aparecerá en los listados activos.` : ''}
+        confirmLabel="Archivar"
+        destructive
+        onConfirm={doArchive}
+        onCancel={() => setConfirmArchive(null)}
+      />
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Inquilinos</h1>
       </div>
+
+      {actionErr && (
+        <div role="alert" className="card p-4" style={{ color: 'var(--danger)', fontSize: 'var(--fs-sm)' }}>
+          {actionErr}
+        </div>
+      )}
 
       <Input
         placeholder="Buscar por nombre o DNI..."
@@ -224,7 +244,7 @@ export default function InquilinosPage() {
               <IcEdit size={14} />
             </Button>
             {t.isActive && (
-              <Button size="sm" variant="ghost" onClick={() => handleDelete(t.id)} aria-label="Archivar inquilino" title="Archivar">
+              <Button size="sm" variant="ghost" onClick={() => setConfirmArchive(t)} aria-label="Archivar inquilino" title="Archivar">
                 <IcArchive size={14} />
               </Button>
             )}
