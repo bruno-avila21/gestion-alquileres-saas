@@ -52,7 +52,62 @@ Vite inlinea las variables al compilar. La URL de la API no se puede cambiar des
 
 ---
 
-## 3. Opciones, con su costo real
+## 2bis. Correrlo gratis (entorno de pruebas)
+
+Para probar antes de vender, **local le gana a la nube gratuita** — y no solo por precio.
+
+### El detalle que lo decide
+
+`Program.cs:233` → `IsReadOnlyFunc = _ => !app.Environment.IsDevelopment()`
+
+**Fuera de Development el panel de Hangfire es de solo lectura: no se puede disparar un job a mano.** En un despliegue gratuito en modo Producción, probar el ajuste mensual de alquileres implicaría esperar al día 1 a las 09:00 o cambiar el cron y volver a desplegar. Corriendo local en Development, el panel es escribible y disparás cualquier job cuando querés.
+
+### Opción gratuita A — todo local con docker compose ✅ implementado
+
+```bash
+cp .env.example .env          # completar JWT_SECRET y DOCUMENT_TOKEN_SECRET
+docker compose up -d --build
+docker compose run --rm migrate
+# → http://localhost:8080
+```
+
+Levanta Postgres, MinIO (con el bucket `documents` creado), la API y el portal web servido por Caddy. Costo cero, sin límite de horas, sin arranques en frío.
+
+Dos decisiones del armado que vale conocer:
+
+- **Mismo origen.** Caddy sirve el SPA y hace de proxy a `/api`, `/health`, `/hangfire` y `/swagger`. El navegador nunca manda `Origin`, así que **CORS no llega a intervenir** y la cookie HttpOnly de sesión viaja sin configuración extra. `VITE_API_URL` queda en `/api/v1`, relativo.
+- **S3 de verdad, no disco local.** El compose apunta `Storage:Provider=S3` a MinIO, así que desarrollo ejercita el mismo camino de código que producción. Un bug de storage aparece acá y no en el despliegue.
+
+Las migraciones van en un contenedor aparte (`profiles: ["tools"]`), porque la API no migra al arrancar. `AppDbContextFactory` trae una cadena de conexión de marcador, así que el stage de migraciones pasa `--connection` explícito.
+
+### Opción gratuita B — local + túnel, para mostrarlo
+
+Cloudflare Tunnel es gratis y expone tu `localhost:8080` en una URL pública temporal. Sirve para una demo puntual sin desplegar nada.
+
+### Opción gratuita C — Oracle Cloud Always Free ✅ implementado
+
+La única nube genuinamente gratuita **sin hibernación**: 4 núcleos ARM y 24 GB de RAM, permanentes. Se corre el mismo compose con el override de producción:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm migrate
+```
+
+El override pasa a Producción, hace que Caddy escuche en 80/443 y saque el certificado TLS solo contra `SITE_ADDRESS`, cierra el puerto directo de la API y ata Postgres y MinIO a loopback.
+
+El `Dockerfile` de la API usa las imágenes multi-arquitectura de Microsoft, así que corre en ARM Ampere sin cambios. **Contra real:** conseguir capacidad ARM está difícil en varias regiones y el alta de cuenta tiene fricción.
+
+> ⚠️ En modo Producción el panel de Hangfire vuelve a ser de solo lectura. Si el objetivo del VPS es seguir probando y no mostrar, dejalo en Development — pero entonces Swagger queda expuesto y el panel sin autenticación, así que no lo dejes accesible al público.
+
+### La que descartaría
+
+Coser tiers gratuitos administrados (Neon o Supabase + Render + Pages) suena bien y es la peor para probar: la API de Render duerme a los 15 minutos y un .NET tarda cerca de un minuto en despertar, las bases gratuitas se pausan por inactividad, y quedás en modo Producción con el panel bloqueado.
+
+**Salvedad:** las condiciones de los tiers gratuitos cambian seguido y esta información tiene fecha de corte. Verificá los límites vigentes antes de comprometerte.
+
+---
+
+## 3. Opciones pagas, con su costo real
 
 Ordenadas por tiempo hasta la primera URL.
 
