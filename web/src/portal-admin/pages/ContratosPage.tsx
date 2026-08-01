@@ -25,6 +25,7 @@ type FormState = {
   currency: ContractCurrency
   adjustmentType: AdjustmentType
   adjustmentFrequency: AdjustmentFrequency
+  adjustmentPercent: string
   dayOfMonth: string
   depositAmount: string
   notes: string
@@ -34,7 +35,7 @@ const EMPTY_FORM: FormState = {
   propertyId: '', appTenantId: '',
   startDate: '', endDate: '',
   monthlyRent: '', currency: 'ARS',
-  adjustmentType: 'ICL', adjustmentFrequency: 'Quarterly',
+  adjustmentType: 'ICL', adjustmentFrequency: 'Quarterly', adjustmentPercent: '',
   dayOfMonth: '1', depositAmount: '', notes: '',
 }
 
@@ -44,7 +45,20 @@ const STATUS_LABELS: Record<ContractStatus, { cls: string; lbl: string }> = {
   Terminated: { cls: 'chip--danger', lbl: 'Rescindido' },
 }
 
-const ADJ_LABELS: Record<AdjustmentType, string> = { ICL: 'ICL', IPC: 'IPC', Manual: 'Manual' }
+const ADJ_LABELS: Record<AdjustmentType, string> = {
+  ICL: 'ICL',
+  IPC: 'IPC',
+  Manual: 'Manual',
+  FixedPercent: '% fijo',
+}
+
+const FREQ_OPTIONS: { value: AdjustmentFrequency; label: string }[] = [
+  { value: 'Monthly', label: 'Mensual' },
+  { value: 'Quarterly', label: 'Trimestral' },
+  { value: 'FourMonthly', label: 'Cuatrimestral' },
+  { value: 'SemiAnnual', label: 'Semestral' },
+  { value: 'Annual', label: 'Anual' },
+]
 
 export default function ContratosPage() {
   const navigate = useNavigate()
@@ -101,6 +115,11 @@ export default function ContratosPage() {
       currency: form.currency,
       adjustmentType: form.adjustmentType,
       adjustmentFrequency: form.adjustmentFrequency,
+      // Sólo viaja en contratos de % fijo: el backend rechaza un porcentaje en los demás tipos.
+      adjustmentPercent:
+        form.adjustmentType === 'FixedPercent' && form.adjustmentPercent
+          ? parseFloat(form.adjustmentPercent)
+          : null,
       dayOfMonth: parseInt(form.dayOfMonth, 10),
       depositAmount: form.depositAmount ? parseFloat(form.depositAmount) : null,
       notes: form.notes.trim() || null,
@@ -267,29 +286,59 @@ export default function ContratosPage() {
               </div>
               <div className="grid-3">
                 <div>
-                  <label className="label">Índice ajuste *</label>
+                  <label className="label" htmlFor="adjustmentType">Tipo de ajuste *</label>
                   <select
+                    id="adjustmentType"
                     className="select"
                     value={form.adjustmentType}
-                    onChange={e => setForm(f => ({ ...f, adjustmentType: e.target.value as AdjustmentType }))}
+                    onChange={e => setForm(f => ({
+                      ...f,
+                      adjustmentType: e.target.value as AdjustmentType,
+                      // El backend exige que el porcentaje vaya vacío si el tipo no es % fijo.
+                      adjustmentPercent: e.target.value === 'FixedPercent' ? f.adjustmentPercent : '',
+                    }))}
                   >
-                    <option value="ICL">ICL</option>
-                    <option value="IPC">IPC</option>
+                    <option value="ICL">ICL — Contratos de Locación (BCRA)</option>
+                    <option value="IPC">IPC — Precios al Consumidor (INDEC)</option>
+                    <option value="FixedPercent">% fijo pactado</option>
                     <option value="Manual">Manual</option>
                   </select>
                 </div>
                 <div>
-                  <label className="label">Frecuencia *</label>
+                  <label className="label" htmlFor="adjustmentFrequency">Frecuencia *</label>
                   <select
+                    id="adjustmentFrequency"
                     className="select"
                     value={form.adjustmentFrequency}
                     onChange={e => setForm(f => ({ ...f, adjustmentFrequency: e.target.value as AdjustmentFrequency }))}
                   >
-                    <option value="Monthly">Mensual</option>
-                    <option value="Quarterly">Trimestral</option>
-                    <option value="Annual">Anual</option>
+                    {FREQ_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
+                {form.adjustmentType === 'FixedPercent' && (
+                  <div>
+                    <label className="label" htmlFor="adjustmentPercent">Porcentaje *</label>
+                    <input
+                      id="adjustmentPercent"
+                      className="input"
+                      type="number"
+                      inputMode="decimal"
+                      step="0.001"
+                      min="0"
+                      placeholder="8"
+                      value={form.adjustmentPercent}
+                      onChange={e => setForm(f => ({ ...f, adjustmentPercent: e.target.value }))}
+                      required
+                    />
+                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', marginTop: 4 }}>
+                      Se aplica en cada período. Ej: 8 para un 8% {(
+                        FREQ_OPTIONS.find(o => o.value === form.adjustmentFrequency)?.label ?? ''
+                      ).toLowerCase()}.
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="label">Día de cobro *</label>
                   <input className="input"

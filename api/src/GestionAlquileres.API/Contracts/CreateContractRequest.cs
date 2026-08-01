@@ -11,6 +11,8 @@ public record CreateContractRequest(
     Currency Currency,
     AdjustmentType AdjustmentType,
     AdjustmentFrequency AdjustmentFrequency,
+    /// <summary>Requerido sólo cuando AdjustmentType es FixedPercent (ej. 8 para un 8%).</summary>
+    decimal? AdjustmentPercent,
     int DayOfMonth,
     decimal? DepositAmount,
     string? Notes

@@ -75,13 +75,7 @@ public class MonthlyRentAdjustmentJob
         var historyRepo = scope.ServiceProvider.GetRequiredService<IRentHistoryRepository>();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
-        int frequencyMonths = contract.Frequency switch
-        {
-            AdjustmentFrequency.Monthly => 1,
-            AdjustmentFrequency.Quarterly => 3,
-            AdjustmentFrequency.Annual => 12,
-            _ => 3,
-        };
+        int frequencyMonths = contract.Frequency.ToMonths();
 
         var lastAdj = await historyRepo.GetLastByContractRawAsync(contract.Id, ct);
         var baseDate = lastAdj?.EffectiveDate ?? contract.StartDate;

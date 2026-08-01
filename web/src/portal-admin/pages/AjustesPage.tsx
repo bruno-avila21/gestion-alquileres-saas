@@ -11,10 +11,21 @@ import { useDebounce } from '@/shared/hooks/useDebounce'
 
 const PAGE_SIZE = 20
 
+// Usa los tokens dedicados --icl y --ipc, igual que la pantalla de Contratos. Antes ICL salía
+// verde (color reservado para "pagado") e IPC gris neutro, así que el código de color que el
+// usuario aprende en una pantalla no se sostenía en la otra.
 const TYPE_CHIP: Record<AdjustmentType, string> = {
-  ICL: 'chip--ok',
-  IPC: '',
+  ICL: 'chip--icl',
+  IPC: 'chip--ipc',
+  FixedPercent: 'chip--info',
   Manual: 'chip--warn',
+}
+
+const TYPE_LABELS: Record<AdjustmentType, string> = {
+  ICL: 'ICL',
+  IPC: 'IPC',
+  FixedPercent: '% fijo',
+  Manual: 'Manual',
 }
 
 export default function AjustesPage() {
@@ -67,13 +78,13 @@ export default function AjustesPage() {
         </div>
 
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-          {(['all', 'ICL', 'IPC', 'Manual'] as const).map((t) => (
+          {(['all', 'ICL', 'IPC', 'FixedPercent', 'Manual'] as const).map((t) => (
             <button
               key={t}
               className={`btn btn--sm${typeFilter === t ? ' btn--primary' : ''}`}
               onClick={() => { setTypeFilter(t); setPage(0) }}
             >
-              {t === 'all' ? 'Todos' : t}
+              {t === 'all' ? 'Todos' : TYPE_LABELS[t]}
             </button>
           ))}
           <input

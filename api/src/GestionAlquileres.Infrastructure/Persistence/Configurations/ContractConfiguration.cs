@@ -16,6 +16,10 @@ public class ContractConfiguration : IEntityTypeConfiguration<Contract>
         builder.Property(c => c.AppTenantId).IsRequired();
         builder.Property(c => c.MonthlyRent).HasPrecision(14, 2).IsRequired();
         builder.Property(c => c.DepositAmount).HasPrecision(14, 2);
+
+        // Porcentaje de ajuste fijo. (6,3) admite hasta 999,999% — holgado para cualquier escalón
+        // pactado, sin dejar de acotar una carga errónea a nivel base.
+        builder.Property(c => c.AdjustmentPercent).HasPrecision(6, 3);
         builder.Property(c => c.DayOfMonth).IsRequired();
         builder.Property(c => c.Notes).HasMaxLength(2000);
         builder.Property(c => c.CreatedAt).HasDefaultValueSql("now()");

@@ -21,6 +21,19 @@ public class Phase7ApiFactory : WebApplicationFactory<Program>, IDisposable
     public string DbName { get; } = "Phase7TestsDb_" + Guid.NewGuid();
     private readonly string _tempStoragePath = Path.Combine(Path.GetTempPath(), "phase7_" + Guid.NewGuid().ToString("N"));
 
+    static Phase7ApiFactory()
+    {
+        // La suite corre en Development, así que el appsettings.Development.json de quien esté
+        // desarrollando SE CARGA — y si apunta el storage a MinIO (que es lo recomendado para el
+        // loop local), los tests de documentos intentan salir a la red y fallan con 500.
+        //
+        // Va por variable de entorno y no por ConfigureAppConfiguration porque, con hosting mínimo,
+        // los archivos de configuración le ganan al callback del factory. Las variables de entorno
+        // se agregan después en la cadena, así que estas sí mandan.
+        Environment.SetEnvironmentVariable("Storage__Provider", "Local");
+        Environment.SetEnvironmentVariable("Storage__ServiceUrl", "");
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -35,6 +48,10 @@ public class Phase7ApiFactory : WebApplicationFactory<Program>, IDisposable
                 ["ConnectionStrings:DefaultConnection"]  = "Host=localhost;Database=x",
                 ["ConnectionStrings:HangfireConnection"] = "Host=localhost;Database=x",
                 ["DocumentToken:Secret"] = "THIS_IS_A_TEST_DOCUMENT_TOKEN_SECRET_32CHARS",
+                // Los tests corren en Development, así que appsettings.Development.json se carga y
+                // podría apuntar el storage a MinIO. Se fija Local explícitamente: la suite tiene
+                // que ser hermética y no depender de que haya un contenedor levantado.
+                ["Storage:Provider"] = "Local",
                 ["Storage:BasePath"] = _tempStoragePath,
             });
         });

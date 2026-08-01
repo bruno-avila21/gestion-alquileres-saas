@@ -14,5 +14,11 @@ public class UpdateContractCommandValidator : AbstractValidator<UpdateContractCo
         RuleFor(x => x.MonthlyRent).GreaterThan(0).WithMessage("El alquiler mensual debe ser mayor a 0.");
         RuleFor(x => x.DayOfMonth).InclusiveBetween(1, 28)
             .WithMessage("El día de cobro debe estar entre 1 y 28.");
+
+        RuleFor(x => x.AdjustmentFrequency).IsInEnum().WithMessage("Frecuencia de ajuste no soportada.");
+        RuleFor(x => x.Currency).IsInEnum().WithMessage("Moneda no soportada.");
+        RuleFor(x => x.Notes).MaximumLength(2000);
+
+        ContractRules.Apply(this, x => x.AdjustmentType, x => x.AdjustmentPercent);
     }
 }

@@ -85,6 +85,19 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
             newRent = request.ManualNewRent.Value;
             factor = Math.Round(newRent / previousRent, 6);
         }
+        else if (contract.AdjustmentType == AdjustmentType.FixedPercent)
+        {
+            // Porcentaje pactado: no depende de ningún índice ni de un servicio externo.
+            if (contract.AdjustmentPercent is not { } percent || percent <= 0)
+                throw new BusinessException(
+                    "El contrato es de porcentaje fijo pero no tiene un porcentaje de ajuste configurado.");
+
+            // Igual que en la rama indexada: NO se pre-redondea el factor para después multiplicar.
+            // Redondear el factor primero sesga el importe, y el error se acumula porque cada ajuste
+            // toma como base el alquiler ya redondeado del anterior.
+            newRent = Math.Round(previousRent * (100m + percent) / 100m, 2);
+            factor = Math.Round((100m + percent) / 100m, 6);
+        }
         else
         {
             var indexType = contract.AdjustmentType == AdjustmentType.ICL ? IndexType.ICL : IndexType.IPC;
@@ -98,13 +111,7 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
             // calculator separates step from lookback (cross-repo follow-up — audit C-7).
             int lookbackMonths = indexType == IndexType.ICL
                 ? 12
-                : contract.AdjustmentFrequency switch
-                {
-                    AdjustmentFrequency.Monthly => 1,
-                    AdjustmentFrequency.Quarterly => 3,
-                    AdjustmentFrequency.Annual => 12,
-                    _ => 3,
-                };
+                : contract.AdjustmentFrequency.ToMonths();
 
             var periodT = new DateOnly(effectiveDate.Year, effectiveDate.Month, 1);
             var periodBase = periodT.AddMonths(-lookbackMonths);

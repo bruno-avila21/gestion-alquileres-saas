@@ -20,6 +20,8 @@ falla, está en `AUDITORIA-2026-07-31.md`.
 | ✅ | Nav del inquilino duplicada 4× · sin cerrar sesión | `TenantBottomNav.tsx` |
 | ✅ | Cookies sin `Secure` y rate limit por IP de proxy detrás de TLS | `Program.cs` — `UseForwardedHeaders` |
 | ✅ | Stack completo con docker compose, local y para VPS | `docker-compose*.yml` |
+| ✅ | Ajuste por % fijo · frecuencias cuatrimestral y semestral · `IsInEnum` | `AdjustmentType.cs`, `ContractRules.cs` |
+| ✅ | Mapeo frecuencia→meses duplicado en 3 lugares y ya divergente | `AdjustmentFrequencyExtensions.cs` |
 
 ---
 
@@ -27,11 +29,17 @@ falla, está en `AUDITORIA-2026-07-31.md`.
 
 Sale del análisis de mercado. Es lo que hoy hace perder un cliente en la demo.
 
-- [ ] **Motor de ajustes completo.** Hoy `AdjustmentType` sólo tiene `{ICL, IPC, Manual}` y
-      `AdjustmentFrequency` `{Monthly, Quarterly, Annual}`. Faltan **% fijo escalonado**,
-      **Casa Propia/ICP**, y frecuencias **cuatrimestral y semestral**. Post-DNU 70/2023 esos son
-      los contratos mayoritarios: **no se puede cargar el contrato típico de 2026**.
-      → `Domain/Enums/AdjustmentType.cs:3`, `AdjustmentFrequency.cs:3`, `Contract.cs:13-16`
+- [x] ~~**Motor de ajustes: % fijo y frecuencias nuevas.**~~ ✅ Se agregaron `FixedPercent`,
+      `FourMonthly` y `SemiAnnual`, con el porcentaje pactado en el contrato. Ya se puede cargar
+      "8% trimestral" y "IPC cuatrimestral", que son los contratos mayoritarios post-DNU.
+      El escalonado además se proyecta localmente, sin depender de indices-api.
+- [ ] **Motor de ajustes: lo que falta.**
+      - **Casa Propia / ICP** como índice — depende de que indices-api lo sirva.
+      - **Escalonado con porcentajes distintos por tramo** (10%, luego 8%, luego 7%): hoy el
+        porcentaje es único para todo el contrato.
+      - **Tope y piso de ajuste**, y **contratos en USD con cotización**.
+      - Mover los índices de enum compilado a **configuración de datos**, para que sumar uno nuevo
+        sea una fila y no un deploy (riesgo de reversión regulatoria).
 - [ ] **Punitorios e intereses automáticos.** 73% de los hogares inquilinos tiene deudas; es el
       dolor número uno del administrador y la competencia ya lo vende.
       → falta tipo en `TransactionType.cs:3`, tasa en `Contract`, job de devengamiento
@@ -76,9 +84,8 @@ acceso a nadie.** Se resuelven en cadena.
       → `ApplyRentAdjustmentCommandHandler.cs:125-126`
 - [ ] **La fecha efectiva por defecto usa UTC** en vez de hora argentina, y en el borde de fin de mes
       eso **selecciona el índice equivocado**. → `ApplyRentAdjustmentCommandHandler.cs:64`
-- [ ] **Enums de contrato sin `IsInEnum()`**: un `adjustmentType` inválido se persiste y después se
-      trata como IPC — contrato ajustado con el índice equivocado, y ese importe queda como base del
-      siguiente. → `CreateContractCommandValidator.cs:9-16`
+- [x] ~~**Enums de contrato sin `IsInEnum()`**~~ ✅ Validado en alta y edición, junto con el tope de
+      `Notes` que devolvía 500 en vez de 400. Las reglas quedaron compartidas en `ContractRules`.
 - [ ] **`UpdateContract` no revalida que la propiedad sea de la organización.** Los listados usan
       *inner join*, así que las transacciones de ese contrato **desaparecen de las pantallas sin
       error**. → `UpdateContractCommandHandler.cs:22-23`

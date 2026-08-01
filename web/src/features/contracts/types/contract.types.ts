@@ -1,5 +1,10 @@
-export type AdjustmentType = 'ICL' | 'IPC' | 'Manual'
-export type AdjustmentFrequency = 'Monthly' | 'Quarterly' | 'Annual'
+export type AdjustmentType = 'ICL' | 'IPC' | 'Manual' | 'FixedPercent'
+export type AdjustmentFrequency =
+  | 'Monthly'
+  | 'Quarterly'
+  | 'FourMonthly'
+  | 'SemiAnnual'
+  | 'Annual'
 export type ContractStatus = 'Active' | 'Expired' | 'Terminated'
 export type ContractCurrency = 'ARS' | 'USD'
 
@@ -17,6 +22,8 @@ export interface ContractDto {
   currency: ContractCurrency
   adjustmentType: AdjustmentType
   adjustmentFrequency: AdjustmentFrequency
+  /** Sólo para adjustmentType 'FixedPercent'. */
+  adjustmentPercent: number | null
   dayOfMonth: number
   depositAmount: number | null
   status: ContractStatus
@@ -34,6 +41,8 @@ export interface CreateContractRequest {
   currency: ContractCurrency
   adjustmentType: AdjustmentType
   adjustmentFrequency: AdjustmentFrequency
+  /** Requerido cuando adjustmentType es 'FixedPercent'; debe ir null en el resto. */
+  adjustmentPercent?: number | null
   dayOfMonth: number
   depositAmount?: number | null
   notes?: string | null

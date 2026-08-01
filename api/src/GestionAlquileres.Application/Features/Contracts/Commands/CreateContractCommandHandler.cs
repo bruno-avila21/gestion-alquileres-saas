@@ -44,6 +44,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             Currency = request.Currency,
             AdjustmentType = request.AdjustmentType,
             AdjustmentFrequency = request.AdjustmentFrequency,
+            AdjustmentPercent = request.AdjustmentPercent,
             DayOfMonth = request.DayOfMonth,
             DepositAmount = request.DepositAmount,
             Notes = request.Notes?.Trim(),
@@ -61,6 +62,6 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             c.PropertyId, c.Property?.Address ?? "", c.Property?.City ?? "",
             c.AppTenantId, $"{c.AppTenant?.FirstName} {c.AppTenant?.LastName}".Trim(),
             c.StartDate, c.EndDate, c.MonthlyRent, c.Currency,
-            c.AdjustmentType, c.AdjustmentFrequency, c.DayOfMonth,
+            c.AdjustmentType, c.AdjustmentFrequency, c.AdjustmentPercent, c.DayOfMonth,
             c.DepositAmount, c.Status, c.Notes, c.CreatedAt, c.TerminatedAt);
 }
