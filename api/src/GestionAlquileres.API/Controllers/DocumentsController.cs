@@ -49,8 +49,9 @@ public class DocumentsController : BaseController
     public async Task<ActionResult<DocumentDto>> SetVisibility(
         Guid contractId, Guid docId, [FromBody] SetDocumentVisibilityRequest body, CancellationToken ct)
     {
-        var dto = await Mediator.Send(new SetDocumentVisibilityCommand(docId, body.IsVisibleToTenant), ct);
-        return dto.ContractId != contractId ? NotFound() : Ok(dto);
+        var dto = await Mediator.Send(
+            new SetDocumentVisibilityCommand(docId, contractId, body.IsVisibleToTenant), ct);
+        return dto is null ? NotFound() : Ok(dto);
     }
 
     [HttpGet("{docId:guid}/download-url")]
