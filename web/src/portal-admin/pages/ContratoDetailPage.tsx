@@ -6,7 +6,7 @@ import {
   IcShield, IcBell, IcDownload, IcUpload, IcPlus,
   IcCalendar, IcDoc, IcChev, IcLink,
 } from '@/shared/components/ui/Icons'
-import { formatARS, formatDate } from '@/shared/lib/formatters'
+import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
 import {
   useContractById,
   useRentHistory,
@@ -252,7 +252,7 @@ function PaymentsTab({ contractId }: { contractId: string }) {
             <tbody>
               {payments.map((t) => (
                 <tr key={t.id}>
-                  <td><b>{formatDate(t.period)}</b></td>
+                  <td><b>{formatPeriod(t.period)}</b></td>
                   <td>
                     {t.type === 'Payment'
                       ? <span className="chip chip--ok"><span className="dot" />Pago</span>

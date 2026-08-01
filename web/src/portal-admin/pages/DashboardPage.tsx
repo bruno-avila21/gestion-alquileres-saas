@@ -5,7 +5,7 @@ import {
   IcCalendar, IcChevDown, IcDownload, IcArrowUp,
   IcChev, IcShield, IcBell, Spark,
 } from '@/shared/components/ui/Icons'
-import { formatARS, formatDate } from '@/shared/lib/formatters'
+import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
 import { downloadCsv } from '@/shared/lib/exportCsv'
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard'
 
@@ -156,7 +156,7 @@ export default function DashboardPage() {
                           {t.type === 'Payment' ? 'Pago' : t.type === 'RentCharge' ? 'Cargo' : t.type === 'ManualDebit' ? 'Débito' : 'Crédito'}
                         </span>
                       </td>
-                      <td>{formatDate(t.period)}</td>
+                      <td>{formatPeriod(t.period)}</td>
                       <td className="num"><b>{formatARS(t.amount)}</b></td>
                       <td>{t.currency}</td>
                       <td className="muted" style={{ fontSize: 'var(--fs-xs)' }}>{formatDate(t.createdAt.split('T')[0])}</td>
