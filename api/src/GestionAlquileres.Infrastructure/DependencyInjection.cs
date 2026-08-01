@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<ISentNotificationRepository, SentNotificationRepository>();
         services.AddSingleton<IDocumentTokenService, DocumentTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 

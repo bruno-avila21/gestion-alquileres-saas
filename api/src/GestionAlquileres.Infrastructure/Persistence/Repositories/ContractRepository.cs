@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Time;
 using GestionAlquileres.Domain.Entities;
 using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
@@ -62,8 +63,10 @@ public class ContractRepository : IContractRepository
 
     public async Task<IReadOnlyList<Contract>> GetExpiringRawAsync(int daysAhead, CancellationToken ct)
     {
-        var cutoff = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(daysAhead));
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        // Hora argentina, no UTC: entre las 21:00 y las 24:00 locales UtcNow ya está en el día
+        // siguiente, y un contrato que vence hoy quedaría fuera de la ventana (auditoría B-20).
+        var today = ArgentinaTime.Today;
+        var cutoff = today.AddDays(daysAhead);
         return await _db.Contracts
             .IgnoreQueryFilters()
             .Include(c => c.Property)

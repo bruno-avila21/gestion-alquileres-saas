@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<SentNotification> SentNotifications => Set<SentNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +56,9 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Document>()
             .HasQueryFilter(d => d.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<SentNotification>()
+            .HasQueryFilter(n => n.OrganizationId == _currentTenant.OrganizationId);
 
         // IndexValue is GLOBAL reference data (BCRA/INDEC) — no tenant filter.
         // Do NOT add HasQueryFilter for IndexValue.
