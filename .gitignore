@@ -29,10 +29,15 @@ dist/
 .env.local
 .env.*.local
 
-# Storage local
-uploads/
-storage/
-minio-data/
+# Storage local (datos en disco, NO código).
+# Las reglas van ancladas con "/" inicial: sin anclar, "storage/" matchea cualquier carpeta con ese
+# nombre a cualquier profundidad y se tragaba api/src/GestionAlquileres.Infrastructure/Storage/,
+# dejando LocalFileStorageService, S3StorageService y DocumentTokenService fuera del repositorio
+# (un clone limpio no compilaba).
+/uploads/
+/storage/
+/minio-data/
+**/bin/uploads/
 
 # Logs
 logs/
