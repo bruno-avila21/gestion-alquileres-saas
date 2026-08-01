@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router'
 import {
-  IcDownload, IcShield, IcDoc, IcTrend, IcLink, IcClock, IcHome, IcReceipt, IcCash,
+  IcDownload, IcShield, IcDoc, IcTrend, IcLink, IcClock, IcReceipt,
 } from '@/shared/components/ui/Icons'
 import { formatDate } from '@/shared/lib/formatters'
 import { QueryError } from '@/shared/components/ui/QueryError'
@@ -9,26 +8,6 @@ import { useMyDocuments } from '@/features/documents/hooks/useDocuments'
 import { useMyContract } from '@/features/me/hooks/useMe'
 import { documentService } from '@/features/documents/services/documentService'
 import type { DocumentDownloadUrlDto } from '@/features/documents/types/document.types'
-
-function BottomNav({ active }: { active: 'home' | 'contrato' | 'documentos' | 'pagos' }) {
-  const navigate = useNavigate()
-  const items = [
-    { k: 'home', label: 'Inicio', to: '/inquilino' },
-    { k: 'contrato', label: 'Contrato', to: '/inquilino/contrato' },
-    { k: 'documentos', label: 'Docs', to: '/inquilino/documentos' },
-    { k: 'pagos', label: 'Pagos', to: '/inquilino/pagos' },
-  ] as const
-  return (
-    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--surface)', borderTop: '1px solid var(--hairline)', display: 'flex', justifyContent: 'space-around', padding: '8px 0 16px', zIndex: 100 }}>
-      {items.map((item) => (
-        <button key={item.k} onClick={() => navigate(item.to)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: active === item.k ? 'var(--brand)' : 'var(--muted)', fontFamily: 'inherit' }}>
-          {item.k === 'home' ? <IcHome size={20} /> : item.k === 'contrato' ? <IcDoc size={20} /> : item.k === 'documentos' ? <IcShield size={20} /> : <IcCash size={20} />}
-          <span style={{ fontSize: 10, fontWeight: 500 }}>{item.label}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
 
 function docIcon(mimeType: string) {
   if (mimeType.includes('pdf')) return <IcDoc size={16} />
@@ -220,7 +199,6 @@ export default function TenantDocumentosPage() {
         </div>
       )}
 
-      <BottomNav active="documentos" />
     </div>
   )
 }

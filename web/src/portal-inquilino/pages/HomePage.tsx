@@ -1,51 +1,11 @@
 import { useNavigate } from 'react-router'
 import { useAuthStore } from '@/shared/stores/authStore'
 import {
-  IcArrowR, IcDownload, IcTrend, IcBuilding, IcCheck, IcHome, IcDoc, IcShield, IcCash,
+  IcArrowR, IcDownload, IcTrend, IcBuilding, IcCheck,
 } from '@/shared/components/ui/Icons'
 import { QueryError } from '@/shared/components/ui/QueryError'
-import { formatARS, formatDate } from '@/shared/lib/formatters'
+import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
 import { useMyContract, useMyTransactions } from '@/features/me/hooks/useMe'
-
-interface BottomNavProps {
-  active: 'home' | 'contrato' | 'documentos' | 'pagos'
-}
-
-function BottomNav({ active }: BottomNavProps) {
-  const navigate = useNavigate()
-  const items = [
-    { k: 'home', label: 'Inicio', icon: <IcHome size={20} />, to: '/inquilino' },
-    { k: 'contrato', label: 'Contrato', icon: <IcDoc size={20} />, to: '/inquilino/contrato' },
-    { k: 'documentos', label: 'Docs', icon: <IcShield size={20} />, to: '/inquilino/documentos' },
-    { k: 'pagos', label: 'Pagos', icon: <IcCash size={20} />, to: '/inquilino/pagos' },
-  ] as const
-  return (
-    <div
-      style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: 'var(--surface)', borderTop: '1px solid var(--hairline)',
-        display: 'flex', justifyContent: 'space-around',
-        padding: '8px 0 16px', zIndex: 100,
-      }}
-    >
-      {items.map((item) => (
-        <button
-          key={item.k}
-          onClick={() => navigate(item.to)}
-          style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: active === item.k ? 'var(--brand)' : 'var(--muted)',
-            fontFamily: 'inherit',
-          }}
-        >
-          {item.icon}
-          <span style={{ fontSize: 10, fontWeight: 500 }}>{item.label}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
 
 export default function TenantHomePage() {
   const navigate = useNavigate()
@@ -187,7 +147,7 @@ export default function TenantHomePage() {
                   <IcCheck size={12} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{formatDate(t.period)}</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{formatPeriod(t.period)}</div>
                   <div style={{ fontSize: 11, color: 'var(--muted)' }}>{t.notes ?? 'Pago registrado'}</div>
                 </div>
               </div>
@@ -197,7 +157,6 @@ export default function TenantHomePage() {
         </div>
       </div>
 
-      <BottomNav active="home" />
     </div>
   )
 }

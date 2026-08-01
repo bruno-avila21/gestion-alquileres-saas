@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router'
 import { useAuthStore } from '@/shared/stores/authStore'
+import { TenantBottomNav } from '../components/TenantBottomNav'
 
 export default function InquilinoLayout() {
   const user = useAuthStore((s) => s.user)
@@ -9,6 +10,7 @@ export default function InquilinoLayout() {
   return (
     <div className="app t-portal" style={{ minHeight: '100vh', background: 'var(--surface-2)' }}>
       <Outlet />
+      <TenantBottomNav />
     </div>
   )
 }
