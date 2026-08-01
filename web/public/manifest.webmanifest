@@ -1,0 +1,34 @@
+{
+  "name": "Alquilar.io — Gestión de alquileres",
+  "short_name": "Alquilar.io",
+  "description": "Ajustes automáticos por ICL e IPC, contratos, cobros y portal de inquilinos.",
+  "lang": "es-AR",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2f4ad0",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mi contrato",
+      "short_name": "Contrato",
+      "url": "/inquilino/contrato"
+    },
+    {
+      "name": "Mis pagos",
+      "short_name": "Pagos",
+      "url": "/inquilino/pagos"
+    }
+  ]
+}
