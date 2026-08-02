@@ -9,6 +9,8 @@ export interface AuthUser {
   role: UserRole
   organizationId: string
   organizationSlug: string
+  /** La credencial la generó el sistema: hay que cambiarla antes de poder operar. */
+  mustChangePassword: boolean
 }
 
 interface AuthState {

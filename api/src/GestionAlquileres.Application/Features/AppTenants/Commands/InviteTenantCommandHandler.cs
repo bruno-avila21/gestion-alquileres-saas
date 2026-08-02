@@ -11,13 +11,16 @@ public class InviteTenantCommandHandler : IRequestHandler<InviteTenantCommand, I
 {
     private readonly IAppTenantRepository _tenantRepo;
     private readonly IUserRepository _userRepo;
+    private readonly IRefreshTokenRepository _refreshTokens;
 
     public InviteTenantCommandHandler(
         IAppTenantRepository tenantRepo,
-        IUserRepository userRepo)
+        IUserRepository userRepo,
+        IRefreshTokenRepository refreshTokens)
     {
         _tenantRepo = tenantRepo;
         _userRepo = userRepo;
+        _refreshTokens = refreshTokens;
     }
 
     public async Task<InviteTenantResult> Handle(InviteTenantCommand request, CancellationToken ct)
@@ -25,23 +28,46 @@ public class InviteTenantCommandHandler : IRequestHandler<InviteTenantCommand, I
         var tenant = await _tenantRepo.GetByIdAsync(request.AppTenantId, ct)
             ?? throw new BusinessException($"Inquilino {request.AppTenantId} not found.");
 
-        if (tenant.UserId.HasValue)
-            throw new BusinessException("Este inquilino ya tiene acceso al portal.");
-
         if (string.IsNullOrWhiteSpace(tenant.Email))
             throw new BusinessException("El inquilino debe tener un email para recibir acceso al portal.");
 
         var tempPassword = GenerateTempPassword();
+        var hash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+
+        if (tenant.UserId is { } existingUserId)
+        {
+            // Re-invitar en vez de rechazar. Antes esto lanzaba "ya tiene acceso al portal", con lo
+            // cual una contraseña temporal filtrada o perdida no se podía rotar por ninguna vía:
+            // había que tocar la base a mano. Es además el único camino para devolverle el acceso a
+            // un inquilino dado de baja, porque reactivarlo desde la edición no reactiva su usuario.
+            var existing = await _userRepo.GetByIdAsync(existingUserId, ct)
+                ?? throw new BusinessException("El usuario vinculado a este inquilino no existe.");
+
+            existing.PasswordHash = hash;
+            existing.MustChangePassword = true;
+            existing.PasswordChangedAt = DateTimeOffset.UtcNow;
+            existing.IsActive = true;
+            existing.Email = tenant.Email;
+
+            // La credencial anterior deja de servir en todos lados, no sólo para nuevos ingresos.
+            await _refreshTokens.RevokeAllForUserAsync(existingUserId, ct);
+
+            await _tenantRepo.SaveChangesAsync(ct);
+            return new InviteTenantResult(CreateAppTenantCommandHandler.ToDto(tenant), tempPassword);
+        }
 
         var user = new User
         {
             OrganizationId = tenant.OrganizationId,
             Email = tenant.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword),
+            PasswordHash = hash,
             FirstName = tenant.FirstName,
             LastName = tenant.LastName,
             Role = UserRole.Tenant,
             IsActive = true,
+            // La contraseña la generó el sistema y viaja por WhatsApp o email: queda en el historial
+            // de esa conversación, así que no puede ser la credencial definitiva.
+            MustChangePassword = true,
         };
 
         await _userRepo.AddAsync(user, ct);

@@ -52,6 +52,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
             user.Email,
             user.Role.ToString(),
             org.Id,
-            org.Slug);
+            org.Slug,
+            user.MustChangePassword);
     }
 }

@@ -77,6 +77,26 @@ public class AuthController : BaseController
         return Ok(result.Auth);
     }
 
+    /// <summary>
+    /// Cambio de contraseña del usuario autenticado. Termina todas las sesiones abiertas y emite un
+    /// par nuevo para ésta, así que quien hizo el cambio sigue trabajando y el resto queda afuera.
+    /// </summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<ActionResult<AuthResponseDto>> ChangePassword(
+        [FromBody] ChangePasswordRequest body, CancellationToken ct)
+    {
+        var result = await Mediator.Send(
+            // El usuario sale del claim del JWT, nunca del body.
+            new ChangePasswordCommand(CurrentUserId, body.CurrentPassword, body.NewPassword), ct);
+
+        SetAuthCookie(result.Token);
+        await IssueRefreshCookieAsync(result.UserId, result.OrganizationId, ct);
+        return Ok(result);
+    }
+
+    public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(
         [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefreshRequest? body, CancellationToken ct)

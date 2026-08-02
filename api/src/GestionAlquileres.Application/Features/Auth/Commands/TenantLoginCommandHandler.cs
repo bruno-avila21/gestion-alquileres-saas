@@ -52,6 +52,7 @@ public class TenantLoginCommandHandler : IRequestHandler<TenantLoginCommand, Aut
             user.Email,
             user.Role.ToString(),
             org.Id,
-            org.Slug);
+            org.Slug,
+            user.MustChangePassword);
     }
 }

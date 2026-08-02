@@ -14,6 +14,7 @@ const PagosPage = lazy(() => import('./pages/PagosPage'))
 const AjustesPage = lazy(() => import('./pages/AjustesPage'))
 const DocumentosAdminPage = lazy(() => import('./pages/DocumentosAdminPage'))
 const ConfiguracionPage = lazy(() => import('./pages/ConfiguracionPage'))
+const CambiarClavePage = lazy(() => import('./pages/CambiarClavePage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 function PageLoader() {
@@ -44,6 +45,7 @@ export const adminRoutes: RouteObject[] = [
       { path: 'ajustes', element: <Lazy><AjustesPage /></Lazy> },
       { path: 'documentos', element: <Lazy><DocumentosAdminPage /></Lazy> },
       { path: 'configuracion', element: <Lazy><ConfiguracionPage /></Lazy> },
+      { path: 'cambiar-clave', element: <Lazy><CambiarClavePage /></Lazy> },
       { path: '*', element: <Lazy><NotFoundPage /></Lazy> },
     ],
   },

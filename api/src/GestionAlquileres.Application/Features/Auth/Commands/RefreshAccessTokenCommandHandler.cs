@@ -89,7 +89,8 @@ public class RefreshAccessTokenCommandHandler
             user.Email,
             user.Role.ToString(),
             org.Id,
-            org.Slug);
+            org.Slug,
+            user.MustChangePassword);
 
         return new RefreshAccessTokenResult(auth, newRaw, expiresAt);
     }

@@ -19,6 +19,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.LastName).IsRequired().HasMaxLength(100);
         builder.Property(u => u.Role).HasConversion<string>().IsRequired().HasMaxLength(20);
         builder.Property(u => u.IsActive).HasDefaultValue(true);
+        builder.Property(u => u.MustChangePassword).IsRequired().HasDefaultValue(false);
         builder.Property(u => u.CreatedAt).HasDefaultValueSql("now()");
         builder.HasIndex(u => new { u.OrganizationId, u.Email }).IsUnique();
         builder.HasIndex(u => u.OrganizationId);

@@ -23,6 +23,7 @@ falla, está en `AUDITORIA-2026-07-31.md`.
 | ✅ | Ajuste por % fijo · frecuencias cuatrimestral y semestral · `IsInEnum` | `AdjustmentType.cs`, `ContractRules.cs` |
 | ✅ | Mapeo frecuencia→meses duplicado en 3 lugares y ya divergente | `AdjustmentFrequencyExtensions.cs` |
 | ✅ | Cadena de revocación: refresh en el cliente · token de 8 h → 15 min · baja efectiva del inquilino | `api.ts`, `JwtSettings.cs`, `TenantAccessRevoker.cs` |
+| ✅ | Cambio de contraseña, forzado en el primer ingreso, y re-invitación que rota la credencial | `ChangePasswordCommandHandler.cs`, `InviteTenantCommandHandler.cs` |
 
 ---
 
@@ -59,17 +60,25 @@ Sale del análisis de mercado. Es lo que hoy hace perder un cliente en la demo.
 Los tres primeros son el mismo problema visto de tres formas: **no hay manera de revocarle el
 acceso a nadie.** Se resuelven en cadena.
 
-- [ ] **No existe cambio ni recuperación de contraseña.** La contraseña temporal del inquilino es su
-      credencial permanente y nadie puede rotarla. → `AuthController.cs:25-105`
+- [x] ~~**No existe cambio de contraseña.**~~ ✅ `POST /auth/change-password`, cambio forzado en el
+      primer ingreso cuando la credencial la generó el sistema, y re-invitación que regenera la
+      contraseña temporal. Cambiarla cierra las sesiones abiertas en otros dispositivos.
+- [ ] **Falta recuperación de contraseña ("olvidé mi clave").** Depende de tener email funcionando,
+      que está en el bloque 1. Mientras tanto la vía es re-invitar desde el panel, que regenera la
+      contraseña temporal.
+- [ ] **El portal del inquilino no tiene punto de entrada al cambio voluntario.** La ruta
+      `/inquilino/cambiar-clave` existe y el cambio forzado funciona, pero no hay enlace: la nav
+      inferior ya tiene cinco ítems y un sexto no entra. Necesita una pantalla de "Cuenta".
 - [x] ~~**El logout no invalida el token** (8 h de vida)~~ ✅ El access token pasó de 8 horas a
       **15 minutos**, que es la ventana de revocación real del sistema. Ver la nota abajo.
 - [x] ~~**Dar de baja a un inquilino no le quita el acceso**~~ ✅ La baja y la desactivación ahora
       desactivan el `User` vinculado y revocan sus refresh tokens.
 - [x] ~~**El cliente nunca llama a `/auth/refresh`**~~ ✅ Interceptor con renovación y reintento,
       deduplicando las llamadas concurrentes.
-- [ ] **Reactivar un inquilino no le devuelve el acceso.** La baja desactiva su `User`, pero volver a
-      activarlo no lo reactiva, y la interfaz no lo avisa. Asimetría a resolver con producto.
-      → cubierto por un test que documenta el comportamiento actual
+- [x] ~~**Reactivar un inquilino no le devuelve el acceso.**~~ ✅ Resuelto por la re-invitación, que
+      reactiva el usuario y le entrega una contraseña nueva. Reactivar desde la edición sigue sin
+      restaurar el acceso — es deliberado: devolverlo exige emitir una credencial, no sólo tildar
+      una casilla.
 
 > **Nota sobre el modelo de sesión.** El access token es autocontenido: mientras no expire vale
 > aunque el usuario cierre sesión o lo den de baja. Por eso la ventana de revocación del sistema
