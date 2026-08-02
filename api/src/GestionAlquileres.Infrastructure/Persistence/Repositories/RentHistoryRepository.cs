@@ -78,4 +78,9 @@ public class RentHistoryRepository : IRentHistoryRepository
             .Where(r => r.ContractId == contractId)
             .OrderByDescending(r => r.EffectiveDate)
             .FirstOrDefaultAsync(ct);
+
+    public Task<int> CountByContractRawAsync(Guid contractId, CancellationToken ct) =>
+        _db.RentHistory
+            .IgnoreQueryFilters()
+            .CountAsync(r => r.ContractId == contractId, ct);
 }

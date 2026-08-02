@@ -24,4 +24,12 @@ public interface IRentHistoryRepository
 
     // Background-job helper — bypass tenant filter
     Task<RentHistory?> GetLastByContractRawAsync(Guid contractId, CancellationToken ct);
+
+    /// <summary>
+    /// Cuántos ajustes lleva el contrato. El scheduler lo usa para anclar la cadencia a
+    /// <c>StartDate + k·frecuencia</c> en vez de encadenar desde la última fecha efectiva, que
+    /// desplazaba el día en contratos que arrancan el 29, 30 o 31.
+    /// Ignora el filtro de tenant: corre desde un job, sin organización en contexto.
+    /// </summary>
+    Task<int> CountByContractRawAsync(Guid contractId, CancellationToken ct);
 }

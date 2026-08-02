@@ -98,10 +98,10 @@ acceso a nadie.** Se resuelven en cadena.
 
 ## Bloque 3 — Correctitud
 
-- [ ] **División por cero** si el índice base vale 0: 500 en vez de error de negocio.
-      → `ApplyRentAdjustmentCommandHandler.cs:125-126`
-- [ ] **La fecha efectiva por defecto usa UTC** en vez de hora argentina, y en el borde de fin de mes
-      eso **selecciona el índice equivocado**. → `ApplyRentAdjustmentCommandHandler.cs:64`
+- [x] ~~**División por cero** si el índice base vale 0~~ ✅ Devuelve error de negocio. Se agregó
+      además una guarda para que ningún camino de cálculo deje el alquiler en cero o negativo, que
+      quedaría incorporado al contrato y heredado por el ajuste siguiente.
+- [x] ~~**La fecha efectiva por defecto usa UTC**~~ ✅ Usa `ArgentinaTime.Today`, igual que el job.
 - [x] ~~**Enums de contrato sin `IsInEnum()`**~~ ✅ Validado en alta y edición, junto con el tope de
       `Notes` que devolvía 500 en vez de 400. Las reglas quedaron compartidas en `ContractRules`.
 - [ ] **`UpdateContract` no revalida que la propiedad sea de la organización.** Los listados usan
@@ -113,8 +113,11 @@ acceso a nadie.** Se resuelven en cadena.
       no se ve en el archivo. → `TransactionRepository.cs:38-43`
 - [ ] **Los cuatro handlers de `/me` resuelven el contrato activo de forma ambigua** y
       `/me/transactions` no pagina. Es la superficie del portal del inquilino.
-- [ ] **Deriva de cadencia** en contratos que arrancan el 29, 30 o 31 · `newRent` puede quedar en 0 ·
-      redondeo bancario sin decidir.
+- [x] ~~**Deriva de cadencia** en contratos que arrancan el 29, 30 o 31~~ ✅ El scheduler ancla a
+      `StartDate + k·frecuencia` en vez de encadenar desde el último ajuste.
+- [ ] **Redondeo bancario sin decidir.** `Math.Round(x, 2)` sin `MidpointRounding` explícito redondea
+      al par: 2,225 → 2,22. Para importes en pesos normalmente no es lo que espera contabilidad, pero
+      es una decisión de negocio, no técnica.
 - [ ] Rendimiento: cero `AsNoTracking()` en todo el backend · el dashboard trae la cartera completa
       para calcular tres números · N+1 en la liquidación al propietario · búsqueda no sargable con
       triple escaneo por request.

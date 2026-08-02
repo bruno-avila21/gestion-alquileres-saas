@@ -77,15 +77,23 @@ public class MonthlyRentAdjustmentJob
 
         int frequencyMonths = contract.Frequency.ToMonths();
 
-        var lastAdj = await historyRepo.GetLastByContractRawAsync(contract.Id, ct);
-        var baseDate = lastAdj?.EffectiveDate ?? contract.StartDate;
-        var nextAdj = baseDate.AddMonths(frequencyMonths);
+        // La cadencia se ancla al inicio del contrato: StartDate + k·frecuencia.
+        //
+        // Antes se encadenaba desde la fecha efectiva del último ajuste, y eso desplazaba el día en
+        // contratos que arrancan el 29, 30 o 31: AddMonths recorta al último día del mes destino, así
+        // que 31-ene + 1 mes = 28-feb, y la corrida siguiente tomaba ESE 28 como base dando 28-mar.
+        // La cadencia se corría y no volvía nunca. Calculándola siempre desde StartDate, 31-ene + 2
+        // meses vuelve a dar 31-mar.
+        //
+        // Contar los ajustes es seguro: el job excluye los contratos de tipo Manual, y para el resto
+        // el único camino que escribe en RentHistory es este.
+        var applied = await historyRepo.CountByContractRawAsync(contract.Id, ct);
+        var nextAdj = contract.StartDate.AddMonths((applied + 1) * frequencyMonths);
 
         if (today < nextAdj) return false;
 
-        // Anchor the adjustment to the *scheduled* date, not the day the job happens to run, so the
-        // cadence stays pinned to StartDate + k·frequency and self-heals one overdue period per run
-        // (audit C-3).
+        // Se ancla a la fecha PROGRAMADA, no al día en que corre el job, y se recupera un período
+        // atrasado por corrida (auditoría C-3).
         await mediator.Send(
             new ApplyRentAdjustmentCommand(contract.Id, nextAdj, OrganizationId: contract.OrganizationId), ct);
         _logger.LogInformation(

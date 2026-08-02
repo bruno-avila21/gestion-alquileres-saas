@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Time;
 using GestionAlquileres.Application.Common.Exceptions;
 using GestionAlquileres.Application.Features.RentHistory.DTOs;
 using Entities = GestionAlquileres.Domain.Entities;
@@ -61,7 +62,10 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
         if (contract.Status != ContractStatus.Active)
             throw new BusinessException("Solo se pueden ajustar contratos vigentes.");
 
-        var effectiveDate = request.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        // Hora argentina, no UTC: entre las 21:00 y las 24:00 locales UtcNow ya está en el día
+        // siguiente. En el borde de fin de mes eso corre el período y termina eligiendo el índice
+        // equivocado (auditoría C-10). El job ya usaba ArgentinaTime; este camino no.
+        var effectiveDate = request.EffectiveDate ?? ArgentinaTime.Today;
 
         // Idempotency: never apply two adjustments for the same contract+effective date.
         // Guards against job retries, manual + scheduled overlap, and concurrent requests.
@@ -83,7 +87,9 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
                 throw new BusinessException("El ajuste manual requiere una nota explicativa (campo notes obligatorio).");
 
             newRent = request.ManualNewRent.Value;
-            factor = Math.Round(newRent / previousRent, 6);
+            // El factor es informativo, pero dividir por cero acá tira una excepción no controlada.
+            // previousRent llega en 0 si un ajuste anterior dejó el alquiler en cero.
+            factor = previousRent > 0 ? Math.Round(newRent / previousRent, 6) : 0m;
         }
         else if (contract.AdjustmentType == AdjustmentType.FixedPercent)
         {
@@ -124,6 +130,14 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
             if (baseIndex is null)
                 throw new BusinessException($"No hay índice {indexType} disponible para {periodBase:yyyy-MM} (período base). Sincronice los índices primero.");
 
+            // La guarda anterior sólo cubría el índice ausente. Un IndexValue con valor 0 es
+            // persistible —la entidad no valida rango y el sincronizador copia lo que devuelve la
+            // fuente— y hacía que la división de abajo tirara un 500 en vez de un error de negocio.
+            if (baseIndex.Value <= 0)
+                throw new BusinessException(
+                    $"El índice {indexType} de {periodBase:yyyy-MM} (período base) tiene un valor inválido ({baseIndex.Value}). " +
+                    "Revise el dato sincronizado antes de ajustar.");
+
             // Compute the new rent from the raw index ratio. Do NOT pre-round the factor and then
             // multiply: rounding the ratio to 6 decimals first skews the amount (up to ~0.10 ARS on
             // a 200k rent) and that error compounds across successive adjustments, since each
@@ -133,6 +147,13 @@ public class ApplyRentAdjustmentCommandHandler : IRequestHandler<ApplyRentAdjust
             factor = Math.Round(currentIndex.Value / baseIndex.Value, 6);
             indexValueId = currentIndex.Id;
         }
+
+        // Ningún camino de cálculo puede dejar el alquiler en cero o negativo. Si eso se persistiera
+        // en contract.MonthlyRent, el ajuste siguiente arrancaría desde ahí y el error quedaría
+        // incorporado al contrato. La rama manual ya lo validaba; las calculadas no.
+        if (newRent <= 0)
+            throw new BusinessException(
+                $"El ajuste da un alquiler de {newRent}, que no es un importe válido. Revise los datos del cálculo.");
 
         // Update contract rent
         contract.MonthlyRent = newRent;

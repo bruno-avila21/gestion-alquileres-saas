@@ -34,6 +34,7 @@ public class GetAdjustmentProjectionQueryTests
         public Task SaveChangesAsync(CancellationToken ct) => throw new NotImplementedException();
         public Task<bool> ExistsForPeriodAsync(Guid id, DateOnly d, CancellationToken ct) => throw new NotImplementedException();
         public Task<Domain.Entities.RentHistory?> GetLastByContractRawAsync(Guid id, CancellationToken ct) => throw new NotImplementedException();
+        public Task<int> CountByContractRawAsync(Guid id, CancellationToken ct) => throw new NotImplementedException();
     }
 
     private sealed class StubCalculator : IIndicesCalculator
