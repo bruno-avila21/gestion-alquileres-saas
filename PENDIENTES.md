@@ -22,6 +22,7 @@ falla, está en `AUDITORIA-2026-07-31.md`.
 | ✅ | Stack completo con docker compose, local y para VPS | `docker-compose*.yml` |
 | ✅ | Ajuste por % fijo · frecuencias cuatrimestral y semestral · `IsInEnum` | `AdjustmentType.cs`, `ContractRules.cs` |
 | ✅ | Mapeo frecuencia→meses duplicado en 3 lugares y ya divergente | `AdjustmentFrequencyExtensions.cs` |
+| ✅ | Cadena de revocación: refresh en el cliente · token de 8 h → 15 min · baja efectiva del inquilino | `api.ts`, `JwtSettings.cs`, `TenantAccessRevoker.cs` |
 
 ---
 
@@ -60,13 +61,21 @@ acceso a nadie.** Se resuelven en cadena.
 
 - [ ] **No existe cambio ni recuperación de contraseña.** La contraseña temporal del inquilino es su
       credencial permanente y nadie puede rotarla. → `AuthController.cs:25-105`
-- [ ] **El logout no invalida el token** (8 h de vida, sin denylist ni claim de sesión). Cerrar
-      sesión es cosmético. → `JwtService.cs:35-40`, `appsettings.json:10`
-- [ ] **Dar de baja a un inquilino no le quita el acceso**: no se toca el `User` vinculado ni se
-      revocan sus refresh tokens. → `DeleteAppTenantCommandHandler.cs:18`
-- [ ] **El cliente nunca llama a `/auth/refresh`.** Toda la rotación del backend es código muerto, y
-      es lo que obliga a que el token dure 8 h. Resolverlo primero destraba los dos anteriores.
-      → `web/src/shared/lib/api.ts:17-24`
+- [x] ~~**El logout no invalida el token** (8 h de vida)~~ ✅ El access token pasó de 8 horas a
+      **15 minutos**, que es la ventana de revocación real del sistema. Ver la nota abajo.
+- [x] ~~**Dar de baja a un inquilino no le quita el acceso**~~ ✅ La baja y la desactivación ahora
+      desactivan el `User` vinculado y revocan sus refresh tokens.
+- [x] ~~**El cliente nunca llama a `/auth/refresh`**~~ ✅ Interceptor con renovación y reintento,
+      deduplicando las llamadas concurrentes.
+- [ ] **Reactivar un inquilino no le devuelve el acceso.** La baja desactiva su `User`, pero volver a
+      activarlo no lo reactiva, y la interfaz no lo avisa. Asimetría a resolver con producto.
+      → cubierto por un test que documenta el comportamiento actual
+
+> **Nota sobre el modelo de sesión.** El access token es autocontenido: mientras no expire vale
+> aunque el usuario cierre sesión o lo den de baja. Por eso la ventana de revocación del sistema
+> **es** su duración, ahora 15 minutos. La continuidad de la sesión la da el refresh token, que sí
+> se verifica contra la base en cada canje. Un corte instantáneo requeriría validar un sello de
+> sesión contra la base **en cada request**, lo que hoy no tiene caché que lo sostenga.
 - [ ] **`Organization.IsActive` no se lee nunca**: no se puede suspender una inmobiliaria morosa.
 - [ ] **Alta de organizaciones abierta y sin verificar email**: se pueden ocupar slugs de marcas
       reales de forma irrecuperable. → `AuthController.cs:25`

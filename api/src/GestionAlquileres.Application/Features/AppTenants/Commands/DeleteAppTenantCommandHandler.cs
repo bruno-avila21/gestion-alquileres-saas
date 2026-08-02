@@ -7,8 +7,16 @@ namespace GestionAlquileres.Application.Features.AppTenants.Commands;
 public class DeleteAppTenantCommandHandler : IRequestHandler<DeleteAppTenantCommand>
 {
     private readonly IAppTenantRepository _repo;
+    private readonly IUserRepository _users;
+    private readonly IRefreshTokenRepository _refreshTokens;
 
-    public DeleteAppTenantCommandHandler(IAppTenantRepository repo) => _repo = repo;
+    public DeleteAppTenantCommandHandler(
+        IAppTenantRepository repo, IUserRepository users, IRefreshTokenRepository refreshTokens)
+    {
+        _repo = repo;
+        _users = users;
+        _refreshTokens = refreshTokens;
+    }
 
     public async Task Handle(DeleteAppTenantCommand request, CancellationToken ct)
     {
@@ -16,6 +24,10 @@ public class DeleteAppTenantCommandHandler : IRequestHandler<DeleteAppTenantComm
             ?? throw new BusinessException($"Inquilino {request.Id} not found.");
 
         tenant.IsActive = false;
+
+        // La baja tiene que cortar el acceso al portal, no sólo ocultar al inquilino de los listados.
+        await TenantAccessRevoker.RevokeAsync(tenant, _users, _refreshTokens, ct);
+
         await _repo.SaveChangesAsync(ct);
     }
 }

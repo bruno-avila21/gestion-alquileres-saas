@@ -123,7 +123,7 @@ public class AuthController : BaseController
             Secure = Request.IsHttps,        // sent over HTTPS in prod; allows http://localhost in dev
             SameSite = SameSiteMode.Lax,     // cross-site deployments should override to None + Secure
             Path = "/",
-            MaxAge = TimeSpan.FromHours(_jwt.ExpiryHours),
+            MaxAge = TimeSpan.FromMinutes(_jwt.EffectiveAccessTokenMinutes),
         });
     }
 
