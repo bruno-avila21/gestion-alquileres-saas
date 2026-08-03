@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Export;
 using GestionAlquileres.Domain.Entities;
 using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
@@ -37,9 +38,10 @@ public class TransactionRepository : ITransactionRepository
 
     public async Task<IReadOnlyList<Transaction>> GetAllAsync(CancellationToken ct) =>
         await _db.Transactions
+            .AsNoTracking()
             .OrderByDescending(t => t.Period)
             .ThenByDescending(t => t.CreatedAt)
-            .Take(500)
+            .Take(ExportLimits.FetchSize)
             .ToListAsync(ct);
 
     public async Task<(IReadOnlyList<Transaction> Items, int Total, decimal NetBalance)> GetPagedAsync(

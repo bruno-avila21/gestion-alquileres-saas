@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Export;
 using System.Text;
 using GestionAlquileres.API.Common;
 using GestionAlquileres.Application.Features.Transactions.DTOs;
@@ -20,14 +21,24 @@ public class TransactionsController : AdminControllerBase
     {
         var txs = await Mediator.Send(new ListAllTransactionsQuery(), ct);
 
+        // Se piden MaxRows + 1: si vinieron todas, había al menos una más y el archivo va recortado.
+        var truncated = txs.Count > ExportLimits.MaxRows;
+        var rows = truncated ? txs.Take(ExportLimits.MaxRows) : txs;
+
         var sb = new StringBuilder();
         sb.AppendLine("Id,ContractId,Tipo,Importe,Moneda,Periodo,Notas,FechaCreacion");
 
-        foreach (var t in txs)
+        foreach (var t in rows)
         {
             sb.AppendLine(
                 $"{t.Id},{t.ContractId},{t.Type},{Csv.Number(t.Amount)},{t.Currency}," +
                 $"{t.Period:yyyy-MM-dd},{Csv.Field(t.Notes)},{t.CreatedAt:yyyy-MM-ddTHH:mm:ssZ}");
+        }
+
+        if (truncated)
+        {
+            sb.AppendLine(ExportLimits.TruncationNotice("transacciones"));
+            Response.Headers[ExportLimits.TruncatedHeader] = "true";
         }
 
         var bytes = Encoding.UTF8.GetBytes(sb.ToString());

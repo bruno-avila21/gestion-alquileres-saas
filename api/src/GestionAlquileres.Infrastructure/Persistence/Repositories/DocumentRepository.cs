@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Export;
 using GestionAlquileres.Domain.Entities;
 using GestionAlquileres.Domain.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -17,8 +18,9 @@ public class DocumentRepository : IDocumentRepository
 
     public async Task<IReadOnlyList<Document>> GetAllAsync(CancellationToken ct) =>
         await _db.Documents
+            .AsNoTracking()
             .OrderByDescending(d => d.CreatedAt)
-            .Take(500)
+            .Take(ExportLimits.FetchSize)
             .ToListAsync(ct);
 
     public async Task<(IReadOnlyList<Document> Items, int Total)> GetPagedAsync(

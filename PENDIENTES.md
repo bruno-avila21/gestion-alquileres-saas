@@ -104,13 +104,14 @@ acceso a nadie.** Se resuelven en cadena.
 - [x] ~~**La fecha efectiva por defecto usa UTC**~~ ✅ Usa `ArgentinaTime.Today`, igual que el job.
 - [x] ~~**Enums de contrato sin `IsInEnum()`**~~ ✅ Validado en alta y edición, junto con el tope de
       `Notes` que devolvía 500 en vez de 400. Las reglas quedaron compartidas en `ContractRules`.
-- [ ] **`UpdateContract` no revalida que la propiedad sea de la organización.** Los listados usan
-      *inner join*, así que las transacciones de ese contrato **desaparecen de las pantallas sin
-      error**. → `UpdateContractCommandHandler.cs:22-23`
+- [x] ~~**`UpdateContract` no revalida que la propiedad sea de la organización.**~~ ✅ Verifica
+      propiedad e inquilino igual que el alta, y además rechaza editar un contrato rescindido.
 - [ ] **`MonthlyRentAdjustmentJob` no tiene un solo test**, y es el disparador de todo el negocio.
       Tampoco hay ningún test que aplique un ajuste **IPC**.
-- [ ] **Exports CSV truncados a 500 filas sin aviso**: la conciliación contable sale mal y el error
-      no se ve en el archivo. → `TransactionRepository.cs:38-43`
+- [x] ~~**Exports CSV truncados a 500 filas sin aviso**~~ ✅ Tope subido a 50.000 y, cuando se
+      alcanza, el archivo lo declara con una fila de aviso más un header `X-Export-Truncated`. La
+      fila va dentro del CSV porque quien lo abre lo hace en una planilla, donde los headers HTTP
+      no se ven.
 - [ ] **Los cuatro handlers de `/me` resuelven el contrato activo de forma ambigua** y
       `/me/transactions` no pagina. Es la superficie del portal del inquilino.
 - [x] ~~**Deriva de cadencia** en contratos que arrancan el 29, 30 o 31~~ ✅ El scheduler ancla a
