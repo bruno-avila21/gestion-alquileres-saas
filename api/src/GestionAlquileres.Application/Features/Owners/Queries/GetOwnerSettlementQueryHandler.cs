@@ -9,19 +9,13 @@ namespace GestionAlquileres.Application.Features.Owners.Queries;
 public class GetOwnerSettlementQueryHandler : IRequestHandler<GetOwnerSettlementQuery, OwnerSettlementDto>
 {
     private readonly IOwnerRepository _ownerRepo;
-    private readonly IPropertyRepository _propertyRepo;
-    private readonly IContractRepository _contractRepo;
     private readonly ITransactionRepository _txRepo;
 
-    public GetOwnerSettlementQueryHandler(
-        IOwnerRepository ownerRepo,
-        IPropertyRepository propertyRepo,
-        IContractRepository contractRepo,
-        ITransactionRepository txRepo)
+    // Ya no hacen falta los repositorios de propiedades ni de contratos: la consulta agregada
+    // resuelve el join completo en la base.
+    public GetOwnerSettlementQueryHandler(IOwnerRepository ownerRepo, ITransactionRepository txRepo)
     {
         _ownerRepo = ownerRepo;
-        _propertyRepo = propertyRepo;
-        _contractRepo = contractRepo;
         _txRepo = txRepo;
     }
 
@@ -33,32 +27,23 @@ public class GetOwnerSettlementQueryHandler : IRequestHandler<GetOwnerSettlement
         if (request.PeriodTo < request.PeriodFrom)
             throw new BusinessException("El período final no puede ser anterior al inicial.");
 
+        // Una sola consulta agregada. Antes se recorría propiedad por propiedad y contrato por
+        // contrato, trayendo TODAS las transacciones de cada uno para filtrar el período en memoria.
+        var collectedRows = await _txRepo.GetCollectedByOwnerAsync(
+            owner.Id, request.PeriodFrom, request.PeriodTo, ct);
+
         var lines = new List<OwnerSettlementLineDto>();
-        var properties = await _propertyRepo.GetByOwnerAsync(owner.Id, ct);
-
-        foreach (var property in properties)
+        foreach (var row in collectedRows)
         {
-            var pct = property.CommissionPct ?? 0m;
-            var contracts = await _contractRepo.ListAsync(null, property.Id, null, ct);
+            // Un contrato cuyos cobros del período suman exactamente cero no aporta nada a la
+            // liquidación y ensuciaría el detalle.
+            if (row.Collected == 0m) continue;
 
-            foreach (var contract in contracts)
-            {
-                var txs = await _txRepo.GetByContractAsync(contract.Id, ct);
-                // What's "collected" for the owner is money actually received — the Payment inflows in
-                // the period (cash model). Both settlement paths now produce a Payment row: RegisterPayment
-                // creates one directly, and mark-paid records a matching money-in Payment (audit A1), so
-                // the owner's commission is no longer zeroed for charges settled via mark-paid.
-                var collected = txs
-                    .Where(t => t.Type == TransactionType.Payment
-                                && t.Period >= request.PeriodFrom && t.Period <= request.PeriodTo)
-                    .Sum(t => t.Amount);
-
-                if (collected == 0m) continue;
-
-                var commission = Math.Round(collected * pct / 100m, 2);
-                lines.Add(new OwnerSettlementLineDto(
-                    property.Id, property.Address, contract.Id, collected, pct, commission, collected - commission));
-            }
+            var pct = row.CommissionPct ?? 0m;
+            var commission = Math.Round(row.Collected * pct / 100m, 2);
+            lines.Add(new OwnerSettlementLineDto(
+                row.PropertyId, row.PropertyAddress, row.ContractId,
+                row.Collected, pct, commission, row.Collected - commission));
         }
 
         var gross = lines.Sum(l => l.Collected);

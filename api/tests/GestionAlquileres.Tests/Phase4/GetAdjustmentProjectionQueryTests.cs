@@ -20,6 +20,8 @@ public class GetAdjustmentProjectionQueryTests
         public Task<Contract?> GetByIdRawAsync(Guid id, Guid orgId, CancellationToken ct) => throw new NotImplementedException();
         public Task<IReadOnlyList<Contract>> ListActiveRawAsync(CancellationToken ct) => throw new NotImplementedException();
         public Task<IReadOnlyList<Contract>> GetExpiringRawAsync(int d, CancellationToken ct) => throw new NotImplementedException();
+        public Task<(int ActiveCount, decimal MonthlyRevenue, int ExpiringCount)> GetDashboardStatsAsync(
+            DateOnly today, DateOnly until, CancellationToken ct) => throw new NotImplementedException();
     }
 
     private sealed class StubHistory : IRentHistoryRepository

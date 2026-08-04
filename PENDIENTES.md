@@ -119,9 +119,20 @@ acceso a nadie.** Se resuelven en cadena.
 - [ ] **Redondeo bancario sin decidir.** `Math.Round(x, 2)` sin `MidpointRounding` explícito redondea
       al par: 2,225 → 2,22. Para importes en pesos normalmente no es lo que espera contabilidad, pero
       es una decisión de negocio, no técnica.
-- [ ] Rendimiento: cero `AsNoTracking()` en todo el backend · el dashboard trae la cartera completa
-      para calcular tres números · N+1 en la liquidación al propietario · búsqueda no sargable con
-      triple escaneo por request.
+- [x] ~~**El dashboard trae la cartera completa para calcular tres números.**~~ ✅ Los agregados se
+      calculan en la base, en un solo round-trip, sin materializar contratos.
+- [x] ~~**N+1 en la liquidación al propietario.**~~ ✅ Una consulta agregada reemplaza el recorrido
+      anidado: de 81 idas a la base y ~6.000 entidades a una consulta y tantas filas como contratos
+      con cobros en el período.
+- [x] ~~**Triple escaneo por request en el buscador.**~~ ✅ El total y el balance salen en la misma
+      consulta; quedan dos barridos en vez de tres.
+- [ ] **La búsqueda sigue sin poder usar índice.** `lower(...) LIKE '%texto%'` sobre expresiones
+      concatenadas fuerza *sequential scan* del join completo, y se dispara con cada tecleo. Necesita
+      índices GIN con `pg_trgm`, lo que implica una migración con SQL crudo y `CREATE EXTENSION`:
+      queda aparte por ser el cambio de mayor riesgo del bloque.
+- [ ] **`AsNoTracking()` en el resto de las lecturas.** Se aplicó en las de exportación, los listados
+      de contratos y las consultas nuevas. Faltan repasar las de documentos, ajustes, propiedades e
+      inquilinos, verificando caso por caso que ningún command handler mute lo que devuelven.
 - [ ] `Notes` sin `MaximumLength` devuelve 500 en vez de 400 · borrado de documento antes de
       confirmar la base · invalidaciones de caché faltantes tras mutaciones.
 
