@@ -32,6 +32,8 @@ public static class DependencyInjection
         services.AddScoped<IIndexRepository, IndexRepository>();
         services.AddScoped<IOwnerRepository, OwnerRepository>();
         services.AddScoped<IPropertyRepository, PropertyRepository>();
+        services.AddScoped<IListingRepository, ListingRepository>();
+        services.AddScoped<IPropertyPhotoRepository, PropertyPhotoRepository>();
         services.AddScoped<IAppTenantRepository, AppTenantRepository>();
         services.AddScoped<IContractRepository, ContractRepository>();
         services.AddScoped<IRentHistoryRepository, RentHistoryRepository>();
@@ -51,6 +53,7 @@ public static class DependencyInjection
 
         // Document storage: S3-compatible object store (AWS S3 / MinIO) when configured, else local FS.
         services.Configure<StorageSettings>(configuration.GetSection(StorageSettings.SectionName));
+        services.Configure<RegistrationSettings>(configuration.GetSection(RegistrationSettings.SectionName));
         AddStorage(services, configuration);
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
@@ -104,7 +107,12 @@ public static class DependencyInjection
 
             var serviceUrl = configuration["Storage:ServiceUrl"]; // set for MinIO; null for AWS
             if (!string.IsNullOrWhiteSpace(serviceUrl))
+            {
                 config.ServiceURL = serviceUrl;
+                // Endpoints S3-compatibles (MinIO, Railway Buckets, R2) firman SigV4 contra la región
+                // declarada; sin esto el SDK asume us-east-1, que Railway ("auto") puede rechazar.
+                config.AuthenticationRegion = configuration["Storage:Region"] ?? "us-east-1";
+            }
             else
                 config.RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(configuration["Storage:Region"] ?? "us-east-1");
 

@@ -1,0 +1,611 @@
+<title>Palavecino en Railway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F3F5F8;
+    --surface: #FFFFFF;
+    --surface-2: #E9EDF3;
+    --ink: #1B2434;
+    --ink-2: #24324A;
+    --muted: #5E6A7C;
+    --line: #D6DCE5;
+    --accent: #B85C3E;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #F6E7E0;
+    --ok: #2E7D5B;
+    --ok-soft: #DDF0E6;
+    --warn: #8A6116;
+    --warn-soft: #FBF0D6;
+    --code-bg: #1E2736;
+    --code-ink: #E6EAF0;
+    --code-accent: #E4A48A;
+    --shadow: 0 1px 2px rgba(27,36,52,.06), 0 8px 24px -12px rgba(27,36,52,.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #11161F;
+      --surface: #1A2130;
+      --surface-2: #222B3C;
+      --ink: #E6EAF0;
+      --ink-2: #F2F4F8;
+      --muted: #98A3B4;
+      --line: #2C3648;
+      --accent: #D6785A;
+      --accent-ink: #11161F;
+      --accent-soft: #3A2A24;
+      --ok: #6CC79A;
+      --ok-soft: #1E3328;
+      --warn: #E5B95C;
+      --warn-soft: #3A3120;
+      --code-bg: #0C1018;
+      --code-ink: #E6EAF0;
+      --code-accent: #E4A48A;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #11161F;
+    --surface: #1A2130;
+    --surface-2: #222B3C;
+    --ink: #E6EAF0;
+    --ink-2: #F2F4F8;
+    --muted: #98A3B4;
+    --line: #2C3648;
+    --accent: #D6785A;
+    --accent-ink: #11161F;
+    --accent-soft: #3A2A24;
+    --ok: #6CC79A;
+    --ok-soft: #1E3328;
+    --warn: #E5B95C;
+    --warn-soft: #3A3120;
+    --code-bg: #0C1018;
+    --code-ink: #E6EAF0;
+    --code-accent: #E4A48A;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
+    color: var(--ink-2);
+    text-wrap: balance;
+    margin: 0;
+    line-height: 1.15;
+  }
+  h1 { font-size: clamp(2rem, 4.5vw, 3rem); font-weight: 700; letter-spacing: -.02em; }
+  h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em; }
+  h3 { font-size: 1.05rem; font-weight: 700; margin-top: 1.4rem; }
+  p { margin: .6rem 0; max-width: 68ch; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  code, kbd, pre, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+    font-size: .88em;
+  }
+  code { background: var(--surface-2); padding: .1em .38em; border-radius: 4px; color: var(--ink-2); }
+  strong { font-weight: 600; color: var(--ink-2); }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+
+  /* ── Encabezado ─────────────────────────────── */
+  .eyebrow {
+    font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 600;
+    color: var(--accent); display: flex; align-items: center; gap: .6rem;
+  }
+  .eyebrow::before { content: ""; width: 22px; height: 3px; background: var(--accent); border-radius: 2px; }
+  header .lede { font-size: 1.1rem; color: var(--muted); max-width: 62ch; margin-top: .8rem; }
+
+  .facts {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
+    background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    margin: 1.6rem 0 0;
+  }
+  .facts div { background: var(--surface); padding: .85rem 1rem; }
+  .facts dt { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .facts dd { margin: .15rem 0 0; font-family: "Bricolage Grotesque", sans-serif; font-size: 1.25rem; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .facts dd small { font-family: "Instrument Sans", sans-serif; font-size: .8rem; font-weight: 500; color: var(--muted); }
+
+  /* ── Dominio ────────────────────────────────── */
+  .domain {
+    margin-top: 1.4rem; display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center;
+    background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius: 10px; padding: .9rem 1.1rem;
+  }
+  .domain label { font-weight: 600; color: var(--ink-2); }
+  .domain input {
+    font-family: "IBM Plex Mono", monospace; font-size: .95rem; padding: .5rem .7rem;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink);
+    min-width: 260px; flex: 1;
+  }
+  .domain small { color: var(--muted); flex-basis: 100%; }
+  [data-dom] { color: var(--code-accent); }
+  pre [data-dom] { color: var(--code-accent); font-weight: 500; }
+  p [data-dom], td [data-dom], li [data-dom] { color: var(--accent); font-weight: 500; font-family: "IBM Plex Mono", monospace; font-size: .9em; }
+
+  /* ── Mapa de piezas ─────────────────────────── */
+  .map { margin: 2.2rem 0 0; }
+  .map svg { width: 100%; height: auto; display: block; }
+  .map .cap { color: var(--muted); font-size: .9rem; margin-top: .5rem; }
+
+  /* ── Índice de pasos ────────────────────────── */
+  .toc { margin: 2.4rem 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+  .toc header { display: flex; justify-content: space-between; align-items: baseline; padding: .9rem 1.2rem; border-bottom: 1px solid var(--line); gap: 1rem; flex-wrap: wrap; }
+  .toc header h2 { font-size: 1.1rem; }
+  .toc .progress { font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .toc ol { list-style: none; margin: 0; padding: .4rem .6rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 1rem; }
+  .toc li { display: grid; grid-template-columns: auto 1.6rem 1fr auto; align-items: center; gap: .6rem; padding: .45rem .6rem; border-radius: 6px; }
+  .toc li:hover { background: var(--surface-2); }
+  .toc input { width: 16px; height: 16px; accent-color: var(--ok); margin: 0; }
+  .toc .n { font-family: "IBM Plex Mono", monospace; font-size: .8rem; color: var(--muted); }
+  .toc a { color: var(--ink); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc li.done a { color: var(--muted); text-decoration: line-through; }
+  .toc .who { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; padding: .15rem .5rem; border-radius: 999px; }
+  .who.vos { background: var(--accent-soft); color: var(--accent); }
+  .who.pc { background: var(--surface-2); color: var(--muted); }
+
+  /* ── Pasos ──────────────────────────────────── */
+  .step { display: grid; grid-template-columns: 64px 1fr; gap: 1.2rem; margin-top: 3rem; scroll-margin-top: 1.5rem; }
+  .step .num {
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 1.15rem;
+    width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--ink-2); color: var(--bg); position: sticky; top: 1rem;
+  }
+  .step.done .num { background: var(--ok); color: #fff; }
+  .step .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1rem; }
+  .step .meta { font-size: .85rem; color: var(--muted); display: flex; gap: .8rem; align-items: center; }
+  .step .body { min-width: 0; }
+  .step ol, .step ul { padding-left: 1.3rem; max-width: 68ch; }
+  .step li { margin: .35rem 0; }
+  .step li::marker { color: var(--muted); font-weight: 600; }
+
+  .ui { display: inline-block; border: 1px solid var(--line); background: var(--surface); border-radius: 5px; padding: 0 .4em; font-size: .9em; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+
+  /* ── Tablas ─────────────────────────────────── */
+  .tbl { overflow-x: auto; margin: .9rem 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+  th { text-align: left; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: .6rem .8rem; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  td { padding: .5rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.k { font-family: "IBM Plex Mono", monospace; font-size: .85rem; white-space: nowrap; color: var(--ink-2); }
+  td.v { font-family: "IBM Plex Mono", monospace; font-size: .85rem; }
+  td.v .ref { color: var(--accent); }
+  td.note { color: var(--muted); font-size: .85rem; min-width: 18ch; }
+
+  /* ── Código ─────────────────────────────────── */
+  .code { position: relative; margin: .9rem 0; }
+  pre {
+    margin: 0; background: var(--code-bg); color: var(--code-ink); padding: .9rem 1rem; padding-right: 4.5rem;
+    border-radius: 8px; overflow-x: auto; font-size: .84rem; line-height: 1.55; white-space: pre;
+  }
+  pre .c { color: #8C99AD; }
+  pre .s { color: var(--code-accent); }
+  .copy {
+    position: absolute; top: .55rem; right: .55rem; font: 600 .72rem "Instrument Sans", sans-serif;
+    letter-spacing: .05em; text-transform: uppercase; background: rgba(255,255,255,.08); color: var(--code-ink);
+    border: 1px solid rgba(255,255,255,.18); border-radius: 5px; padding: .3rem .55rem; cursor: pointer;
+  }
+  .copy:hover { background: rgba(255,255,255,.16); }
+  .copy.ok { border-color: var(--ok); color: var(--ok); }
+
+  /* ── Avisos ─────────────────────────────────── */
+  .note, .warn, .good { border-radius: 8px; padding: .75rem 1rem; margin: .9rem 0; max-width: 72ch; font-size: .95rem; border: 1px solid; }
+  .note { background: var(--surface); border-color: var(--line); }
+  .warn { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 40%, transparent); color: var(--ink); }
+  .good { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+  .note b, .warn b, .good b { display: block; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; margin-bottom: .2rem; }
+  .warn b { color: var(--warn); } .good b { color: var(--ok); } .note b { color: var(--muted); }
+
+  /* ── Problemas ──────────────────────────────── */
+  .trouble { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--line); }
+  .trouble dl { display: grid; grid-template-columns: minmax(200px, 1fr) 2fr; gap: .75rem 1.5rem; margin: 1.2rem 0 0; }
+  .trouble dt { font-weight: 600; color: var(--ink-2); }
+  .trouble dd { margin: 0; color: var(--ink); }
+  @media (max-width: 640px) {
+    .step { grid-template-columns: 1fr; gap: .6rem; }
+    .step .num { position: static; width: 40px; height: 40px; }
+    .trouble dl { grid-template-columns: 1fr; }
+    .trouble dd { margin-bottom: .6rem; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .copy { transition: background .15s; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Demo Palavecino · deploy</div>
+    <h1 style="margin-top:.5rem">Subir el demo a Railway</h1>
+    <p class="lede">Cuatro piezas en un proyecto de Railway, tu dominio apuntando al frente, y las 85 propiedades cargadas con el importador. Sin servidor que administrar, y cada push redeploya solo.</p>
+
+    <dl class="facts">
+      <div><dt>Tiempo</dt><dd>45 min <small>más propagación DNS</small></dd></div>
+      <div><dt>Costo estimado</dt><dd>USD 5–10 <small>por mes, plan Hobby</small></dd></div>
+      <div><dt>Piezas</dt><dd>4 <small>Postgres · Bucket · api · web</small></dd></div>
+      <div><dt>Rama a desplegar</dt><dd class="mono" style="font-size:.95rem">fix/audit-2026-07-18</dd></div>
+    </dl>
+
+    <div class="domain">
+      <label for="dom">Tu dominio</label>
+      <input id="dom" type="text" placeholder="demo.tudominio.com" autocomplete="off" spellcheck="false">
+      <small>Escribilo una vez y la guía lo reemplaza en todos los comandos y variables. Usá un subdominio (por ejemplo <code>demo.</code>): el CNAME de Railway no funciona en el dominio raíz en la mayoría de los registradores.</small>
+    </div>
+  </header>
+
+  <section class="map" aria-label="Cómo quedan conectadas las piezas">
+    <svg viewBox="0 0 900 250" role="img" aria-labelledby="mapt">
+      <title id="mapt">Diagrama: el dominio entra al servicio web, que sirve el sitio y reenvía /api a la API por la red privada. La API usa Postgres y el Bucket.</title>
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+      <g font-family="Instrument Sans, sans-serif" font-size="14" fill="var(--ink)">
+        <!-- Internet -->
+        <rect x="20" y="95" width="150" height="60" rx="10" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text x="95" y="120" text-anchor="middle" font-weight="600" fill="var(--accent)">Tu dominio</text>
+        <text x="95" y="140" text-anchor="middle" font-size="12" fill="var(--muted)">CNAME → Railway (TLS)</text>
+
+        <!-- Red privada -->
+        <rect x="230" y="20" width="650" height="210" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-dasharray="6 5"/>
+        <text x="250" y="45" font-size="11" letter-spacing="1.5" fill="var(--muted)" font-weight="600">PROYECTO RAILWAY · RED PRIVADA *.railway.internal</text>
+
+        <!-- web -->
+        <rect x="260" y="85" width="170" height="80" rx="10" fill="var(--surface-2)" stroke="var(--ink-2)"/>
+        <text x="345" y="112" text-anchor="middle" font-weight="700" fill="var(--ink-2)">web</text>
+        <text x="345" y="132" text-anchor="middle" font-size="12" fill="var(--muted)">Caddy + SPA · puerto 8080</text>
+        <text x="345" y="150" text-anchor="middle" font-size="12" fill="var(--muted)">/api/* → api:8080</text>
+
+        <!-- api -->
+        <rect x="500" y="85" width="170" height="80" rx="10" fill="var(--surface-2)" stroke="var(--ink-2)"/>
+        <text x="585" y="112" text-anchor="middle" font-weight="700" fill="var(--ink-2)">api</text>
+        <text x="585" y="132" text-anchor="middle" font-size="12" fill="var(--muted)">.NET 8 · puerto 8080</text>
+        <text x="585" y="150" text-anchor="middle" font-size="12" fill="var(--muted)">sin dominio público</text>
+
+        <!-- postgres -->
+        <rect x="730" y="60" width="130" height="56" rx="10" fill="var(--surface-2)" stroke="var(--line)"/>
+        <text x="795" y="84" text-anchor="middle" font-weight="600" fill="var(--ink-2)">Postgres</text>
+        <text x="795" y="102" text-anchor="middle" font-size="12" fill="var(--muted)">datos</text>
+
+        <!-- bucket -->
+        <rect x="730" y="140" width="130" height="56" rx="10" fill="var(--surface-2)" stroke="var(--line)"/>
+        <text x="795" y="164" text-anchor="middle" font-weight="600" fill="var(--ink-2)">Bucket</text>
+        <text x="795" y="182" text-anchor="middle" font-size="12" fill="var(--muted)">fotos (S3)</text>
+
+        <!-- flechas -->
+        <line x1="170" y1="125" x2="258" y2="125" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="430" y1="125" x2="498" y2="125" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="670" y1="110" x2="728" y2="92" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="670" y1="140" x2="728" y2="164" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+      </g>
+    </svg>
+    <p class="cap">Solo el servicio <strong>web</strong> tiene dominio público. Railway termina el TLS, así que Caddy corre en HTTP plano por dentro (no se define <code>SITE_ADDRESS</code>).</p>
+  </section>
+
+  <nav class="toc" aria-label="Pasos">
+    <header>
+      <h2>Pasos</h2>
+      <span class="progress" id="prog">0 de 9 listos</span>
+    </header>
+    <ol id="toc">
+      <li data-step="1"><input type="checkbox" aria-label="Paso 1 listo"><span class="n">1</span><a href="#p1">Antes de tocar Railway</a><span class="who pc">tu PC</span></li>
+      <li data-step="2"><input type="checkbox" aria-label="Paso 2 listo"><span class="n">2</span><a href="#p2">Proyecto, Postgres y Bucket</a><span class="who vos">Railway</span></li>
+      <li data-step="3"><input type="checkbox" aria-label="Paso 3 listo"><span class="n">3</span><a href="#p3">Servicio api</a><span class="who vos">Railway</span></li>
+      <li data-step="4"><input type="checkbox" aria-label="Paso 4 listo"><span class="n">4</span><a href="#p4">Servicio web</a><span class="who vos">Railway</span></li>
+      <li data-step="5"><input type="checkbox" aria-label="Paso 5 listo"><span class="n">5</span><a href="#p5">Dominio</a><span class="who vos">Railway + DNS</span></li>
+      <li data-step="6"><input type="checkbox" aria-label="Paso 6 listo"><span class="n">6</span><a href="#p6">Migrar la base</a><span class="who pc">tu PC</span></li>
+      <li data-step="7"><input type="checkbox" aria-label="Paso 7 listo"><span class="n">7</span><a href="#p7">Cargar las 85 propiedades</a><span class="who pc">tu PC</span></li>
+      <li data-step="8"><input type="checkbox" aria-label="Paso 8 listo"><span class="n">8</span><a href="#p8">Verificar</a><span class="who vos">navegador</span></li>
+      <li data-step="9"><input type="checkbox" aria-label="Paso 9 listo"><span class="n">9</span><a href="#p9">Después: cambios y costo</a><span class="who pc">rutina</span></li>
+    </ol>
+  </nav>
+
+  <!-- ─────────────────────────── 1 ─────────────────────────── -->
+  <section class="step" id="p1" data-step="1">
+    <div class="num">1</div>
+    <div class="body">
+      <div class="head"><h2>Antes de tocar Railway</h2><span class="meta">5 min</span></div>
+      <ol>
+        <li><strong>Pusheá la rama.</strong> Railway construye desde GitHub. La rama <code>fix/audit-2026-07-18</code> ya está en origin; si hacés commits nuevos, pusheá antes de desplegar.</li>
+        <li><strong>Tené a mano los secretos.</strong> Están generados en <code>docs/propuesta-palavecino/secretos-prod.local.txt</code> (gitignoreado). Vas a copiar de ahí <code>JWT_SECRET</code>, <code>DOCUMENT_TOKEN_SECRET</code> y <code>REGISTRATION_INVITE_CODE</code>. Postgres y MinIO de ese archivo <em>no</em> se usan: Railway genera sus propias credenciales.</li>
+        <li><strong>Plan de Railway.</strong> Entrá a <a href="https://railway.com" target="_blank" rel="noopener">railway.com</a>. Si tu cuenta está en Trial, alcanza para armar todo; para que el demo quede en línea más de un mes conviene pasar a Hobby (USD 5/mes, incluye USD 5 de uso).</li>
+        <li><strong>Acceso al DNS de tu dominio.</strong> Vas a agregar un registro CNAME en el paso 5.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── 2 ─────────────────────────── -->
+  <section class="step" id="p2" data-step="2">
+    <div class="num">2</div>
+    <div class="body">
+      <div class="head"><h2>Proyecto, Postgres y Bucket</h2><span class="meta">5 min</span></div>
+      <ol>
+        <li>En el panel: <span class="ui">New Project</span> → <span class="ui">Empty project</span>. Nombralo <code>gestion-alquileres</code> (arriba a la izquierda, <span class="ui">Settings</span>).</li>
+        <li><span class="ui">+ Create</span> → <span class="ui">Database</span> → <span class="ui">PostgreSQL</span>. Queda un servicio llamado <strong>Postgres</strong>. No toques nada más.</li>
+        <li><span class="ui">+ Create</span> → <span class="ui">Bucket</span>. Región: <strong>US East</strong> (la más cercana a Argentina). Dejale el nombre <strong>Bucket</strong>: las variables de abajo lo referencian con ese nombre.</li>
+        <li>Abrí el Bucket → pestaña <span class="ui">Credentials</span> y fijate qué dice sobre el estilo de URL: <em>virtual-hosted</em> (lo normal hoy) o <em>path-style</em>. Lo vas a necesitar para una variable del paso 3.</li>
+      </ol>
+      <div class="note"><b>Por qué Bucket y no MinIO</b>Railway Buckets es almacenamiento S3 nativo, privado, a USD 0,015 por GB al mes y sin costo de tráfico. Es un servicio menos que mantener y el código ya habla S3 (el mismo camino que usa MinIO en local).</div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── 3 ─────────────────────────── -->
+  <section class="step" id="p3" data-step="3">
+    <div class="num">3</div>
+    <div class="body">
+      <div class="head"><h2>Servicio api</h2><span class="meta">10 min · la primera build tarda 4–6 min</span></div>
+      <ol>
+        <li><span class="ui">+ Create</span> → <span class="ui">GitHub Repo</span> → elegí <code>bruno-avila21/gestion-alquileres-saas</code>. Si no aparece, <span class="ui">Configure GitHub App</span> y dale acceso al repo.</li>
+        <li>Antes de que termine la primera build, entrá al servicio → <span class="ui">Settings</span>:
+          <ul>
+            <li><strong>Service name:</strong> <code>api</code> (exacto: el servicio web lo busca por ese nombre en la red privada).</li>
+            <li><strong>Source → Branch:</strong> <code>fix/audit-2026-07-18</code>.</li>
+            <li><strong>Source → Root Directory:</strong> <code>/api</code>. Railway detecta el Dockerfile solo.</li>
+            <li><strong>Deploy → Healthcheck Path:</strong> <code>/health/live</code>.</li>
+            <li><strong>Networking:</strong> no generes dominio público. Solo se llega por el servicio web.</li>
+          </ul>
+        </li>
+        <li>Pestaña <span class="ui">Variables</span> → <span class="ui">Raw Editor</span> y pegá este bloque completo. Reemplazá los tres valores marcados con <code>&lt;…&gt;</code> con los del archivo de secretos.</li>
+      </ol>
+
+      <div class="code"><button class="copy" type="button">Copiar</button><pre><span class="c"># Entorno</span>
+ASPNETCORE_ENVIRONMENT=Production
+PORT=8080
+ForwardedHeaders__Enabled=true
+AllowedHosts=*
+
+<span class="c"># Base de datos (referencias al servicio Postgres, Railway las resuelve)</span>
+ConnectionStrings__DefaultConnection=Host=${{Postgres.RAILWAY_PRIVATE_DOMAIN}};Port=5432;Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}}
+ConnectionStrings__HangfireConnection=Host=${{Postgres.RAILWAY_PRIVATE_DOMAIN}};Port=5432;Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}}
+
+<span class="c"># Fotos y documentos → Railway Bucket</span>
+Storage__Provider=S3
+Storage__Bucket=${{Bucket.BUCKET}}
+Storage__ServiceUrl=${{Bucket.ENDPOINT}}
+Storage__Region=${{Bucket.REGION}}
+Storage__AccessKey=${{Bucket.ACCESS_KEY_ID}}
+Storage__SecretKey=${{Bucket.SECRET_ACCESS_KEY}}
+Storage__ForcePathStyle=false
+
+<span class="c"># Secretos (de secretos-prod.local.txt)</span>
+JwtSettings__SecretKey=<span class="s">&lt;JWT_SECRET&gt;</span>
+DocumentToken__Secret=<span class="s">&lt;DOCUMENT_TOKEN_SECRET&gt;</span>
+
+<span class="c"># Registro cerrado: el código permite sembrar SOLO la org demo</span>
+Registration__Mode=InviteCode
+Registration__InviteCode=<span class="s">&lt;REGISTRATION_INVITE_CODE&gt;</span>
+
+<span class="c"># Origen público (mismo origen que el SPA; CORS no interviene pero la clave es obligatoria)</span>
+Cors__AllowedOrigins__0=https://<span data-dom>demo.tudominio.com</span>
+
+<span class="c"># Email apagado para el demo (solo loguea)</span>
+Email__Provider=Null
+Email__FromEmail=no-reply@<span data-dom>demo.tudominio.com</span></pre></div>
+
+      <div class="tbl"><table>
+        <thead><tr><th>Si…</th><th>Entonces</th></tr></thead>
+        <tbody>
+          <tr><td>El Bucket dice <em>path-style</em> en Credentials</td><td>Cambiá <code>Storage__ForcePathStyle=true</code>.</td></tr>
+          <tr><td>Postgres no tiene <code>PGDATABASE</code> / <code>PGUSER</code> en su pestaña Variables</td><td>Usá los nombres que sí muestre (la base suele ser <code>railway</code> y el usuario <code>postgres</code>).</td></tr>
+          <tr><td>Le pusiste otro nombre al Bucket</td><td>Reemplazá <code>Bucket.</code> por <code>&lt;TuNombre&gt;.</code> en las seis referencias.</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>Guardá con <span class="ui">Deploy</span> (o <span class="ui">Update variables</span>). En <span class="ui">Deployments</span> → <span class="ui">View logs</span> tiene que terminar en <em>Now listening on: http://[::]:8080</em>. Si el deploy queda en rojo, ver <a href="#trouble">Si algo falla</a>.</p>
+      <div class="warn"><b>Ojo</b><code>AllowedHosts=*</code> es correcto acá: la API no tiene dominio público y el healthcheck de Railway le pega con un Host interno. Restringirlo hace fallar el deploy.</div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── 4 ─────────────────────────── -->
+  <section class="step" id="p4" data-step="4">
+    <div class="num">4</div>
+    <div class="body">
+      <div class="head"><h2>Servicio web</h2><span class="meta">5 min · build 2–3 min</span></div>
+      <ol>
+        <li><span class="ui">+ Create</span> → <span class="ui">GitHub Repo</span> → el mismo repo.</li>
+        <li><span class="ui">Settings</span>:
+          <ul>
+            <li><strong>Service name:</strong> <code>web</code>.</li>
+            <li><strong>Branch:</strong> <code>fix/audit-2026-07-18</code>. <strong>Root Directory:</strong> <code>/web</code>.</li>
+          </ul>
+        </li>
+        <li><span class="ui">Variables</span> → <span class="ui">Raw Editor</span>:</li>
+      </ol>
+      <div class="code"><button class="copy" type="button">Copiar</button><pre>PORT=8080
+API_UPSTREAM=${{api.RAILWAY_PRIVATE_DOMAIN}}:8080</pre></div>
+      <p><strong>No definas <code>SITE_ADDRESS</code>.</strong> Con esa variable Caddy intentaría sacar un certificado propio; en Railway el TLS lo termina la plataforma y Caddy sirve HTTP plano en el 8080.</p>
+      <ol start="4">
+        <li><span class="ui">Settings</span> → <span class="ui">Networking</span> → <span class="ui">Generate Domain</span>, puerto <code>8080</code>. Te da una URL <code>*.up.railway.app</code> para probar ya mismo, antes del DNS.</li>
+        <li>Abrí esa URL: tiene que cargar el login del panel. Probá también <code><span class="mono">…/health/live</span></code>: si responde, Caddy ya llega a la API por la red privada.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── 5 ─────────────────────────── -->
+  <section class="step" id="p5" data-step="5">
+    <div class="num">5</div>
+    <div class="body">
+      <div class="head"><h2>Dominio</h2><span class="meta">5 min + propagación (minutos a horas)</span></div>
+      <ol>
+        <li>Servicio <strong>web</strong> → <span class="ui">Settings</span> → <span class="ui">Networking</span> → <span class="ui">Custom Domain</span> → escribí <span data-dom>demo.tudominio.com</span>, puerto <code>8080</code>.</li>
+        <li>Railway te muestra un valor CNAME (algo como <code>xxxx.up.railway.app</code>). En el panel DNS de tu registrador creá:</li>
+      </ol>
+      <div class="tbl"><table>
+        <thead><tr><th>Tipo</th><th>Nombre / host</th><th>Valor / destino</th><th>TTL</th></tr></thead>
+        <tbody><tr><td class="k">CNAME</td><td class="v">demo <span class="note">(solo el subdominio)</span></td><td class="v">el valor que mostró Railway</td><td class="v">Auto o 300</td></tr></tbody>
+      </table></div>
+      <ol start="3">
+        <li>Volvé a Railway: el dominio pasa de <em>Waiting for DNS</em> a un tilde verde cuando propaga. El certificado lo emite solo.</li>
+      </ol>
+      <div class="warn"><b>Si usás Cloudflare</b>Dejá el registro en <em>DNS only</em> (nube gris), o bien poné el modo SSL en <em>Full (strict)</em>. Con la nube naranja y SSL en <em>Flexible</em> entra en un bucle de redirecciones.</div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── 6 ─────────────────────────── -->
+  <section class="step" id="p6" data-step="6">
+    <div class="num">6</div>
+    <div class="body">
+      <div class="head"><h2>Migrar la base</h2><span class="meta">3 min · desde tu PC</span></div>
+      <p>La API no migra al arrancar (a propósito). Corrés las migraciones una vez desde tu máquina contra la URL pública de Postgres.</p>
+      <ol>
+        <li>Servicio <strong>Postgres</strong> → <span class="ui">Variables</span> → copiá <code>DATABASE_PUBLIC_URL</code>. Tiene esta forma: <code>postgresql://postgres:CLAVE@HOST.proxy.rlwy.net:PUERTO/railway</code>.</li>
+        <li>Armá la cadena de conexión con esos cuatro datos y corré, en PowerShell, dentro de la carpeta <code>api</code>:</li>
+      </ol>
+      <div class="code"><button class="copy" type="button">Copiar</button><pre>cd api
+dotnet ef database update `
+  --project src/GestionAlquileres.Infrastructure `
+  --startup-project src/GestionAlquileres.API `
+  --connection "Host=<span class="s">HOST.proxy.rlwy.net</span>;Port=<span class="s">PUERTO</span>;Database=railway;Username=postgres;Password=<span class="s">CLAVE</span>"</pre></div>
+      <ol start="3">
+        <li>Tiene que terminar en <em>Done.</em> Después, servicio <strong>api</strong> → menú ⋯ del último deploy → <span class="ui">Restart</span>, para que Hangfire cree su esquema sobre la base ya migrada.</li>
+      </ol>
+      <div class="note"><b>Recordatorio</b>El proyecto exige <code>--connection</code> explícito: la fábrica del DbContext trae una cadena de marcador y sin ese flag no apunta a ninguna base real.</div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── 7 ─────────────────────────── -->
+  <section class="step" id="p7" data-step="7">
+    <div class="num">7</div>
+    <div class="body">
+      <div class="head"><h2>Cargar las 85 propiedades</h2><span class="meta">10–15 min · desde tu PC</span></div>
+      <p>Los datos ya están scrapeados en <code>tools/importar-sitio-tokko/salida-palavecino/</code> (propiedades y 647 fotos). El importador registra la organización con el código de invitación, sube todo por la API y publica.</p>
+      <div class="code"><button class="copy" type="button">Copiar</button><pre>cd tools/importar-sitio-tokko
+pip install requests
+python importar.py salida-palavecino `
+  --api https://<span data-dom>demo.tudominio.com</span>/api/v1 `
+  --slug palavecino `
+  --email admin@palavecino.demo `
+  --password "Palavecino2026!" `
+  --nombre "Palavecino y Asociados" `
+  --invite <span class="s">&lt;REGISTRATION_INVITE_CODE&gt;</span> `
+  --publicar</pre></div>
+      <p>Si el dominio todavía no propagó, usá la URL <code>*.up.railway.app</code> del paso 4 en <code>--api</code>. Es idempotente: si se corta, volvé a correrlo y saltea lo que ya subió.</p>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── 8 ─────────────────────────── -->
+  <section class="step" id="p8" data-step="8">
+    <div class="num">8</div>
+    <div class="body">
+      <div class="head"><h2>Verificar</h2><span class="meta">5 min</span></div>
+      <div class="tbl"><table>
+        <thead><tr><th>Qué</th><th>URL</th><th>Esperado</th></tr></thead>
+        <tbody>
+          <tr><td>Sitio público</td><td class="v">https://<span data-dom>demo.tudominio.com</span>/sitio/palavecino</td><td>Home con propiedades destacadas, listado con filtros, fichas con fotos.</td></tr>
+          <tr><td>Panel admin</td><td class="v">https://<span data-dom>demo.tudominio.com</span>/admin/login</td><td>Entra con admin@palavecino.demo y pide cambiar la clave en el primer ingreso.</td></tr>
+          <tr><td>Salud</td><td class="v">https://<span data-dom>demo.tudominio.com</span>/health/live</td><td>200.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="good"><b>Listo para mostrar</b>Cambiá la clave del admin en el primer ingreso y guardala en el archivo de secretos. A partir de acá el link se puede compartir con el cliente.</div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── 9 ─────────────────────────── -->
+  <section class="step" id="p9" data-step="9">
+    <div class="num">9</div>
+    <div class="body">
+      <div class="head"><h2>Después: cambios y costo</h2><span class="meta">rutina</span></div>
+      <h3>Ir viendo los cambios</h3>
+      <p>Cada push a la rama configurada redeploya <strong>api</strong> y <strong>web</strong> solos (Railway solo reconstruye el servicio cuya carpeta cambió). Si un cambio trae una migración nueva, repetí el comando del paso 6 antes o justo después del deploy.</p>
+      <h3>Cuando el cliente firme</h3>
+      <ul>
+        <li>Agregá su dominio real como segundo Custom Domain del servicio web y sumalo a <code>Cors__AllowedOrigins__1</code>.</li>
+        <li>Cerrá el registro: <code>Registration__Mode=Disabled</code> en la api.</li>
+        <li>Prendé el email: <code>Email__Provider=Smtp</code> y credenciales (Resend o Brevo tienen plan gratis).</li>
+      </ul>
+      <h3>Controlar el gasto</h3>
+      <p>En <span class="ui">Usage</span> del proyecto ves el consumo diario. Para pausar el demo sin perder nada: servicio → <span class="ui">Settings</span> → <span class="ui">Remove service</span> solo en <strong>api</strong> y <strong>web</strong> (Postgres y Bucket cuestan centavos y conservan los datos). Volver a crearlos son los pasos 3 y 4.</p>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── Problemas ─────────────────────────── -->
+  <section class="trouble" id="trouble">
+    <h2>Si algo falla</h2>
+    <dl>
+      <dt>La build de api o web falla en segundos</dt>
+      <dd>Casi siempre es el <strong>Root Directory</strong> vacío o sin la barra inicial. Tiene que ser <code>/api</code> o <code>/web</code>.</dd>
+
+      <dt>api arranca y se cae (crash loop)</dt>
+      <dd>Mirá los logs. "SecretKey must be at least 32 characters": secreto mal pegado. "Registration mode Open is not allowed": falta <code>Registration__Mode</code>. "Connection refused" a Postgres: revisá que las referencias <code>${{Postgres.…}}</code> se hayan resuelto (en Variables aparecen con el valor real al pasar el mouse).</dd>
+
+      <dt>web responde 502 en /api o /health</dt>
+      <dd>Caddy no encuentra la API. Confirmá que el servicio se llama exactamente <code>api</code> y que <code>API_UPSTREAM</code> termina en <code>:8080</code>.</dd>
+
+      <dt>Las fotos dan 500 al subir o al verse</dt>
+      <dd>Problema con el Bucket. Alterná <code>Storage__ForcePathStyle</code> según lo que diga la pestaña Credentials, y verificá que <code>Storage__ServiceUrl</code> sea la URL completa con <code>https://</code>.</dd>
+
+      <dt>El dominio queda en "Waiting for DNS"</dt>
+      <dd>Propagación. Comprobá desde tu PC con <code>nslookup <span data-dom>demo.tudominio.com</span></code>: tiene que devolver el CNAME de Railway. Si usás Cloudflare, nube gris.</dd>
+
+      <dt>El importador devuelve 401 o 403 al registrar</dt>
+      <dd>El código de <code>--invite</code> no coincide con <code>Registration__InviteCode</code> de la api. Copialo de nuevo, sin espacios.</dd>
+
+      <dt>Login funciona pero la sesión se pierde al recargar</dt>
+      <dd>La cookie sale sin <em>Secure</em>. Falta <code>ForwardedHeaders__Enabled=true</code> en la api.</dd>
+    </dl>
+  </section>
+</div>
+
+<script>
+(function () {
+  var KEY_DOM = 'palavecino-railway-dom', KEY_DONE = 'palavecino-railway-done';
+  var input = document.getElementById('dom');
+  var spans = document.querySelectorAll('[data-dom]');
+  function applyDom(v) {
+    var val = (v || '').trim() || 'demo.tudominio.com';
+    spans.forEach(function (s) { s.textContent = val; });
+  }
+  try { var saved = localStorage.getItem(KEY_DOM); if (saved) { input.value = saved; applyDom(saved); } } catch (e) {}
+  input.addEventListener('input', function () {
+    applyDom(input.value);
+    try { localStorage.setItem(KEY_DOM, input.value); } catch (e) {}
+  });
+
+  // Progreso
+  var boxes = document.querySelectorAll('#toc input[type=checkbox]');
+  var prog = document.getElementById('prog');
+  var done = {};
+  try { done = JSON.parse(localStorage.getItem(KEY_DONE) || '{}'); } catch (e) { done = {}; }
+  function render() {
+    var n = 0;
+    boxes.forEach(function (b) {
+      var li = b.closest('li'), step = li.getAttribute('data-step'), on = !!done[step];
+      b.checked = on; li.classList.toggle('done', on);
+      var sec = document.querySelector('.step[data-step="' + step + '"]');
+      if (sec) sec.classList.toggle('done', on);
+      if (on) n++;
+    });
+    prog.textContent = n + ' de ' + boxes.length + ' listos';
+  }
+  boxes.forEach(function (b) {
+    b.addEventListener('change', function () {
+      var step = b.closest('li').getAttribute('data-step');
+      done[step] = b.checked;
+      try { localStorage.setItem(KEY_DONE, JSON.stringify(done)); } catch (e) {}
+      render();
+    });
+  });
+  render();
+
+  // Copiar
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pre = btn.parentNode.querySelector('pre');
+      var text = pre.innerText.replace(/\r/g, '');
+      function ok() { btn.textContent = 'Copiado'; btn.classList.add('ok'); setTimeout(function () { btn.textContent = 'Copiar'; btn.classList.remove('ok'); }, 1600); }
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(ok, ok); }
+      else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); ok(); }
+    });
+  });
+})();
+</script>
