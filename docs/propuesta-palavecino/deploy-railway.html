@@ -362,7 +362,9 @@
 ASPNETCORE_ENVIRONMENT=Production
 PORT=8080
 ForwardedHeaders__Enabled=true
-AllowedHosts=*
+<span class="c"># Hosts admitidos, separados por ; — healthcheck.railway.app es el que usa Railway para el healthcheck.</span>
+<span class="c"># En el paso 4 vas a sumar acá el dominio *.up.railway.app que genere el servicio web.</span>
+AllowedHosts=<span data-dom>demo.tudominio.com</span>;healthcheck.railway.app
 
 <span class="c"># Base de datos (referencias al servicio Postgres, Railway las resuelve)</span>
 ConnectionStrings__DefaultConnection=Host=${{Postgres.RAILWAY_PRIVATE_DOMAIN}};Port=5432;Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}}
@@ -402,7 +404,7 @@ Email__FromEmail=no-reply@<span data-dom>demo.tudominio.com</span></pre></div>
       </table></div>
 
       <p>Guardá con <span class="ui">Deploy</span> (o <span class="ui">Update variables</span>). En <span class="ui">Deployments</span> → <span class="ui">View logs</span> tiene que terminar en <em>Now listening on: http://[::]:8080</em>. Si el deploy queda en rojo, ver <a href="#trouble">Si algo falla</a>.</p>
-      <div class="warn"><b>Ojo</b><code>AllowedHosts=*</code> es correcto acá: la API no tiene dominio público y el healthcheck de Railway le pega con un Host interno. Restringirlo hace fallar el deploy.</div>
+      <div class="warn"><b>Ojo con los marcadores</b>Los tres valores <code>&lt;…&gt;</code> hay que reemplazarlos por los reales, sin los signos de menor y mayor. Si quedan literales, el arranque falla con "SecretKey debe tener al menos 32 caracteres (actual: 12)". Y <code>AllowedHosts</code> no admite <code>*</code> fuera de Development: la app lo rechaza a propósito.</div>
     </div>
   </section>
 
@@ -426,6 +428,7 @@ API_UPSTREAM=${{api.RAILWAY_PRIVATE_DOMAIN}}:8080</pre></div>
       <p><strong>No definas <code>SITE_ADDRESS</code>.</strong> Con esa variable Caddy intentaría sacar un certificado propio; en Railway el TLS lo termina la plataforma y Caddy sirve HTTP plano en el 8080.</p>
       <ol start="4">
         <li><span class="ui">Settings</span> → <span class="ui">Networking</span> → <span class="ui">Generate Domain</span>, puerto <code>8080</code>. Te da una URL <code>*.up.railway.app</code> para probar ya mismo, antes del DNS.</li>
+        <li>Copiá ese dominio y volvé al servicio <strong>api</strong> → Variables: agregalo al final de <code>AllowedHosts</code>, separado por <code>;</code> (queda <code><span data-dom>demo.tudominio.com</span>;healthcheck.railway.app;xxxx.up.railway.app</code>). Caddy reenvía el Host original, así que la API tiene que admitirlo. Guardá: la api se redeploya sola.</li>
         <li>Abrí esa URL: tiene que cargar el login del panel. Probá también <code><span class="mono">…/health/live</span></code>: si responde, Caddy ya llega a la API por la red privada.</li>
       </ol>
     </div>
@@ -519,7 +522,7 @@ python importar.py salida-palavecino `
       <p>Cada push a la rama configurada redeploya <strong>api</strong> y <strong>web</strong> solos (Railway solo reconstruye el servicio cuya carpeta cambió). Si un cambio trae una migración nueva, repetí el comando del paso 6 antes o justo después del deploy.</p>
       <h3>Cuando el cliente firme</h3>
       <ul>
-        <li>Agregá su dominio real como segundo Custom Domain del servicio web y sumalo a <code>Cors__AllowedOrigins__1</code>.</li>
+        <li>Agregá su dominio real como segundo Custom Domain del servicio web, sumalo a <code>AllowedHosts</code> y a <code>Cors__AllowedOrigins__1</code>.</li>
         <li>Cerrá el registro: <code>Registration__Mode=Disabled</code> en la api.</li>
         <li>Prendé el email: <code>Email__Provider=Smtp</code> y credenciales (Resend o Brevo tienen plan gratis).</li>
       </ul>
@@ -536,7 +539,10 @@ python importar.py salida-palavecino `
       <dd>Casi siempre es el <strong>Root Directory</strong> vacío o sin la barra inicial. Tiene que ser <code>/api</code> o <code>/web</code>.</dd>
 
       <dt>api arranca y se cae (crash loop)</dt>
-      <dd>Mirá los logs. "SecretKey must be at least 32 characters": secreto mal pegado. "Registration mode Open is not allowed": falta <code>Registration__Mode</code>. "Connection refused" a Postgres: revisá que las referencias <code>${{Postgres.…}}</code> se hayan resuelto (en Variables aparecen con el valor real al pasar el mouse).</dd>
+      <dd>Mirá los <strong>Deploy Logs</strong>. "SecretKey debe tener al menos 32 caracteres (actual: 12)": quedó el marcador <code>&lt;JWT_SECRET&gt;</code> sin reemplazar. "AllowedHosts debe listar los dominios reales": pusiste <code>*</code>. "Connection refused" a Postgres: revisá que las referencias <code>${{Postgres.…}}</code> se hayan resuelto (en Variables aparecen con el valor real al pasar el mouse).</dd>
+
+      <dt>El healthcheck falla con 400 aunque la api arrancó</dt>
+      <dd>Falta <code>healthcheck.railway.app</code> en <code>AllowedHosts</code>. Railway hace el healthcheck con ese host.</dd>
 
       <dt>web responde 502 en /api o /health</dt>
       <dd>Caddy no encuentra la API. Confirmá que el servicio se llama exactamente <code>api</code> y que <code>API_UPSTREAM</code> termina en <code>:8080</code>.</dd>
