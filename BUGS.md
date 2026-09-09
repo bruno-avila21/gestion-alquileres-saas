@@ -53,3 +53,40 @@ de arreglar. El hook `qa-captura` deja el crudo en `.claude/qa/fallos.jsonl`.
 - **Lección:** comparar texto scrapeado sin normalizar espacios es un falso negativo
   silencioso — no rompe nada, sólo ensucia los datos, y se descubre meses después en
   pantalla. Toda comparación de strings venidos de HTML va normalizada.
+
+---
+
+### 3. El panel muestra los punitorios como "Crédito"
+
+- **Paso:** entrar a `/admin/dashboard` con la org `palavecino` → tabla "Transacciones
+  recientes", primera fila (el punitorio de $ 10.500 de Ana López).
+- **Error exacto:** el chip dice `Crédito` en vez de `Punitorio`.
+- **Reproducir:** cualquier organización con una transacción de tipo `LateFee`.
+- **Causa:** `DashboardPage.tsx` tenía dos fuentes de verdad para el mismo rótulo. Arriba
+  el `Record<TransactionType, string>` **TX_LABEL**, completo y exhaustivo por tipo — que
+  sólo se usaba para el CSV de exportación. Y adentro de la tabla, un ternario encadenado
+  escrito a mano que terminaba en `: 'Crédito'`. Al sumar `LateFee` al enum se actualizó
+  el Record (el compilador lo exige) pero no el ternario, que no tiene forma de exigirlo:
+  el caso nuevo cayó en la rama final.
+- **Arreglo:** la tabla usa `TX_LABEL[t.type]`. Queda un solo mapa, y `Record<TransactionType, …>`
+  hace que agregar un tipo al enum rompa la compilación hasta rotularlo.
+- **Lección:** un rótulo por enum va en un `Record<Enum, string>`, nunca en un ternario
+  encadenado. El Record convierte "me olvidé un caso" en error de compilación; el ternario
+  lo convierte en un dato mal mostrado que nadie ve hasta la demo.
+
+---
+
+### 4. Los KPI del panel mostraban una tendencia inventada
+
+- **Paso:** `/admin/dashboard` → las cuatro tarjetas de arriba.
+- **Error exacto:** cada una llevaba un sparkline rotulado `tendencia (ilustrativa)` sobre
+  una serie fija en el código (`[4.2, 4.4, 4.5, 4.7, …]`) con el valor real pegado como
+  último punto. Dos tarjetas ("Ingresos mensuales" y "Trans. recientes") compartían la
+  misma serie, así que dibujaban la misma curva para métricas distintas.
+- **Causa:** relleno visual de la maqueta que nunca se reemplazó por datos.
+- **Arreglo:** fuera el sparkline. Cada tarjeta lleva un pie con un dato real derivado de
+  lo que ya trae el endpoint: promedio por contrato (ingresos ÷ contratos vigentes) y
+  fecha del último movimiento; las otras dos, un descriptor sin cifras.
+- **Lección:** en una demo comercial, un gráfico rotulado "ilustrativo" no es neutral —
+  es lo primero que mira el cliente y lo único que le confirma que el resto puede ser
+  inventado. O el dato es real, o no va.
