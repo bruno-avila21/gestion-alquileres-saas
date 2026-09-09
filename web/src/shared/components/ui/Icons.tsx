@@ -350,3 +350,12 @@ export function Spark({ data, color = 'var(--brand)', w = 96, h = 28 }: SparkPro
     </svg>
   )
 }
+
+export function IcCalculator({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={style} className={className} aria-hidden="true">
+      <rect x="4" y="2.5" width="16" height="19" rx="2.5" />
+      <path d="M8 6.5h8M8 11h.01M12 11h.01M16 11h.01M8 14.5h.01M12 14.5h.01M16 14.5h.01M8 18h.01M12 18h4" />
+    </svg>
+  )
+}

@@ -6,6 +6,11 @@ const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api/v1'
 export const api = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
+  // Sin tope, una petición que depende de un servicio externo caído deja la pantalla
+  // girando para siempre y sin error: se vio con la simulación de ajuste cuando la
+  // indices-api no responde. Un minuto es holgado hasta para generar un PDF y acota
+  // el fallo a algo que la interfaz puede contar.
+  timeout: 60_000,
   // Send the HttpOnly auth cookie with every request. The JWT is no longer kept in
   // localStorage, so there is no Authorization header to attach client-side.
   withCredentials: true,

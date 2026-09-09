@@ -254,6 +254,40 @@ summary:focus-visible {
    formularios; en una fila de filtros eso empuja al resto a la línea de abajo. */
 .select--inline { width: auto; min-width: 180px; padding-right: 28px; cursor: pointer; }
 
+/* ─── Modal ───
+   El patrón estaba repetido con estilos inline en cada diálogo (motivo de pérdida,
+   alta de consulta, confirmaciones). Acá queda una sola vez: la capa oscura, la
+   tarjeta centrada, y una cabecera y un cuerpo con el mismo espaciado que el resto
+   del panel. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 320;
+  padding: 16px;
+  background: rgba(20, 20, 16, .4);
+  display: grid;
+  place-items: center;
+}
+.modal {
+  width: 100%;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-4);
+  box-shadow: 0 20px 45px -12px rgba(16, 24, 40, .22);
+}
+.modal-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--hairline);
+}
+.modal-h h3 { font-size: 16px; font-weight: var(--fw-b); letter-spacing: -.01em; margin: 0; }
+.modal-b { padding: 20px; }
+
 /* ─── Segmented control ───
    Elegir entre dos o tres vistas de lo mismo (tablero/lista, ARS/USD). No es un
    grupo de botones: la pista de fondo comunica que las opciones son excluyentes

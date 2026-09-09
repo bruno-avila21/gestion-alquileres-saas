@@ -67,6 +67,6 @@ public class GetOwnerSettlementQueryHandler : IRequestHandler<GetOwnerSettlement
         var commissionTotal = lines.Sum(l => l.Commission);
 
         return new OwnerSettlementDto(
-            owner.Id, owner.Name, from, to, gross, commissionTotal, gross - commissionTotal, lines);
+            owner.Id, owner.Name, owner.Cbu, from, to, gross, commissionTotal, gross - commissionTotal, lines);
     }
 }

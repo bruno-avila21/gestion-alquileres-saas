@@ -36,6 +36,12 @@ public class OwnersController : AdminControllerBase
         return Ok(result);
     }
 
+    /// <summary>La liquidación del período para todos los propietarios con cobranzas. La vista de lote.</summary>
+    [HttpGet("settlements")]
+    public async Task<ActionResult<IReadOnlyList<OwnerSettlementDto>>> GetAllSettlements(
+        [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct) =>
+        Ok(await Mediator.Send(new GetAllOwnerSettlementsQuery(from, to), ct));
+
     /// <summary>Monthly settlement (rendición) for the owner over the inclusive period range.</summary>
     [HttpGet("{ownerId:guid}/settlement")]
     public async Task<ActionResult<OwnerSettlementDto>> GetSettlement(
