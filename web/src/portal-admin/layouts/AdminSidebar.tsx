@@ -7,7 +7,7 @@ import {
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Panel', icon: <IcHome size={18} />, end: true },
-  { to: '/admin/consultas', label: 'Consultas', icon: <IcMail size={18} /> },
+  { to: '/admin/consultas', label: 'CRM & Leads', icon: <IcMail size={18} /> },
   { to: '/admin/contratos', label: 'Contratos', icon: <IcDoc size={18} /> },
   { to: '/admin/propiedades', label: 'Propiedades', icon: <IcBuilding size={18} /> },
   { to: '/admin/inquilinos', label: 'Inquilinos', icon: <IcUsers size={18} /> },

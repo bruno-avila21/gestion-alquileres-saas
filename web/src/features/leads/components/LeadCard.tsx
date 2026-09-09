@@ -34,6 +34,10 @@ export function LeadCard({ lead, dragging, onOpen, onDragStart, onDragEnd }: Lea
       <div className="lci-property">{propertyLabel}</div>
       <div className="lci-meta">
         <span className="lci-channel">
+          {/* De dónde vino: entró sola por el sitio o la cargó alguien del equipo. */}
+          <span className={`chip ${lead.source === 'Website' ? 'chip--info' : ''}`}>
+            {lead.source === 'Website' ? 'Sitio' : 'Manual'}
+          </span>
           {lead.email && <IcMail size={12} />}
           {lead.phone && <IcPhone size={12} />}
         </span>

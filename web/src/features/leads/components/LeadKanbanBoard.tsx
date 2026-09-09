@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLeads, useLeadSummary, useUpdateLeadStatus } from '../hooks/useLeads'
 import { LEAD_STATUSES } from '../types/lead.types'
-import type { LeadDto, LeadStatus } from '../types/lead.types'
+import type { LeadDto, LeadSource, LeadStatus } from '../types/lead.types'
 import { LeadColumn } from './LeadColumn'
 import { LostReasonModal } from './LostReasonModal'
 
@@ -18,6 +18,8 @@ const AUTOSCROLL_REDUCED_INTERVAL_MS = 300
 
 interface LeadKanbanBoardProps {
   search: string
+  /** Vacío = todos. Se filtra en cliente: el tablero ya trae la cartera entera en una sola página. */
+  source: '' | LeadSource
   onOpenLead: (lead: LeadDto) => void
 }
 
@@ -26,7 +28,7 @@ interface LeadKanbanBoardProps {
  * afectados por el buscador); las tarjetas debajo muestran el resultado de `search`. Puede haber
  * más consultas en una columna que tarjetas visibles si hay un texto buscado — es intencional.
  */
-export function LeadKanbanBoard({ search, onOpenLead }: LeadKanbanBoardProps) {
+export function LeadKanbanBoard({ search, source, onOpenLead }: LeadKanbanBoardProps) {
   const { data, isLoading, isError, refetch } = useLeads({ search, page: 1, pageSize: BOARD_PAGE_SIZE })
   const { data: summary } = useLeadSummary()
   const updateStatus = useUpdateLeadStatus()
@@ -107,7 +109,9 @@ export function LeadKanbanBoard({ search, onOpenLead }: LeadKanbanBoardProps) {
   const leadsByStatus: Record<LeadStatus, LeadDto[]> = {
     New: [], Contacted: [], Visit: [], Negotiation: [], Won: [], Lost: [],
   }
-  data?.items.forEach((lead) => { leadsByStatus[lead.status].push(lead) })
+  data?.items
+    .filter((lead) => !source || lead.source === source)
+    .forEach((lead) => { leadsByStatus[lead.status].push(lead) })
 
   function handleDropStatus(id: string, status: LeadStatus) {
     const lead = data?.items.find((l) => l.id === id)
@@ -139,7 +143,7 @@ export function LeadKanbanBoard({ search, onOpenLead }: LeadKanbanBoardProps) {
             key={status}
             status={status}
             leads={leadsByStatus[status]}
-            count={summary?.byStatus[status] ?? leadsByStatus[status].length}
+            count={source ? leadsByStatus[status].length : (summary?.byStatus[status] ?? leadsByStatus[status].length)}
             isLoading={isLoading}
             isError={isError}
             draggingId={draggingId}
