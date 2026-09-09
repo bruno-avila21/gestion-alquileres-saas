@@ -31,6 +31,21 @@ export default function ConfiguracionPage() {
 
           <div className="card">
             <div className="card-h">
+              <h3>Marca</h3>
+              <div className="sub">recibos y liquidaciones</div>
+            </div>
+            <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
+                Nombre, datos fiscales, logo y color que aparecen en los PDF de recibos y liquidaciones.
+              </div>
+              <Link className="btn" to="/admin/configuracion/marca" style={{ alignSelf: 'flex-start' }}>
+                Editar marca
+              </Link>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-h">
               <h3>Seguridad</h3>
             </div>
             <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

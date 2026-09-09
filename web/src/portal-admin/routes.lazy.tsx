@@ -15,6 +15,8 @@ export const ConsultasPage = lazy(() => import('./pages/ConsultasPage'))
 export const AjustesPage = lazy(() => import('./pages/AjustesPage'))
 export const DocumentosAdminPage = lazy(() => import('./pages/DocumentosAdminPage'))
 export const ConfiguracionPage = lazy(() => import('./pages/ConfiguracionPage'))
+export const MarcaPage = lazy(() => import('./pages/MarcaPage'))
+export const RendicionesPage = lazy(() => import('./pages/RendicionesPage'))
 export const CambiarClavePage = lazy(() => import('./pages/CambiarClavePage'))
 export const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { AdminTopbar } from '../layouts/AdminTopbar'
-import { IcCash, IcDownload } from '@/shared/components/ui/Icons'
+import { IcCash, IcDownload, IcReceipt } from '@/shared/components/ui/Icons'
 import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
+import { downloadBlob } from '@/shared/lib/downloadFile'
 import { useAllTransactions, useContracts } from '@/features/contracts/hooks/useContracts'
 import { contractService } from '@/features/contracts/services/contractService'
 import type { TransactionType } from '@/features/contracts/types/contract.types'
@@ -33,6 +34,21 @@ export default function PagosPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
   const debouncedSearch = useDebounce(search)
+  const [downloadingReceiptId, setDownloadingReceiptId] = useState<string | null>(null)
+  const [receiptError, setReceiptError] = useState('')
+
+  async function handleDownloadReceipt(transactionId: string) {
+    setReceiptError('')
+    setDownloadingReceiptId(transactionId)
+    try {
+      const { blob, fileName } = await contractService.downloadReceiptPdf(transactionId)
+      downloadBlob(blob, fileName)
+    } catch {
+      setReceiptError('No pudimos generar el recibo. Probá de nuevo.')
+    } finally {
+      setDownloadingReceiptId(null)
+    }
+  }
 
   // Server-side pagination + filter + search + net balance (audit M10): the filter/search run in the
   // API (joined to contract), so they span the whole dataset, and the net balance is summed server-side
@@ -104,6 +120,10 @@ export default function PagosPage() {
           />
         </div>
 
+        {receiptError && (
+          <div role="alert" style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)' }}>{receiptError}</div>
+        )}
+
         {isLoading ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
         ) : isError ? (
@@ -125,6 +145,7 @@ export default function PagosPage() {
                   <th>Contrato</th>
                   <th>Notas</th>
                   <th>Fecha</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -148,6 +169,19 @@ export default function PagosPage() {
                     <td className="muted" style={{ fontSize: 'var(--fs-xs)' }}>
                       {formatDate(t.createdAt.split('T')[0])}
                     </td>
+                    <td>
+                      {t.type === 'Payment' && (
+                        <button
+                          className="btn btn--ghost btn--sm btn--icon"
+                          title="Descargar recibo"
+                          aria-label="Descargar recibo"
+                          disabled={downloadingReceiptId === t.id}
+                          onClick={() => handleDownloadReceipt(t.id)}
+                        >
+                          <IcReceipt size={13} />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -157,7 +191,7 @@ export default function PagosPage() {
                   <td className="num" style={{ fontWeight: 700, color: netBalance >= 0 ? 'var(--ok)' : 'var(--danger)' }}>
                     {formatARS(Math.abs(netBalance))}
                   </td>
-                  <td colSpan={4} />
+                  <td colSpan={5} />
                 </tr>
               </tfoot>
             </table>

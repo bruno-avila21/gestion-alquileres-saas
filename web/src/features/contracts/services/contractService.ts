@@ -1,4 +1,5 @@
 import { api } from '@/shared/lib/api'
+import { filenameFromContentDisposition } from '@/shared/lib/downloadFile'
 import type {
   AdjustmentProjection,
   AdjustmentType,
@@ -78,5 +79,12 @@ export const contractService = {
   async exportAdjustmentsCsv(): Promise<Blob> {
     const { data } = await api.get<Blob>('/rent-adjustments/export', { responseType: 'blob' })
     return data
+  },
+  async downloadReceiptPdf(transactionId: string): Promise<{ blob: Blob; fileName: string }> {
+    const res = await api.get<Blob>(`/transactions/${transactionId}/receipt`, { responseType: 'blob' })
+    return {
+      blob: res.data,
+      fileName: filenameFromContentDisposition(res.headers['content-disposition']) ?? 'recibo.pdf',
+    }
   },
 }
