@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { useTenantLogin } from '@/features/auth/hooks/useTenantLogin'
+import { loginErrorMessage } from '@/features/auth/utils/loginError'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -109,7 +110,7 @@ export default function TenantLoginPage() {
 
             {mutation.isError && (
               <div role="alert" style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)' }}>
-                Credenciales inválidas
+                {loginErrorMessage(mutation.error)}
               </div>
             )}
 

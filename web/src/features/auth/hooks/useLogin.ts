@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { authService } from '../services/authService'
 import { useAuthStore } from '@/shared/stores/authStore'
+import { rememberOrgSlug } from '../utils/lastOrg'
 import type { LoginRequest } from '../types/auth.types'
 
 export function useLogin() {
@@ -10,6 +11,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: (req: LoginRequest) => authService.login(req),
     onSuccess: (data) => {
+      rememberOrgSlug(data.organizationSlug)
       login({
         userId: data.userId,
         email: data.email,

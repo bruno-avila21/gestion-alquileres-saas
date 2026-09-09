@@ -23,6 +23,10 @@ dist/
 
 # Claude Code settings locales
 .claude/settings.local.json
+# Capturas de fallos del hook qa-captura (efímeras, por máquina). Se crean en el
+# directorio desde el que se corrió el runner — `cd web && pnpm test` las deja en
+# web/.claude/ — así que el patrón tiene que valer a cualquier profundidad.
+**/.claude/qa/
 
 # Entorno
 .env

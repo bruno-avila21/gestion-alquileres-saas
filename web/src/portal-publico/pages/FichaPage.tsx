@@ -4,6 +4,7 @@ import { usePublicListing } from '@/features/public/hooks/usePublic'
 import { LeadForm } from '@/features/public/components/LeadForm'
 import { resolvePublicPhotoUrl } from '@/features/public/utils/resolvePublicPhotoUrl'
 import { formatArea, operationLabel, propertyTypeLabel } from '@/features/public/utils/labels'
+import { locationLine } from '@/features/public/utils/location'
 import { waConsultaPropiedad } from '@/features/public/utils/whatsapp'
 import type { PublicoOutletContext } from '../types'
 import { BackArrowIcon, NoPhotoIcon, PinIcon, WhatsAppIcon } from '../components/icons'
@@ -88,18 +89,17 @@ export default function FichaPage() {
           ) : null}
 
           <div className="dcontent">
-            <div style={{ display: 'flex', gap: 9, alignItems: 'center', marginBottom: 8 }}>
-              <span className={`badge ${isRent ? 'rent' : 'sale'}`} style={{ position: 'static' }}>{operationLabel(p.operationType)}</span>
-              <span className="mono" style={{ fontSize: 12, color: 'var(--faint)' }}>
-                {propertyTypeLabel(p.propertyType)} · {p.code ?? ''}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+              <span className={`tag ${isRent ? 'tag--rent' : 'tag--sale'}`}>{operationLabel(p.operationType)}</span>
+              <span className="label" style={{ color: 'var(--muted)' }}>
+                {propertyTypeLabel(p.propertyType)}{p.code ? ` · ${p.code}` : ''}
               </span>
             </div>
             <h2>{p.title}</h2>
             <div className="addr" style={{ marginTop: 8, fontSize: 15 }}>
               <PinIcon />
               {p.address ? `${p.address} · ` : ''}
-              {p.neighborhood ? `${p.neighborhood}, ` : ''}
-              {p.city}
+              {locationLine(p.neighborhood, p.city)}
             </div>
 
             <div className="dattrs">
@@ -148,7 +148,7 @@ export default function FichaPage() {
           </div>
         </div>
 
-        <div>
+        <div className="detail-side">
           <div className="contact-card">
             <div className="cc-head">
               <div className="op">{operationLabel(p.operationType)}</div>
@@ -161,11 +161,11 @@ export default function FichaPage() {
             </div>
             <div className="cc-body">
               <div className="code">Cód. {p.code ?? '—'}</div>
-              <a className="btn btn-wa" href={waConsultaPropiedad(p.code, p.title)} target="_blank" rel="noopener noreferrer">
+              <a className="btn btn--wa btn--block" href={waConsultaPropiedad(p.code, p.title)} target="_blank" rel="noopener noreferrer">
                 <WhatsAppIcon />
                 Consultar por WhatsApp
               </a>
-              <Link className="btn btn-ghost" to={`/sitio/${slug}/contacto`}>Solicitar visita</Link>
+              <Link className="btn btn--ghost btn--block" to={`/sitio/${slug}/contacto`}>Solicitar visita</Link>
             </div>
           </div>
 

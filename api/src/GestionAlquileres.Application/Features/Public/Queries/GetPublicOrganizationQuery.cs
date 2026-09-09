@@ -15,6 +15,8 @@ public class GetPublicOrganizationQueryHandler : IRequestHandler<GetPublicOrgani
     {
         var org = await _orgs.GetBySlugAsync(request.Slug.ToLowerInvariant(), ct);
         // A suspended organization's site goes dark along with its panel.
-        return org is null || !org.IsActive ? null : new PublicOrganizationDto(org.Name, org.Slug);
+        return org is null || !org.IsActive
+            ? null
+            : new PublicOrganizationDto(org.Name, org.Slug, org.Address, org.Phone, org.Email);
     }
 }

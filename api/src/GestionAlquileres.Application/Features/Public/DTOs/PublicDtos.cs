@@ -2,8 +2,16 @@ using GestionAlquileres.Domain.Enums;
 
 namespace GestionAlquileres.Application.Features.Public.DTOs;
 
-/// <summary>Lo que el sitio público sabe de la inmobiliaria. Sin datos internos (plan, estado).</summary>
-public record PublicOrganizationDto(string Name, string Slug);
+/// <summary>
+/// Lo que el sitio público sabe de la inmobiliaria. Sin datos internos (plan, estado, CUIT):
+/// sólo lo que la inmobiliaria ya publica de puertas afuera para que la contacten.
+/// </summary>
+public record PublicOrganizationDto(
+    string Name,
+    string Slug,
+    string? Address,
+    string? Phone,
+    string? Email);
 
 /// <summary>Tarjeta del listado público.</summary>
 public record PublicListingCardDto(

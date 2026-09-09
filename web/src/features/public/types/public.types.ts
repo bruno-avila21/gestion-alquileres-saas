@@ -9,6 +9,10 @@ export type PublicSortOption = 'price_asc' | 'price_desc' | 'rooms_asc' | 'rooms
 export interface PublicOrgDto {
   name: string
   slug: string
+  /** Datos de contacto públicos de la inmobiliaria. Nulos hasta que los carga en Configuración. */
+  address: string | null
+  phone: string | null
+  email: string | null
 }
 
 export interface FacetDto {

@@ -14,8 +14,9 @@ function readStoredTheme(): PpTheme {
 }
 
 /**
- * Tema del sitio público, independiente del panel admin. `null` = seguir el tema del sistema
- * (`prefers-color-scheme`, resuelto en CSS); `light`/`dark` = elección explícita persistida.
+ * Tema del sitio público, independiente del panel admin. `null` = claro, el tema por defecto
+ * del sistema de diseño (el CSS ya no sigue `prefers-color-scheme`: el modelo es light-first
+ * y una inmobiliaria se muestra de día). `light`/`dark` = elección explícita persistida.
  */
 export function usePpTheme() {
   const [theme, setTheme] = useState<PpTheme>(() => readStoredTheme())
@@ -30,10 +31,7 @@ export function usePpTheme() {
   }, [theme])
 
   const toggleTheme = useCallback(() => {
-    setTheme((current) => {
-      const isDark = current === 'dark' || (current === null && window.matchMedia('(prefers-color-scheme: dark)').matches)
-      return isDark ? 'light' : 'dark'
-    })
+    setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
   }, [])
 
   return { theme, toggleTheme }

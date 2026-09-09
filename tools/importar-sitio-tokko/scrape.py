@@ -187,8 +187,14 @@ def ficha(session: requests.Session, base: str, card: dict) -> dict:
 def barrio_y_ciudad(card: dict) -> tuple[str | None, str]:
     """alt = 'Foto Departamento en Alquiler en Villa Pueyrredon, Capital Federal Avenida ...'"""
     alt = card["alt"]
-    if card["address"] and alt.endswith(card["address"]):
-        alt = alt[: -len(card["address"])].strip()
+    # El alt trae la dirección al final, pero con espacios dobles donde `address`
+    # tiene uno solo ("Av Cordoba  al 5800" vs "Av Cordoba al 5800"). Comparar en
+    # crudo hacía fallar el endswith y la dirección terminaba pegada a la ciudad
+    # ("Capital Federal Av Cordoba al 5800") en 30 de las 85 propiedades.
+    alt_norm = re.sub(r"\s+", " ", alt).strip()
+    addr_norm = re.sub(r"\s+", " ", card["address"] or "").strip()
+    if addr_norm and alt_norm.endswith(addr_norm):
+        alt = alt_norm[: -len(addr_norm)].strip()
     m = re.search(r".* en ([^,]+?)(?:, (.+))?$", alt)  # el último " en ": "Casa en Venta en Bella Vista, San Miguel"
     if not m:
         return None, ""
