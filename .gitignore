@@ -43,6 +43,9 @@ dist/
 logs/
 *.log
 
+# PDF de muestra generados al verificar QuestPDF (recibos/liquidaciones) — no son código.
+api/artifacts-qa/
+
 # IDE
 .idea/
 .vscode/settings.json
@@ -65,3 +68,17 @@ Template/
 
 # Claude worktrees
 .claude/worktrees/
+
+# graphify — grafo generado, no versionar
+graphify-out/
+
+# Secretos de deploy y salidas de herramientas (nunca commitear)
+*.local.txt
+tools/importar-sitio-tokko/salida-*/
+.env.prod
+
+# Propuesta comercial de Palavecino: analisis del cliente, precios y credenciales de la demo.
+# El repositorio es PUBLICO, asi que esta carpeta no se versiona. Hasta ahora dependia de que
+# nadie hiciera "git add ." sobre ella; con la guia de demo adentro (que lleva la clave del panel)
+# eso dejo de ser suficiente.
+docs/propuesta-palavecino/
