@@ -25,15 +25,39 @@ public class S3StorageService : IStorageService
     public async Task<string> UploadAsync(Stream content, string fileName, string mimeType, CancellationToken ct)
     {
         var storageKey = Guid.NewGuid().ToString("N") + Path.GetExtension(fileName);
-        var request = new PutObjectRequest
+
+        // Sin stream seekable el SDK no puede calcular el hash del cuerpo y cae en
+        // "aws-chunked", que Railway Buckets y otros S3 compatibles rechazan
+        // ("The Content-Encoding HTTP header is invalid"). Se bufferiza en memoria: son
+        // fotos y PDFs chicos (el límite lo pone el validador de cada comando).
+        Stream body = content;
+        MemoryStream? buffer = null;
+        if (!content.CanSeek)
         {
-            BucketName = _bucket,
-            Key = storageKey,
-            InputStream = content,
-            ContentType = mimeType,
-            AutoCloseStream = false,
-        };
-        await _s3.PutObjectAsync(request, ct);
+            buffer = new MemoryStream();
+            await content.CopyToAsync(buffer, ct);
+            buffer.Position = 0;
+            body = buffer;
+        }
+
+        try
+        {
+            var request = new PutObjectRequest
+            {
+                BucketName = _bucket,
+                Key = storageKey,
+                InputStream = body,
+                ContentType = mimeType,
+                AutoCloseStream = false,
+                UseChunkEncoding = false, // cuerpo firmado entero con Content-Length, sin aws-chunked
+            };
+            await _s3.PutObjectAsync(request, ct);
+        }
+        finally
+        {
+            buffer?.Dispose();
+        }
+
         return storageKey;
     }
 
