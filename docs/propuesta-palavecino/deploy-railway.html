@@ -317,7 +317,7 @@
       <div class="head"><h2>Antes de tocar Railway</h2><span class="meta">5 min</span></div>
       <ol>
         <li><strong>Pusheá la rama.</strong> Railway construye desde GitHub. La rama <code>fix/audit-2026-07-18</code> ya está en origin; si hacés commits nuevos, pusheá antes de desplegar.</li>
-        <li><strong>Tené a mano los secretos.</strong> Están generados en <code>docs/propuesta-palavecino/secretos-prod.local.txt</code> (gitignoreado). Vas a copiar de ahí <code>JWT_SECRET</code>, <code>DOCUMENT_TOKEN_SECRET</code> y <code>REGISTRATION_INVITE_CODE</code>. Postgres y MinIO de ese archivo <em>no</em> se usan: Railway genera sus propias credenciales.</li>
+        <li><strong>Tené a mano los secretos.</strong> Están generados en <code>docs/propuesta-palavecino/secretos-prod.local.txt</code> (gitignoreado). Vas a copiar de ahí <code>JWT_SECRET</code>, <code>DOCUMENT_TOKEN_SECRET</code>, <code>REGISTRATION_INVITE_CODE</code> y <code>ADMIN_PASSWORD</code>. El repositorio es público: la clave del admin del demo tiene que ser distinta de la que usás en local y no puede aparecer en ningún archivo versionado. Postgres y MinIO de ese archivo <em>no</em> se usan: Railway genera sus propias credenciales.</li>
         <li><strong>Plan de Railway.</strong> Entrá a <a href="https://railway.com" target="_blank" rel="noopener">railway.com</a>. Si tu cuenta está en Trial, alcanza para armar todo; para que el demo quede en línea más de un mes conviene pasar a Hobby (USD 5/mes, incluye USD 5 de uso).</li>
         <li><strong>Acceso al DNS de tu dominio.</strong> Vas a agregar un registro CNAME en el paso 5.</li>
       </ol>
@@ -485,7 +485,7 @@ python importar.py salida-palavecino `
   --api https://<span data-dom>demo.tudominio.com</span>/api/v1 `
   --slug palavecino `
   --email admin@palavecino.demo `
-  --password "Palavecino2026!" `
+  --password "<span class="s">&lt;ADMIN_PASSWORD&gt;</span>" `
   --nombre "Palavecino y Asociados" `
   --invite <span class="s">&lt;REGISTRATION_INVITE_CODE&gt;</span> `
   --publicar</pre></div>
