@@ -14,6 +14,14 @@ COPY . .
 # hace de proxy a la API en el mismo origen, así que no hace falta saber el dominio al construir.
 ARG VITE_API_URL=/api/v1
 ENV VITE_API_URL=$VITE_API_URL
+
+# Canales de soporte del producto, que la pantalla /admin/soporte ofrece a la
+# inmobiliaria. Vacíos por defecto: sin ellos la pantalla lo dice en vez de
+# mostrar un link muerto. El teléfono va en E.164 sin "+", como pide wa.me.
+ARG VITE_SUPPORT_EMAIL=
+ENV VITE_SUPPORT_EMAIL=$VITE_SUPPORT_EMAIL
+ARG VITE_SUPPORT_WHATSAPP=
+ENV VITE_SUPPORT_WHATSAPP=$VITE_SUPPORT_WHATSAPP
 RUN pnpm build
 
 FROM caddy:2-alpine AS runtime

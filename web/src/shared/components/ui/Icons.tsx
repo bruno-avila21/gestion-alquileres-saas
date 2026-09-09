@@ -359,3 +359,13 @@ export function IcCalculator({ size = 16, style, className }: IconProps) {
     </svg>
   )
 }
+
+export function IcHelp({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={style} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="9.25" />
+      <path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 4" />
+      <path d="M12 17.3h.01" />
+    </svg>
+  )
+}

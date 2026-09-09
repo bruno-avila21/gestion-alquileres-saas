@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router'
 import { useAuthStore } from '@/shared/stores/authStore'
 import {
   IcHome, IcDoc, IcBuilding, IcUsers, IcCash,
-  IcTrend, IcSettings, IcLogout, IcCalendar, IcMail, IcReceipt,
+  IcTrend, IcSettings, IcLogout, IcCalendar, IcMail, IcReceipt, IcHelp,
 } from '@/shared/components/ui/Icons'
 
 const NAV_ITEMS = [
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { to: '/admin/indices', label: 'Índices', icon: <IcTrend size={18} /> },
   { to: '/admin/documentos', label: 'Documentos', icon: <IcDoc size={18} /> },
   { to: '/admin/configuracion', label: 'Configuración', icon: <IcSettings size={18} /> },
+  { to: '/admin/soporte', label: 'Soporte', icon: <IcHelp size={18} /> },
 ]
 
 export function AdminSidebar() {
