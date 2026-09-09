@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Export;
 using GestionAlquileres.Domain.Entities;
 using GestionAlquileres.Domain.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -17,9 +18,29 @@ public class DocumentRepository : IDocumentRepository
 
     public async Task<IReadOnlyList<Document>> GetAllAsync(CancellationToken ct) =>
         await _db.Documents
+            .AsNoTracking()
             .OrderByDescending(d => d.CreatedAt)
-            .Take(500)
+            .Take(ExportLimits.FetchSize)
             .ToListAsync(ct);
+
+    public async Task<(IReadOnlyList<Document> Items, int Total)> GetPagedAsync(
+        string? search, int page, int pageSize, CancellationToken ct)
+    {
+        var query = _db.Documents.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            query = query.Where(d => d.FileName.ToLower().Contains(s));
+        }
+
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .OrderByDescending(d => d.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+        return (items, total);
+    }
 
     public Task<Document?> GetByIdAsync(Guid id, CancellationToken ct) =>
         _db.Documents.FirstOrDefaultAsync(d => d.Id == id, ct);

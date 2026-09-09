@@ -1,3 +1,4 @@
+import { QueryError } from '@/shared/components/ui/QueryError'
 import type { IndexValueDto } from '../types/index.types'
 
 interface IndexTableProps {
@@ -22,47 +23,45 @@ function formatPeriod(yyyymmdd: string): string {
 }
 
 function formatPct(v: number | null): string {
-  if (v == null) return '\u2014'
+  if (v == null) return '—'
   return pctFmt.format(v) + '%'
 }
 
 export function IndexTable({ rows, isLoading, error }: IndexTableProps) {
-  if (isLoading) return <div className="p-4 text-slate-500">Cargando\u2026</div>
+  if (isLoading) {
+    return <div className="card" style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
+  }
   if (error) {
     const msg = error instanceof Error ? error.message : 'Error desconocido'
-    return (
-      <div role="alert" className="p-4 text-red-700 bg-red-50 rounded">
-        Error: {msg}
-      </div>
-    )
+    return <QueryError message={`Error: ${msg}`} />
   }
   if (!rows || rows.length === 0) {
-    return (
-      <div className="p-4 text-slate-500">Sin índices en el rango seleccionado.</div>
-    )
+    return <div className="card" style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Sin índices en el rango seleccionado.</div>
   }
   return (
-    <table className="w-full text-sm border-collapse">
-      <thead>
-        <tr className="bg-slate-100">
-          <th className="text-left p-2">Período</th>
-          <th className="text-right p-2">Valor</th>
-          <th className="text-right p-2">Variación %</th>
-          <th className="text-left p-2">Fuente</th>
-          <th className="text-left p-2">Sincronizado</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r.id} className="border-b border-slate-200">
-            <td className="p-2">{formatPeriod(r.period)}</td>
-            <td className="p-2 text-right tabular-nums">{numberFmt.format(r.value)}</td>
-            <td className="p-2 text-right tabular-nums">{formatPct(r.variationPct)}</td>
-            <td className="p-2">{r.source}</td>
-            <td className="p-2">{new Date(r.fetchedAt).toLocaleString('es-AR')}</td>
+    <div className="card">
+      <table className="tbl">
+        <thead>
+          <tr>
+            <th>Período</th>
+            <th className="num">Valor</th>
+            <th className="num">Variación %</th>
+            <th>Fuente</th>
+            <th>Sincronizado</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id}>
+              <td>{formatPeriod(r.period)}</td>
+              <td className="num tnum">{numberFmt.format(r.value)}</td>
+              <td className="num tnum">{formatPct(r.variationPct)}</td>
+              <td className="muted" style={{ fontSize: 'var(--fs-xs)' }}>{r.source}</td>
+              <td className="muted" style={{ fontSize: 'var(--fs-xs)' }}>{new Date(r.fetchedAt).toLocaleString('es-AR')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }

@@ -32,3 +32,35 @@ export function useDeleteProperty() {
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   })
 }
+
+export function usePropertyPhotos(propertyId: string) {
+  return useQuery({
+    queryKey: [...KEY, propertyId, 'photos'],
+    queryFn: () => propertyService.listPhotos(propertyId),
+    enabled: !!propertyId,
+  })
+}
+
+export function useUploadPropertyPhoto(propertyId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => propertyService.uploadPhoto(propertyId, file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, propertyId, 'photos'] }),
+  })
+}
+
+export function useSetCoverPhoto(propertyId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (photoId: string) => propertyService.setCoverPhoto(propertyId, photoId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, propertyId, 'photos'] }),
+  })
+}
+
+export function useDeletePropertyPhoto(propertyId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (photoId: string) => propertyService.deletePhoto(propertyId, photoId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, propertyId, 'photos'] }),
+  })
+}

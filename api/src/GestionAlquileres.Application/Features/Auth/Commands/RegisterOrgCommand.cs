@@ -9,4 +9,6 @@ public record RegisterOrgCommand(
     string AdminEmail,
     string AdminPassword,
     string AdminFirstName,
-    string AdminLastName) : IRequest<AuthResponseDto>;
+    string AdminLastName,
+    /// <summary>Requerido cuando Registration:Mode es InviteCode.</summary>
+    string? InviteCode = null) : IRequest<AuthResponseDto>;

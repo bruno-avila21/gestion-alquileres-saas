@@ -26,7 +26,8 @@ public class PropertiesController : AdminControllerBase
     {
         var result = await Mediator.Send(new CreatePropertyCommand(
             OrganizationId, request.Address, request.City, request.Province,
-            request.PropertyType, request.AreaM2, request.Notes, request.OwnerId, request.CommissionPct), ct);
+            request.PropertyType, request.AreaM2, request.Notes, request.OwnerId, request.CommissionPct,
+            request.Details), ct);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -37,7 +38,7 @@ public class PropertiesController : AdminControllerBase
         var result = await Mediator.Send(new UpdatePropertyCommand(
             id, request.Address, request.City, request.Province,
             request.PropertyType, request.AreaM2, request.Notes,
-            request.OwnerId, request.CommissionPct, request.IsActive), ct);
+            request.OwnerId, request.CommissionPct, request.IsActive, request.Details), ct);
         return Ok(result);
     }
 

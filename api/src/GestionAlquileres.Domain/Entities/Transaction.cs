@@ -23,6 +23,13 @@ public class Transaction : ITenantEntity
     /// <summary>When the transaction was settled. Null while Pending.</summary>
     public DateTimeOffset? PaidAt { get; set; }
 
+    /// <summary>
+    /// Número de recibo (`REC-00000042`). Null hasta la primera descarga del recibo — sólo aplica a
+    /// transacciones de tipo Payment. Se asigna una única vez (ver IOrganizationRepository.IncrementReceiptSequenceAsync)
+    /// y queda fijo: un recibo con número que cambia entre descargas no sirve como comprobante.
+    /// </summary>
+    public string? ReceiptNumber { get; set; }
+
     /// <summary>A charge owed by the tenant (vs a payment/credit in their favor).</summary>
     public bool IsCharge => Type is TransactionType.RentCharge or TransactionType.ManualDebit;
 

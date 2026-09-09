@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
-import { IcCash, IcHome, IcDoc, IcShield } from '@/shared/components/ui/Icons'
+import { IcCash } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
 import { useMyTransactions } from '@/features/me/hooks/useMe'
 import type { TransactionType } from '@/features/contracts/types/contract.types'
@@ -12,26 +12,6 @@ const TX_LABELS: Record<TransactionType, string> = {
   Payment: 'Pago',
   ManualDebit: 'Débito',
   ManualCredit: 'Crédito',
-}
-
-function BottomNav({ active }: { active: 'home' | 'contrato' | 'documentos' | 'pagos' }) {
-  const navigate = useNavigate()
-  const items = [
-    { k: 'home', label: 'Inicio', to: '/inquilino' },
-    { k: 'contrato', label: 'Contrato', to: '/inquilino/contrato' },
-    { k: 'documentos', label: 'Docs', to: '/inquilino/documentos' },
-    { k: 'pagos', label: 'Pagos', to: '/inquilino/pagos' },
-  ] as const
-  return (
-    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--surface)', borderTop: '1px solid var(--hairline)', display: 'flex', justifyContent: 'space-around', padding: '8px 0 16px', zIndex: 100 }}>
-      {items.map((item) => (
-        <button key={item.k} onClick={() => navigate(item.to)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: active === item.k ? 'var(--brand)' : 'var(--muted)', fontFamily: 'inherit' }}>
-          {item.k === 'home' ? <IcHome size={20} /> : item.k === 'contrato' ? <IcDoc size={20} /> : item.k === 'documentos' ? <IcShield size={20} /> : <IcCash size={20} />}
-          <span style={{ fontSize: 10, fontWeight: 500 }}>{item.label}</span>
-        </button>
-      ))}
-    </div>
-  )
 }
 
 function txBg(type: TransactionType): string {
@@ -46,15 +26,19 @@ function txFg(type: TransactionType): string {
 }
 
 export default function TenantPagosPage() {
-  const { data: transactions, isLoading } = useMyTransactions()
+  const { data: transactions, isLoading, isError, refetch } = useMyTransactions()
   const [filter, setFilter] = useState<Filter>('all')
 
-  const filtered = (transactions ?? []).filter(
-    (t) => filter === 'all' || t.type === filter,
-  )
+  const all = transactions ?? []
 
-  const net = filtered.reduce((sum, t) => {
+  const filtered = all.filter((t) => filter === 'all' || t.type === filter)
+
+  // Net balance over ALL transactions, not the visible filter (audit M6) — otherwise the balance
+  // jumped every time the tab changed. Cash-ledger model, consistent with the backend (audit A1):
+  // money in (payments + credits) minus what's owed (charges), ignoring cancelled charges.
+  const net = all.reduce((sum, t) => {
     if (t.type === 'Payment' || t.type === 'ManualCredit') return sum + t.amount
+    if (t.status === 'Cancelled') return sum
     return sum - t.amount
   }, 0)
 
@@ -112,6 +96,8 @@ export default function TenantPagosPage() {
         <div className="card" style={{ padding: '24px 14px', textAlign: 'center', color: 'var(--muted)' }}>
           Cargando…
         </div>
+      ) : isError ? (
+        <QueryError onRetry={() => refetch()} message="No pudimos cargar tus transacciones." />
       ) : filtered.length === 0 ? (
         <div className="card" style={{ padding: '28px 14px', textAlign: 'center', color: 'var(--muted)' }}>
           <IcCash size={28} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
@@ -166,7 +152,6 @@ export default function TenantPagosPage() {
         </div>
       )}
 
-      <BottomNav active="pagos" />
     </div>
   )
 }

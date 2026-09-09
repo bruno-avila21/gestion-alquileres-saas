@@ -15,6 +15,14 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 
+// QuestPDF (recibos/liquidaciones): licencia Community, obligatoria antes de generar cualquier PDF
+// o tira excepción. UseEnvironmentFonts = false evita depender de las fuentes del sistema: el
+// contenedor Debian slim no trae fuentes, y sin esto el PDF sale distinto (o falla) en el contenedor
+// vs. en Windows. Se fija afuera de WebApplication.CreateBuilder porque es estado global de la
+// librería, no configuración de DI.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+QuestPDF.Settings.UseEnvironmentFonts = false;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Serilog — structured logging (INFRA-05)
@@ -136,16 +144,36 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// Rate limiting — auth endpoints (10 req/min per window)
+// Rate limiting — auth endpoints, partitioned per client IP (audit M1). A single global fixed
+// window let one client's 10 req/min exhaust the bucket and lock out login for the whole platform
+// (DoS), and didn't isolate brute-force per source. Partitioning by IP gives each source its own
+// window so an abuser only rate-limits themselves.
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter("auth", o =>
-    {
-        o.PermitLimit = 10;
-        o.Window = TimeSpan.FromMinutes(1);
-        o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        o.QueueLimit = 0;
-    });
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+            }));
+
+    // Público y anónimo (bloque A3, CRM de leads): sin esto, un bot podría inundar leads con el
+    // formulario de contacto del sitio. 10/min por IP alcanza para un visitante real que reintenta
+    // tras un error, sin abrir la puerta a un spam masivo.
+    options.AddPolicy("public-leads", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+            }));
     options.RejectionStatusCode = 429;
 });
 
@@ -182,7 +210,45 @@ builder.Services.AddOpenTelemetry()
             m.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
     });
 
+// Reverse-proxy awareness. Behind a proxy that terminates TLS (Caddy, nginx, un balanceador de
+// la nube), Kestrel ve HTTP plano: Request.IsHttps es false, así que las cookies de sesión saldrían
+// SIN el flag Secure, y el rate limiter particionaría por la IP del proxy en vez de la del cliente
+// — los 20 req/min pasarían a ser un cupo global de toda la plataforma.
+//
+// Es opt-in (ForwardedHeaders:Enabled) a propósito: si la app se expone directo a Kestrel, confiar
+// en X-Forwarded-* permitiría a cualquier cliente falsear su IP y su esquema.
+builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+                             | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor;
+
+    // Sólo se confía en proxies de redes privadas. Los defaults cubren el bridge de Docker y las
+    // redes RFC 1918; para otra topología, listar los CIDR en ForwardedHeaders:KnownNetworks.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+
+    var configured = builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>();
+    var networks = configured is { Length: > 0 }
+        ? configured
+        : new[] { "127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16" };
+
+    foreach (var cidr in networks)
+    {
+        var parts = cidr.Split('/');
+        if (parts.Length == 2
+            && System.Net.IPAddress.TryParse(parts[0], out var prefix)
+            && int.TryParse(parts[1], out var length))
+        {
+            options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(prefix, length));
+        }
+    }
+});
+
 var app = builder.Build();
+
+// Debe correr antes que cualquier middleware que lea el esquema o la IP del cliente.
+if (app.Configuration.GetValue<bool>("ForwardedHeaders:Enabled"))
+    app.UseForwardedHeaders();
 
 // ExceptionMiddleware must be first to catch all unhandled exceptions
 app.UseMiddleware<GestionAlquileres.API.Middleware.ExceptionMiddleware>();

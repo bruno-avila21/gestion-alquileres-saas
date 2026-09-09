@@ -22,4 +22,16 @@ public interface IEmailService
         DateOnly expiryDate,
         int daysRemaining,
         CancellationToken ct);
+
+    Task SendNewLeadNotificationAsync(
+        string toEmail,
+        string organizationName,
+        string leadName,
+        string? leadEmail,
+        string? leadPhone,
+        string message,
+        string? propertyTitle,
+        string? propertyAddress,
+        Guid leadId,
+        CancellationToken ct);
 }

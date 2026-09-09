@@ -7,4 +7,7 @@ public enum PropertyType
     Commercial,
     Land,
     Other,
+    /// <summary>Propiedad horizontal: casa/depto sin expensas ni consorcio. Tipo muy usado en AMBA.</summary>
+    PH,
+    Office,
 }

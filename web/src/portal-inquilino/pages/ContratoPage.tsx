@@ -1,30 +1,12 @@
 import { useNavigate } from 'react-router'
-import { IcArrowUp, IcShield, IcDownload, IcPhone, IcHome, IcDoc, IcCash } from '@/shared/components/ui/Icons'
+import { IcArrowUp, IcDownload, IcPhone } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate } from '@/shared/lib/formatters'
 import { useMyContract, useMyTransactions, useMyRentHistory } from '@/features/me/hooks/useMe'
 
-function BottomNav({ active }: { active: 'home' | 'contrato' | 'documentos' | 'pagos' }) {
-  const navigate = useNavigate()
-  const items = [
-    { k: 'home', label: 'Inicio', to: '/inquilino' },
-    { k: 'contrato', label: 'Contrato', to: '/inquilino/contrato' },
-    { k: 'documentos', label: 'Docs', to: '/inquilino/documentos' },
-    { k: 'pagos', label: 'Pagos', to: '/inquilino/pagos' },
-  ] as const
-  return (
-    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--surface)', borderTop: '1px solid var(--hairline)', display: 'flex', justifyContent: 'space-around', padding: '8px 0 16px', zIndex: 100 }}>
-      {items.map((item) => (
-        <button key={item.k} onClick={() => navigate(item.to)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: active === item.k ? 'var(--brand)' : 'var(--muted)', fontFamily: 'inherit' }}>
-          {item.k === 'home' ? <IcHome size={20} /> : item.k === 'contrato' ? <IcDoc size={20} /> : item.k === 'documentos' ? <IcShield size={20} /> : <IcCash size={20} />}
-          <span style={{ fontSize: 10, fontWeight: 500 }}>{item.label}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
 export default function TenantContratoPage() {
-  const { data: contract, isLoading } = useMyContract()
+  const navigate = useNavigate()
+  const { data: contract, isLoading, isError, refetch } = useMyContract()
   const { data: transactions } = useMyTransactions()
   const { data: rentHistory } = useMyRentHistory()
 
@@ -38,7 +20,14 @@ export default function TenantContratoPage() {
     return (
       <div style={{ maxWidth: 420, margin: '0 auto', padding: '40px 18px 80px', textAlign: 'center', color: 'var(--muted)' }}>
         Cargando contrato…
-        <BottomNav active="contrato" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div style={{ maxWidth: 420, margin: '0 auto', padding: '40px 18px 80px' }}>
+        <QueryError onRetry={() => refetch()} message="No pudimos cargar tu contrato." />
       </div>
     )
   }
@@ -49,7 +38,6 @@ export default function TenantContratoPage() {
         <div className="card" style={{ padding: 20, textAlign: 'center', color: 'var(--muted)' }}>
           Sin contrato activo. Contactá a tu administrador.
         </div>
-        <BottomNav active="contrato" />
       </div>
     )
   }
@@ -135,14 +123,22 @@ export default function TenantContratoPage() {
       )}
 
       {/* Acciones */}
-      <button className="btn" style={{ width: '100%', justifyContent: 'center' }}>
-        <IcDownload size={14} /> Descargar contrato
+      <button
+        className="btn"
+        style={{ width: '100%', justifyContent: 'center' }}
+        onClick={() => navigate('/inquilino/documentos')}
+      >
+        <IcDownload size={14} /> Ver documentos del contrato
       </button>
-      <button className="btn btn--ghost" style={{ width: '100%', justifyContent: 'center', color: 'var(--muted)' }}>
-        <IcPhone size={14} /> Solicitar ayuda
+      <button
+        className="btn btn--ghost"
+        style={{ width: '100%', justifyContent: 'center', color: 'var(--muted)', cursor: 'not-allowed' }}
+        disabled
+        title="Próximamente"
+      >
+        <IcPhone size={14} /> Solicitar ayuda (próximamente)
       </button>
 
-      <BottomNav active="contrato" />
     </div>
   )
 }

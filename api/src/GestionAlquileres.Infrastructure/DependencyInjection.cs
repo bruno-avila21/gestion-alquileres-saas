@@ -4,6 +4,7 @@ using GestionAlquileres.Domain.Interfaces.Services;
 using GestionAlquileres.Infrastructure.ExternalServices;
 using GestionAlquileres.Infrastructure.Persistence;
 using GestionAlquileres.Infrastructure.Persistence.Repositories;
+using GestionAlquileres.Infrastructure.Reports;
 using GestionAlquileres.Infrastructure.Services;
 using GestionAlquileres.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -32,14 +33,22 @@ public static class DependencyInjection
         services.AddScoped<IIndexRepository, IndexRepository>();
         services.AddScoped<IOwnerRepository, OwnerRepository>();
         services.AddScoped<IPropertyRepository, PropertyRepository>();
+        services.AddScoped<IListingRepository, ListingRepository>();
+        services.AddScoped<IPropertyPhotoRepository, PropertyPhotoRepository>();
         services.AddScoped<IAppTenantRepository, AppTenantRepository>();
         services.AddScoped<IContractRepository, ContractRepository>();
         services.AddScoped<IRentHistoryRepository, RentHistoryRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<ISentNotificationRepository, SentNotificationRepository>();
+        services.AddScoped<ILeadRepository, LeadRepository>();
         services.AddSingleton<IDocumentTokenService, DocumentTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+        // QuestPDF es sin estado (la licencia se fija una vez en Program.cs) — un solo generador
+        // sirve para toda la vida de la app.
+        services.AddSingleton<IPdfReportGenerator, QuestPdfReportGenerator>();
 
         // Email: real SMTP relay when Email:Provider = "Smtp" (SES/Resend/etc.), else a no-op logger.
         services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
@@ -50,6 +59,7 @@ public static class DependencyInjection
 
         // Document storage: S3-compatible object store (AWS S3 / MinIO) when configured, else local FS.
         services.Configure<StorageSettings>(configuration.GetSection(StorageSettings.SectionName));
+        services.Configure<RegistrationSettings>(configuration.GetSection(RegistrationSettings.SectionName));
         AddStorage(services, configuration);
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
@@ -103,7 +113,12 @@ public static class DependencyInjection
 
             var serviceUrl = configuration["Storage:ServiceUrl"]; // set for MinIO; null for AWS
             if (!string.IsNullOrWhiteSpace(serviceUrl))
+            {
                 config.ServiceURL = serviceUrl;
+                // Endpoints S3-compatibles (MinIO, Railway Buckets, R2) firman SigV4 contra la región
+                // declarada; sin esto el SDK asume us-east-1, que Railway ("auto") puede rechazar.
+                config.AuthenticationRegion = configuration["Storage:Region"] ?? "us-east-1";
+            }
             else
                 config.RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(configuration["Storage:Region"] ?? "us-east-1");
 

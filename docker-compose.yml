@@ -1,3 +1,14 @@
+# Stack completo: Postgres + MinIO + API + portal web.
+#
+#   cp .env.example .env      # y completar los dos secretos
+#   docker compose up -d --build
+#   docker compose run --rm migrate
+#   → http://localhost:8080
+#
+# Por defecto corre en Development, que es lo que querés para PROBAR: el panel de Hangfire queda
+# escribible y podés disparar los jobs a mano en vez de esperar al día 1 del mes. Para el VPS,
+# sumar docker-compose.prod.yml (ver el archivo).
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -5,7 +16,7 @@ services:
     environment:
       POSTGRES_DB: gestion_alquileres
       POSTGRES_USER: appuser
-      POSTGRES_PASSWORD: devpassword
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
     ports:
       - "5432:5432"
     volumes:
@@ -21,8 +32,8 @@ services:
     container_name: gestion_alquileres_minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -42,10 +53,90 @@ services:
       - minio
     entrypoint: >
       /bin/sh -c "
-      until /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 2; done;
+      until /usr/bin/mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin}; do sleep 2; done;
       /usr/bin/mc mb --ignore-existing local/documents;
       exit 0;
       "
+
+  # Contenedor de un solo uso: aplica las migraciones pendientes y termina.
+  # La API NO migra al arrancar (a propósito: evita que varias réplicas migren en paralelo).
+  migrate:
+    build:
+      context: ./api
+      target: migrate
+    container_name: gestion_alquileres_migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=gestion_alquileres;Username=appuser;Password=${POSTGRES_PASSWORD:-devpassword}
+    profiles: ["tools"]
+    restart: "no"
+
+  api:
+    build:
+      context: ./api
+      target: runtime
+    container_name: gestion_alquileres_api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=gestion_alquileres;Username=appuser;Password=${POSTGRES_PASSWORD:-devpassword}
+      ConnectionStrings__HangfireConnection: Host=postgres;Port=5432;Database=gestion_alquileres;Username=appuser;Password=${POSTGRES_PASSWORD:-devpassword}
+
+      JwtSettings__SecretKey: ${JWT_SECRET}
+      DocumentToken__Secret: ${DOCUMENT_TOKEN_SECRET}
+
+      # S3 contra MinIO, el mismo camino de código que producción.
+      Storage__Provider: S3
+      Storage__Bucket: documents
+      Storage__ServiceUrl: http://minio:9000
+      Storage__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
+      Storage__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      Storage__ForcePathStyle: "true"
+
+      # El SPA y la API salen por el mismo origen (Caddy), así que CORS no llega a intervenir.
+      # Se declara igual: sin esta clave la app cae a localhost:5173 en cualquier entorno.
+      Cors__AllowedOrigins__0: ${PUBLIC_URL:-http://localhost:8080}
+      AllowedHosts: ${ALLOWED_HOSTS:-*}
+
+      # Caddy termina TLS y habla HTTP con la API: sin esto las cookies saldrían sin Secure
+      # y el rate limiter contaría todo bajo la IP del proxy.
+      ForwardedHeaders__Enabled: "true"
+
+      IndicesApi__BaseUrl: ${INDICES_API_URL:-http://host.docker.internal:5000}
+      IndicesApi__ApiKey: ${INDICES_API_KEY:-}
+
+      Email__Provider: ${EMAIL_PROVIDER:-Null}
+      Email__Host: ${EMAIL_HOST:-}
+      Email__Port: ${EMAIL_PORT:-587}
+      Email__Username: ${EMAIL_USERNAME:-}
+      Email__Password: ${EMAIL_PASSWORD:-}
+      Email__FromEmail: ${EMAIL_FROM:-no-reply@localhost}
+    ports:
+      # Acceso directo, útil para Swagger en Development. En el VPS se cierra (ver el override).
+      - "5000:8080"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      args:
+        # Relativa: Caddy hace de proxy a la API en el mismo origen.
+        VITE_API_URL: /api/v1
+    container_name: gestion_alquileres_web
+    depends_on:
+      - api
+    environment:
+      API_UPSTREAM: api:8080
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
 
 volumes:
   postgres_data:

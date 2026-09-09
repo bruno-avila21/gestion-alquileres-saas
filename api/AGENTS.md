@@ -444,6 +444,27 @@ var indexActual = await _indexRepo.GetByPeriodAsync(IndexType.ICL, period, ct)
     ?? throw new BusinessException("Índice no disponible. Ejecutar SyncIndexCommand primero.");
 ```
 
+## Tests: mantenerlos herméticos
+
+La suite corre con `ASPNETCORE_ENVIRONMENT=Development`, así que **el `appsettings.Development.json`
+local de cada desarrollador se carga dentro del host de tests**. Si esa configuración apunta a un
+servicio externo (MinIO, indices-api, un SMTP real), los tests salen a la red y fallan en máquinas
+donde ese servicio no está levantado.
+
+Con hosting mínimo, los archivos de configuración **le ganan** al `ConfigureAppConfiguration` del
+`WebApplicationFactory`. Para forzar un valor en los tests hay que usar variables de entorno, que se
+agregan después en la cadena:
+
+```csharp
+static MiApiFactory()
+{
+    Environment.SetEnvironmentVariable("Storage__Provider", "Local");
+}
+```
+
+Ver `Phase7ApiFactory`. Regla práctica: si un test depende de infraestructura, o la fija por
+variable de entorno o la reemplaza por un stub en `ConfigureServices`.
+
 ## Checklist al Finalizar
 
 - [ ] Compila `dotnet build` sin errores ni warnings

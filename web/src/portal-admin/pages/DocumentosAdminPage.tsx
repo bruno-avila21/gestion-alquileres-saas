@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { AdminTopbar } from '../layouts/AdminTopbar'
-import { IcDoc, IcDownload } from '@/shared/components/ui/Icons'
+import { IcDoc, IcDownload, IcShield } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatDate } from '@/shared/lib/formatters'
-import { useAllDocuments } from '@/features/documents/hooks/useDocuments'
-import { useDocumentDownloadUrl } from '@/features/documents/hooks/useDocuments'
+import { useAllDocuments, useDocumentDownloadUrl, useSetDocumentVisibility } from '@/features/documents/hooks/useDocuments'
 import type { DocumentDto } from '@/features/documents/types/document.types'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 
 const PAGE_SIZE = 20
 
@@ -29,25 +30,45 @@ function DownloadButton({ doc }: { doc: DocumentDto }) {
       onClick={handleDownload}
       disabled={getUrl.isPending}
       title="Descargar"
+      aria-label={`Descargar ${doc.fileName}`}
     >
       <IcDownload size={14} />
     </button>
   )
 }
 
+// Share/unshare a document with the tenant (audit A2). Documents are private by default; the tenant
+// portal only shows those toggled visible here.
+function VisibilityToggle({ doc }: { doc: DocumentDto }) {
+  const setVisibility = useSetDocumentVisibility()
+  const visible = doc.isVisibleToTenant
+  return (
+    <button
+      className={`btn btn--sm${visible ? ' btn--primary' : ''}`}
+      disabled={setVisibility.isPending}
+      onClick={() => setVisibility.mutate({ contractId: doc.contractId, docId: doc.id, isVisibleToTenant: !visible })}
+      aria-pressed={visible}
+      title={visible ? 'Visible para el inquilino — click para ocultar' : 'Privado — click para compartir con el inquilino'}
+    >
+      <IcShield size={13} /> {visible ? 'Visible' : 'Privado'}
+    </button>
+  )
+}
+
 export default function DocumentosAdminPage() {
-  const { data: documents, isLoading } = useAllDocuments()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
+  const debouncedSearch = useDebounce(search)
 
-  const filtered = (documents ?? []).filter((d) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return d.fileName.toLowerCase().includes(q) || d.contractId.toLowerCase().includes(q)
+  // Server-side pagination (audit M10): the API returns one page + the total, so the whole dataset is
+  // pageable without loading it all. Search runs server-side too, so it spans every page, not just the
+  // rows currently loaded.
+  const { data, isLoading, isError, refetch } = useAllDocuments({
+    page: page + 1, pageSize: PAGE_SIZE, search: debouncedSearch || undefined,
   })
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+  const documents = data?.items ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <>
@@ -64,7 +85,7 @@ export default function DocumentosAdminPage() {
           <input
             className="input input--sm"
             style={{ width: 280 }}
-            placeholder="Buscar por nombre o contrato…"
+            placeholder="Buscar por nombre de archivo…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0) }}
           />
@@ -72,7 +93,9 @@ export default function DocumentosAdminPage() {
 
         {isLoading ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
-        ) : filtered.length === 0 ? (
+        ) : isError ? (
+          <QueryError onRetry={() => refetch()} message="No pudimos cargar los documentos." />
+        ) : documents.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
             <IcDoc size={32} style={{ margin: '0 auto 8px', display: 'block' }} />
             Sin documentos
@@ -87,11 +110,12 @@ export default function DocumentosAdminPage() {
                   <th className="num">Tamaño</th>
                   <th>Contrato</th>
                   <th>Subido</th>
+                  <th>Inquilino</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((d) => (
+                {documents.map((d) => (
                   <tr key={d.id}>
                     <td style={{ fontWeight: 500 }}>{d.fileName}</td>
                     <td className="muted" style={{ fontSize: 'var(--fs-xs)' }}>{d.mimeType}</td>
@@ -103,13 +127,16 @@ export default function DocumentosAdminPage() {
                       {formatDate(d.createdAt.split('T')[0])}
                     </td>
                     <td>
+                      <VisibilityToggle doc={d} />
+                    </td>
+                    <td>
                       <DownloadButton doc={d} />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <PaginationBar page={page} totalPages={totalPages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+            <PaginationBar page={page} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
           </div>
         )}
       </div>

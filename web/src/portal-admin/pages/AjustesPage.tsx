@@ -1,37 +1,56 @@
 import { useState } from 'react'
 import { AdminTopbar } from '../layouts/AdminTopbar'
 import { IcCalendar, IcDownload } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate } from '@/shared/lib/formatters'
-import { useAllRentHistory } from '@/features/contracts/hooks/useContracts'
+import { useAllRentHistory, useContracts } from '@/features/contracts/hooks/useContracts'
 import { contractService } from '@/features/contracts/services/contractService'
 import type { AdjustmentType } from '@/features/contracts/types/contract.types'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 
 const PAGE_SIZE = 20
 
+// Usa los tokens dedicados --icl y --ipc, igual que la pantalla de Contratos. Antes ICL salía
+// verde (color reservado para "pagado") e IPC gris neutro, así que el código de color que el
+// usuario aprende en una pantalla no se sostenía en la otra.
 const TYPE_CHIP: Record<AdjustmentType, string> = {
-  ICL: 'chip--ok',
-  IPC: '',
+  ICL: 'chip--icl',
+  IPC: 'chip--ipc',
+  FixedPercent: 'chip--info',
   Manual: 'chip--warn',
 }
 
+const TYPE_LABELS: Record<AdjustmentType, string> = {
+  ICL: 'ICL',
+  IPC: 'IPC',
+  FixedPercent: '% fijo',
+  Manual: 'Manual',
+}
+
 export default function AjustesPage() {
-  const { data: history, isLoading } = useAllRentHistory()
+  const { data: contracts } = useContracts()
   const [typeFilter, setTypeFilter] = useState<AdjustmentType | 'all'>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
+  const debouncedSearch = useDebounce(search)
 
-  const filtered = (history ?? []).filter((r) => {
-    if (typeFilter !== 'all' && r.adjustmentType !== typeFilter) return false
-    if (search) {
-      const q = search.toLowerCase()
-      return r.contractId.toLowerCase().includes(q) || (r.notes ?? '').toLowerCase().includes(q)
-    }
-    return true
+  // Server-side pagination + filter + search (audit M10): the type filter and the tenant/address/notes
+  // search run in the API (joined to contract), so they span the whole dataset — not just the loaded
+  // page. contractLabel is still used for display in the row.
+  const { data, isLoading, isError, refetch } = useAllRentHistory({
+    page: page + 1, pageSize: PAGE_SIZE,
+    type: typeFilter === 'all' ? undefined : typeFilter,
+    search: debouncedSearch || undefined,
   })
+  const history = data?.items ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+  // contractId -> tenant + address, for display (audit B13).
+  const contractLabel = new Map(
+    (contracts ?? []).map((c) => [c.id, `${c.appTenantFullName} · ${c.propertyAddress}`]),
+  )
 
   return (
     <>
@@ -59,19 +78,19 @@ export default function AjustesPage() {
         </div>
 
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-          {(['all', 'ICL', 'IPC', 'Manual'] as const).map((t) => (
+          {(['all', 'ICL', 'IPC', 'FixedPercent', 'Manual'] as const).map((t) => (
             <button
               key={t}
               className={`btn btn--sm${typeFilter === t ? ' btn--primary' : ''}`}
               onClick={() => { setTypeFilter(t); setPage(0) }}
             >
-              {t === 'all' ? 'Todos' : t}
+              {t === 'all' ? 'Todos' : TYPE_LABELS[t]}
             </button>
           ))}
           <input
             className="input input--sm"
             style={{ marginLeft: 'auto', width: 220 }}
-            placeholder="Buscar por notas…"
+            placeholder="Buscar por inquilino, dirección o notas…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0) }}
           />
@@ -79,7 +98,9 @@ export default function AjustesPage() {
 
         {isLoading ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
-        ) : filtered.length === 0 ? (
+        ) : isError ? (
+          <QueryError onRetry={() => refetch()} message="No pudimos cargar los ajustes." />
+        ) : history.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
             <IcCalendar size={32} style={{ margin: '0 auto 8px', display: 'block' }} />
             Sin ajustes registrados
@@ -100,7 +121,7 @@ export default function AjustesPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((r) => (
+                {history.map((r) => (
                   <tr key={r.id}>
                     <td>
                       <span className={`chip ${TYPE_CHIP[r.adjustmentType]}`}>
@@ -114,8 +135,8 @@ export default function AjustesPage() {
                       ×{r.adjustmentFactor.toFixed(4)}
                     </td>
                     <td>{formatDate(r.effectiveDate)}</td>
-                    <td className="muted" style={{ fontSize: 'var(--fs-xs)', fontFamily: 'monospace' }}>
-                      {r.contractId.slice(0, 8)}…
+                    <td className="muted" style={{ fontSize: 'var(--fs-xs)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {contractLabel.get(r.contractId) ?? `${r.contractId.slice(0, 8)}…`}
                     </td>
                     <td className="muted" style={{ fontSize: 'var(--fs-xs)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {r.notes ?? '—'}
@@ -127,7 +148,7 @@ export default function AjustesPage() {
                 ))}
               </tbody>
             </table>
-            <PaginationBar page={page} totalPages={totalPages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+            <PaginationBar page={page} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
           </div>
         )}
       </div>

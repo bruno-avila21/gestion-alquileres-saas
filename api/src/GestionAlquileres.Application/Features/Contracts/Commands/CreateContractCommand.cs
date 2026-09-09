@@ -14,6 +14,7 @@ public record CreateContractCommand(
     Currency Currency,
     AdjustmentType AdjustmentType,
     AdjustmentFrequency AdjustmentFrequency,
+    decimal? AdjustmentPercent,
     int DayOfMonth,
     decimal? DepositAmount,
     string? Notes

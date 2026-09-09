@@ -16,6 +16,7 @@ export function useLogin() {
         role: data.role,
         organizationId: data.organizationId,
         organizationSlug: data.organizationSlug,
+        mustChangePassword: data.mustChangePassword,
       })
       navigate('/admin/dashboard', { replace: true })
     },

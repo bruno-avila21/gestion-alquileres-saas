@@ -48,4 +48,24 @@ public class NullEmailService : IEmailService
 
         return Task.CompletedTask;
     }
+
+    public Task SendNewLeadNotificationAsync(
+        string toEmail,
+        string organizationName,
+        string leadName,
+        string? leadEmail,
+        string? leadPhone,
+        string message,
+        string? propertyTitle,
+        string? propertyAddress,
+        Guid leadId,
+        CancellationToken ct)
+    {
+        _logger.LogInformation(
+            "[EMAIL-STUB] New lead notification → {To} | Org: {Org} | Lead: {LeadName} | " +
+            "Property: {PropertyTitle} | LeadId: {LeadId}",
+            toEmail, organizationName, leadName, propertyTitle, leadId);
+
+        return Task.CompletedTask;
+    }
 }

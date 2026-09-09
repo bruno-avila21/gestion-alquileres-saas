@@ -16,6 +16,7 @@ public record ContractDto(
     Currency Currency,
     AdjustmentType AdjustmentType,
     AdjustmentFrequency AdjustmentFrequency,
+    decimal? AdjustmentPercent,
     int DayOfMonth,
     decimal? DepositAmount,
     ContractStatus Status,

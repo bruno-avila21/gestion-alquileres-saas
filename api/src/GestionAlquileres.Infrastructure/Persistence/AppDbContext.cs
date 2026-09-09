@@ -19,12 +19,17 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Owner> Owners => Set<Owner>();
     public DbSet<Property> Properties => Set<Property>();
+    public DbSet<Listing> Listings => Set<Listing>();
+    public DbSet<PropertyPhoto> PropertyPhotos => Set<PropertyPhoto>();
     public DbSet<AppTenant> AppTenants => Set<AppTenant>();
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<RentHistory> RentHistory => Set<RentHistory>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<SentNotification> SentNotifications => Set<SentNotification>();
+    public DbSet<Lead> Leads => Set<Lead>();
+    public DbSet<LeadNote> LeadNotes => Set<LeadNote>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,6 +46,12 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Property>()
             .HasQueryFilter(p => p.OrganizationId == _currentTenant.OrganizationId);
 
+        modelBuilder.Entity<Listing>()
+            .HasQueryFilter(l => l.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<PropertyPhoto>()
+            .HasQueryFilter(p => p.OrganizationId == _currentTenant.OrganizationId);
+
         modelBuilder.Entity<AppTenant>()
             .HasQueryFilter(t => t.OrganizationId == _currentTenant.OrganizationId);
 
@@ -55,6 +66,15 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Document>()
             .HasQueryFilter(d => d.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<SentNotification>()
+            .HasQueryFilter(n => n.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<Lead>()
+            .HasQueryFilter(l => l.OrganizationId == _currentTenant.OrganizationId);
+
+        modelBuilder.Entity<LeadNote>()
+            .HasQueryFilter(n => n.OrganizationId == _currentTenant.OrganizationId);
 
         // IndexValue is GLOBAL reference data (BCRA/INDEC) — no tenant filter.
         // Do NOT add HasQueryFilter for IndexValue.

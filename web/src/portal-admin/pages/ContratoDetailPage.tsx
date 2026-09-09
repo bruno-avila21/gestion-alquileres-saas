@@ -6,7 +6,7 @@ import {
   IcShield, IcBell, IcDownload, IcUpload, IcPlus,
   IcCalendar, IcDoc, IcChev, IcLink,
 } from '@/shared/components/ui/Icons'
-import { formatARS, formatDate } from '@/shared/lib/formatters'
+import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
 import {
   useContractById,
   useRentHistory,
@@ -17,6 +17,7 @@ import {
 } from '@/features/contracts/hooks/useContracts'
 import { useContractDocuments, useUploadDocument, useDeleteDocument } from '@/features/documents/hooks/useDocuments'
 import { documentService } from '@/features/documents/services/documentService'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import type { ContractDto } from '@/features/contracts/types/contract.types'
 import type { DocumentDownloadUrlDto } from '@/features/documents/types/document.types'
 
@@ -76,11 +77,12 @@ function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: 
           <div className="card-h">
             <div>
               <h3>Próximo ajuste — cómo se calcula</h3>
-              <div className="sub">{adjLabel} · {freqLabel} · auto-aplicable</div>
+              <div className="sub">{adjLabel} · {freqLabel}</div>
             </div>
             <div className="row">
               <button className="btn btn--sm" onClick={onAdjust}><IcEdit size={12} /> Ajuste manual</button>
-              <button className="btn btn--sm btn--primary" onClick={onAdjust}>Aplicar ahora <IcChev size={12} /></button>
+              {/* Solo navega a la pestaña de ajustes; no aplica nada por si mismo (audit M9). */}
+              <button className="btn btn--sm btn--primary" onClick={onAdjust}>Ver ajuste <IcChev size={12} /></button>
             </div>
           </div>
           <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -98,8 +100,16 @@ function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: 
             </div>
 
             <div className="between" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>
+              {/* El sello se muestra solo cuando corresponde y con la fuente correcta: ICL→BCRA,
+                  IPC→INDEC. Antes decia "verificado con BCRA" siempre, incluso en contratos Manual
+                  o IPC y sin proyeccion disponible (audit M9/M15). */}
               <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                <IcShield size={12} /> Datos verificados con BCRA
+                <IcShield size={12} />
+                {contract.adjustmentType === 'Manual'
+                  ? 'Ajuste manual — sin índice'
+                  : projection
+                    ? `Datos verificados con ${contract.adjustmentType === 'ICL' ? 'BCRA' : 'INDEC'}`
+                    : 'Esperando índice del período'}
               </span>
               <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
                 <IcBell size={12} /> Inquilino será notificado por email
@@ -242,7 +252,7 @@ function PaymentsTab({ contractId }: { contractId: string }) {
             <tbody>
               {payments.map((t) => (
                 <tr key={t.id}>
-                  <td><b>{formatDate(t.period)}</b></td>
+                  <td><b>{formatPeriod(t.period)}</b></td>
                   <td>
                     {t.type === 'Payment'
                       ? <span className="chip chip--ok"><span className="dot" />Pago</span>
@@ -362,7 +372,7 @@ function AdjustmentsTab({ contractId }: { contractId: string }) {
                     <td className="num">{formatARS(a.previousRent)}</td>
                     <td className="num"><b>{formatARS(a.newRent)}</b></td>
                     <td className="num">
-                      <span className="delta-pill up"><IcArrowUp size={10} />+{pct.toFixed(2)}%</span>
+                      <span className="delta-pill neutral"><IcArrowUp size={10} />+{pct.toFixed(2)}%</span>
                     </td>
                     <td style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>{a.notes ?? '—'}</td>
                   </tr>
@@ -383,6 +393,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [urlModal, setUrlModal] = useState<DocumentDownloadUrlDto | null>(null)
   const [loadingDocId, setLoadingDocId] = useState<string | null>(null)
+  const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<string | null>(null)
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -469,10 +480,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
                         style={{ color: 'var(--danger)' }}
                         title="Eliminar documento"
                         aria-label="Eliminar documento"
-                        onClick={() => {
-                          if (window.confirm('¿Eliminar este documento? Esta acción no se puede deshacer.'))
-                            deleteDoc.mutate(d.id)
-                        }}
+                        onClick={() => setConfirmDeleteDoc(d.id)}
                       >
                         ×
                       </button>
@@ -484,6 +492,16 @@ function DocumentsTab({ contractId }: { contractId: string }) {
           </table>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDeleteDoc}
+        title="Eliminar documento"
+        description="El documento se eliminará de forma permanente. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={() => { if (confirmDeleteDoc) deleteDoc.mutate(confirmDeleteDoc); setConfirmDeleteDoc(null) }}
+        onCancel={() => setConfirmDeleteDoc(null)}
+      />
 
       {urlModal && (
         <div

@@ -30,8 +30,10 @@ public class GetMyDocumentsQueryHandler : IRequestHandler<GetMyDocumentsQuery, I
         var contract = contracts.FirstOrDefault();
         if (contract is null) return [];
 
+        // Tenants only ever see documents an admin has explicitly shared (audit A2).
         var docs = await _docRepo.GetByContractAsync(contract.Id, ct);
-        return docs.Select(d => new DocumentDto(d.Id, d.ContractId, d.FileName, d.MimeType, d.SizeBytes, d.CreatedAt))
+        return docs.Where(d => d.IsVisibleToTenant)
+                   .Select(d => new DocumentDto(d.Id, d.ContractId, d.FileName, d.MimeType, d.SizeBytes, d.CreatedAt, d.IsVisibleToTenant))
                    .ToList();
     }
 }

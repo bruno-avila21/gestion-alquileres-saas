@@ -5,6 +5,7 @@ export interface DocumentDto {
   mimeType: string
   sizeBytes: number
   createdAt: string
+  isVisibleToTenant: boolean
 }
 
 export interface DocumentDownloadUrlDto {

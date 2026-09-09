@@ -18,11 +18,22 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.Property(t => t.Notes).HasMaxLength(2000);
         builder.Property(t => t.CreatedAt).HasDefaultValueSql("now()");
         builder.Property(t => t.Status).IsRequired().HasDefaultValue(TransactionStatus.Pending);
+        builder.Property(t => t.ReceiptNumber).HasMaxLength(20);
+
+        // Único por organización, sólo entre los no nulos: un recibo con número que cambia entre
+        // descargas no sirve como comprobante, y dos transacciones nunca pueden compartir número.
+        builder.HasIndex(t => new { t.OrganizationId, t.ReceiptNumber })
+            .IsUnique()
+            .HasFilter("receipt_number IS NOT NULL");
 
         builder.HasIndex(t => t.ContractId);
         builder.HasIndex(t => new { t.ContractId, t.Period });
         // Supports aging/morosidad queries over pending charges past their due date.
         builder.HasIndex(t => new { t.Status, t.DueDate });
+        // The multi-tenant global filter adds `WHERE organization_id = @org` to every query, and the
+        // org-wide listings order by Period; without this the highest-cardinality table sequential-scans
+        // per tenant and sorts in memory (audit A4).
+        builder.HasIndex(t => new { t.OrganizationId, t.Period });
 
         builder.HasOne<Contract>()
             .WithMany()

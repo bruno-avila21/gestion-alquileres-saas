@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Features.Properties.DTOs;
 using GestionAlquileres.Domain.Enums;
 
 namespace GestionAlquileres.API.Contracts;
@@ -11,4 +12,5 @@ public record UpdatePropertyRequest(
     string? Notes,
     Guid? OwnerId,
     decimal? CommissionPct,
-    bool IsActive);
+    bool IsActive,
+    PropertyListingDetails? Details = null);

@@ -1,8 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { contractService } from '../services/contractService'
 import type {
+  AdjustmentType,
   ApplyAdjustmentRequest,
   ContractStatus,
+  TransactionType,
   CreateContractRequest,
   RegisterManualTransactionRequest,
   RegisterPaymentRequest,
@@ -106,16 +108,18 @@ export function useRegisterManualCharge() {
   })
 }
 
-export function useAllTransactions() {
+export function useAllTransactions(params: { page: number; pageSize: number; type?: TransactionType; search?: string }) {
   return useQuery({
-    queryKey: ['transactions', 'all'],
-    queryFn: () => contractService.listAllTransactions(),
+    queryKey: ['transactions', 'all', params],
+    queryFn: () => contractService.listAllTransactions(params),
+    placeholderData: keepPreviousData,
   })
 }
 
-export function useAllRentHistory() {
+export function useAllRentHistory(params: { page: number; pageSize: number; type?: AdjustmentType; search?: string }) {
   return useQuery({
-    queryKey: ['rent-adjustments', 'all'],
-    queryFn: () => contractService.listAllRentHistory(),
+    queryKey: ['rent-adjustments', 'all', params],
+    queryFn: () => contractService.listAllRentHistory(params),
+    placeholderData: keepPreviousData,
   })
 }

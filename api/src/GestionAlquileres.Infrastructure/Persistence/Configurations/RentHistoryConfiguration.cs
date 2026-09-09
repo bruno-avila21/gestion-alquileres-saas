@@ -23,6 +23,9 @@ public class RentHistoryConfiguration : IEntityTypeConfiguration<RentHistory>
         // Prevents double-application of a rent adjustment (job retry, manual + scheduled, concurrency).
         // The leftmost prefix (ContractId) also serves single-column ContractId lookups.
         builder.HasIndex(r => new { r.ContractId, r.EffectiveDate }).IsUnique();
+        // Org-wide history listings filter by the tenant (global filter) and order by EffectiveDate;
+        // the unique (ContractId, EffectiveDate) index can't serve an OrganizationId-led scan (audit A4).
+        builder.HasIndex(r => new { r.OrganizationId, r.EffectiveDate });
 
         builder.HasOne<Contract>()
             .WithMany()

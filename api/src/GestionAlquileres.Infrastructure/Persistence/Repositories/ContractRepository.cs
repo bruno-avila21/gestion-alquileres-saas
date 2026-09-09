@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Time;
 using GestionAlquileres.Domain.Entities;
 using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
@@ -19,7 +20,10 @@ public class ContractRepository : IContractRepository
     public async Task<IReadOnlyList<Contract>> ListAsync(
         Guid? appTenantId, Guid? propertyId, ContractStatus? status, CancellationToken ct)
     {
+        // Sólo la consumen query handlers: ninguno muta las entidades devueltas, así que no hace
+        // falta el seguimiento de cambios ni sus snapshots.
         var q = _db.Contracts
+            .AsNoTracking()
             .Include(c => c.Property)
             .Include(c => c.AppTenant)
             .AsQueryable();
@@ -45,6 +49,30 @@ public class ContractRepository : IContractRepository
 
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 
+    public async Task<(int ActiveCount, decimal MonthlyRevenue, int ExpiringCount)> GetDashboardStatsAsync(
+        DateOnly today, DateOnly until, CancellationToken ct)
+    {
+        // Un solo round-trip: se agrupa por una constante para que los tres agregados salgan en la
+        // misma consulta, sin traer una sola fila de contrato.
+        var stats = await _db.Contracts
+            .AsNoTracking()
+            .Where(c => c.Status == ContractStatus.Active)
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                ActiveCount = g.Count(),
+                MonthlyRevenue = g.Sum(c => c.MonthlyRent),
+                // "Por vencer" = termina dentro de los próximos 30 días. Acotado por abajo para que
+                // los ya vencidos no inflen el número (auditoría C-9).
+                ExpiringCount = g.Count(c => c.EndDate >= today && c.EndDate <= until),
+            })
+            .FirstOrDefaultAsync(ct);
+
+        return stats is null
+            ? (0, 0m, 0)
+            : (stats.ActiveCount, stats.MonthlyRevenue, stats.ExpiringCount);
+    }
+
     public Task<Contract?> GetByIdRawAsync(Guid id, Guid organizationId, CancellationToken ct) =>
         _db.Contracts
             .IgnoreQueryFilters()
@@ -62,8 +90,10 @@ public class ContractRepository : IContractRepository
 
     public async Task<IReadOnlyList<Contract>> GetExpiringRawAsync(int daysAhead, CancellationToken ct)
     {
-        var cutoff = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(daysAhead));
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        // Hora argentina, no UTC: entre las 21:00 y las 24:00 locales UtcNow ya está en el día
+        // siguiente, y un contrato que vence hoy quedaría fuera de la ventana (auditoría B-20).
+        var today = ArgentinaTime.Today;
+        var cutoff = today.AddDays(daysAhead);
         return await _db.Contracts
             .IgnoreQueryFilters()
             .Include(c => c.Property)

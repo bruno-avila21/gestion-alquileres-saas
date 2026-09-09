@@ -16,6 +16,7 @@ export function useTenantLogin() {
         role: data.role,
         organizationId: data.organizationId,
         organizationSlug: data.organizationSlug,
+        mustChangePassword: data.mustChangePassword,
       })
       navigate('/inquilino', { replace: true })
     },

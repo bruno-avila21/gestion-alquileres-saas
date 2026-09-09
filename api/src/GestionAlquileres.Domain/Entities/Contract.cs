@@ -14,6 +14,13 @@ public class Contract : ITenantEntity
     public Currency Currency { get; set; } = Currency.ARS;
     public AdjustmentType AdjustmentType { get; set; }
     public AdjustmentFrequency AdjustmentFrequency { get; set; }
+
+    /// <summary>
+    /// Porcentaje pactado que se aplica en cada período cuando <see cref="AdjustmentType"/> es
+    /// <see cref="AdjustmentType.FixedPercent"/> (por ejemplo 8 para un 8% trimestral).
+    /// Null para el resto de los tipos, que no lo usan.
+    /// </summary>
+    public decimal? AdjustmentPercent { get; set; }
     public int DayOfMonth { get; set; } = 1;
     public decimal? DepositAmount { get; set; }
     public ContractStatus Status { get; set; } = ContractStatus.Active;

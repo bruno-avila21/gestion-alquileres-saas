@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { AdminTopbar } from '../layouts/AdminTopbar'
 import { useAuthStore } from '@/shared/stores/authStore'
 
@@ -25,6 +26,35 @@ export default function ConfiguracionPage() {
               <Row label="Slug" value={user?.organizationSlug ?? '—'} />
               <Row label="Usuario" value={user?.email ?? '—'} />
               <Row label="Rol" value={user?.role ?? '—'} />
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-h">
+              <h3>Marca</h3>
+              <div className="sub">recibos y liquidaciones</div>
+            </div>
+            <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
+                Nombre, datos fiscales, logo y color que aparecen en los PDF de recibos y liquidaciones.
+              </div>
+              <Link className="btn" to="/admin/configuracion/marca" style={{ alignSelf: 'flex-start' }}>
+                Editar marca
+              </Link>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-h">
+              <h3>Seguridad</h3>
+            </div>
+            <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
+                Al cambiar tu contraseña se cierran las sesiones abiertas en otros dispositivos.
+              </div>
+              <Link className="btn" to="/admin/cambiar-clave" style={{ alignSelf: 'flex-start' }}>
+                Cambiar contraseña
+              </Link>
             </div>
           </div>
 

@@ -1,3 +1,4 @@
+using GestionAlquileres.API.Contracts;
 using GestionAlquileres.Application.Features.Documents;
 using GestionAlquileres.Application.Features.Documents.Commands;
 using GestionAlquileres.Application.Features.Documents.Queries;
@@ -9,6 +10,10 @@ namespace GestionAlquileres.API.Controllers;
 [Route("api/v1/contracts/{contractId:guid}/documents")]
 public class DocumentsController : BaseController
 {
+    private readonly IConfiguration _config;
+
+    public DocumentsController(IConfiguration config) => _config = config;
+
     // Management of contract documents is staff-only. The download-url endpoint stays
     // accessible to any authenticated user (incl. Tenant) because the tenant portal
     // downloads its own documents through it — ownership is enforced in the handler.
@@ -23,7 +28,8 @@ public class DocumentsController : BaseController
     public async Task<ActionResult<DocumentDto>> Upload(
         Guid contractId,
         IFormFile file,
-        CancellationToken ct)
+        CancellationToken ct,
+        [FromForm] bool isVisibleToTenant = false)
     {
         if (file is null || file.Length == 0) return BadRequest("No file provided.");
 
@@ -34,10 +40,22 @@ public class DocumentsController : BaseController
             MimeType: file.ContentType,
             SizeBytes: file.Length,
             Content: stream,
-            UploadedByUserId: CurrentUserId);
+            UploadedByUserId: CurrentUserId,
+            IsVisibleToTenant: isVisibleToTenant);
 
         var dto = await Mediator.Send(cmd, ct);
         return CreatedAtAction(nameof(GetDownloadUrl), new { contractId, docId = dto.Id }, dto);
+    }
+
+    /// <summary>Staff-only: share a document with the tenant or make it private again (audit A2).</summary>
+    [HttpPatch("{docId:guid}/visibility")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<ActionResult<DocumentDto>> SetVisibility(
+        Guid contractId, Guid docId, [FromBody] SetDocumentVisibilityRequest body, CancellationToken ct)
+    {
+        var dto = await Mediator.Send(
+            new SetDocumentVisibilityCommand(docId, contractId, body.IsVisibleToTenant), ct);
+        return dto is null ? NotFound() : Ok(dto);
     }
 
     [HttpGet("{docId:guid}/download-url")]
@@ -48,9 +66,16 @@ public class DocumentsController : BaseController
             new GetDocumentDownloadUrlQuery(docId, contractId, CurrentUserId, IsStaff), ct);
         if (result is null) return NotFound();
 
-        // Build absolute URL from relative path returned by handler
-        var absoluteUrl = $"{Request.Scheme}://{Request.Host}{result.Url}";
-        return Ok(result with { Url = absoluteUrl });
+        // La base sale de la configuración cuando está definida, y sólo si no lo está se cae al
+        // encabezado Host de la petición. Armarla siempre con Host permite que un cliente elija el
+        // dominio de la URL que devolvemos: con un CDN adelante, esa respuesta envenenada se sirve a
+        // otros usuarios con el token de descarga adentro.
+        var configuredBase = _config["Api:PublicBaseUrl"]?.TrimEnd('/');
+        var baseUrl = string.IsNullOrWhiteSpace(configuredBase)
+            ? $"{Request.Scheme}://{Request.Host}"
+            : configuredBase;
+
+        return Ok(result with { Url = $"{baseUrl}{result.Url}" });
     }
 
     [HttpDelete("{docId:guid}")]
