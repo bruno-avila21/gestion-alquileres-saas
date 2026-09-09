@@ -32,9 +32,11 @@ ENTRYPOINT ["sh", "-c", "dotnet ef database update \
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# curl is needed for the container HEALTHCHECK below.
+# curl is needed for the container HEALTHCHECK below. libfontconfig1 is needed by SkiaSharp
+# (QuestPDF's rendering backend) — without it, generating a PDF (recibos/liquidaciones) can fail to
+# load on this Debian slim image.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl libfontconfig1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish ./

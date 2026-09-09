@@ -1,5 +1,6 @@
 using GestionAlquileres.Application.Common.Exceptions;
 using GestionAlquileres.Application.Features.Owners.DTOs;
+using GestionAlquileres.Domain.Entities;
 using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
 using MediatR;
@@ -24,14 +25,30 @@ public class GetOwnerSettlementQueryHandler : IRequestHandler<GetOwnerSettlement
         var owner = await _ownerRepo.GetByIdAsync(request.OwnerId, ct)
             ?? throw new BusinessException("Propietario no encontrado.");
 
-        if (request.PeriodTo < request.PeriodFrom)
-            throw new BusinessException("El período final no puede ser anterior al inicial.");
+        ValidatePeriod(request.PeriodFrom, request.PeriodTo);
 
-        // Una sola consulta agregada. Antes se recorría propiedad por propiedad y contrato por
-        // contrato, trayendo TODAS las transacciones de cada uno para filtrar el período en memoria.
         var collectedRows = await _txRepo.GetCollectedByOwnerAsync(
             owner.Id, request.PeriodFrom, request.PeriodTo, ct);
 
+        return BuildDto(owner, request.PeriodFrom, request.PeriodTo, collectedRows);
+    }
+
+    /// <summary>El GET a 409 histórico de este endpoint. La variante PDF (GetOwnerSettlementPdfQueryHandler)
+    /// hace su propio chequeo de existencia -> 404 y sólo reusa esta validación de rango.</summary>
+    public static void ValidatePeriod(DateOnly from, DateOnly to)
+    {
+        if (to < from)
+            throw new BusinessException("El período final no puede ser anterior al inicial.");
+    }
+
+    /// <summary>
+    /// Construye el DTO a partir de las filas ya agregadas por ITransactionRepository.GetCollectedByOwnerAsync.
+    /// Compartido con el handler del PDF (Parte C del bloque de recibos/liquidaciones): "el PDF sólo
+    /// formatea" lo que esta consulta ya calcula.
+    /// </summary>
+    public static OwnerSettlementDto BuildDto(
+        Owner owner, DateOnly from, DateOnly to, IReadOnlyList<OwnerCollectedRow> collectedRows)
+    {
         var lines = new List<OwnerSettlementLineDto>();
         foreach (var row in collectedRows)
         {
@@ -50,7 +67,6 @@ public class GetOwnerSettlementQueryHandler : IRequestHandler<GetOwnerSettlement
         var commissionTotal = lines.Sum(l => l.Commission);
 
         return new OwnerSettlementDto(
-            owner.Id, owner.Name, request.PeriodFrom, request.PeriodTo,
-            gross, commissionTotal, gross - commissionTotal, lines);
+            owner.Id, owner.Name, from, to, gross, commissionTotal, gross - commissionTotal, lines);
     }
 }

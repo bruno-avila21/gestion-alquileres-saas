@@ -18,6 +18,13 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.Property(t => t.Notes).HasMaxLength(2000);
         builder.Property(t => t.CreatedAt).HasDefaultValueSql("now()");
         builder.Property(t => t.Status).IsRequired().HasDefaultValue(TransactionStatus.Pending);
+        builder.Property(t => t.ReceiptNumber).HasMaxLength(20);
+
+        // Único por organización, sólo entre los no nulos: un recibo con número que cambia entre
+        // descargas no sirve como comprobante, y dos transacciones nunca pueden compartir número.
+        builder.HasIndex(t => new { t.OrganizationId, t.ReceiptNumber })
+            .IsUnique()
+            .HasFilter("receipt_number IS NOT NULL");
 
         builder.HasIndex(t => t.ContractId);
         builder.HasIndex(t => new { t.ContractId, t.Period });

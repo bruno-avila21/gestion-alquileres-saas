@@ -16,6 +16,14 @@ public class TransactionsController : AdminControllerBase
         CancellationToken ct, int page = 1, int pageSize = 20, TransactionType? type = null, string? search = null) =>
         Ok(await Mediator.Send(new GetTransactionsPageQuery(page, pageSize, type, search), ct));
 
+    /// <summary>Recibo de pago en PDF. Sólo transacciones de tipo Payment (409 si no lo es).</summary>
+    [HttpGet("{id:guid}/receipt")]
+    public async Task<IActionResult> GetReceipt(Guid id, CancellationToken ct)
+    {
+        var pdf = await Mediator.Send(new GetPaymentReceiptPdfQuery(id), ct);
+        return pdf is null ? NotFound() : File(pdf.Content, "application/pdf", pdf.FileName);
+    }
+
     [HttpGet("export")]
     public async Task<IActionResult> Export(CancellationToken ct)
     {

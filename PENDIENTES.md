@@ -3,7 +3,7 @@
 Lista única y priorizada de lo que queda. El detalle de cada punto, con evidencia y escenario de
 falla, está en `AUDITORIA-2026-07-31.md`.
 
-**Última actualización:** 2026-08-01
+**Última actualización:** 2026-09-09
 
 ---
 
@@ -48,8 +48,12 @@ Sale del análisis de mercado. Es lo que hoy hace perder un cliente en la demo.
 - [ ] **WhatsApp como canal.** Recordatorio de vencimiento, aviso de ajuste, envío de recibo, aviso
       de mora. Hoy el proveedor de email por defecto es un no-op: **no sale ningún mensaje**.
       → `appsettings.json:42`
-- [ ] **Recibos y liquidaciones en PDF** con la marca de la inmobiliaria. Es el entregable físico
-      del negocio; sin esto siguen armándolo en Word. → no hay librería de PDF en el proyecto
+- [x] ~~**Recibos y liquidaciones en PDF** con la marca de la inmobiliaria.~~ ✅ Recibo de pago con
+      numeración secuencial por inmobiliaria, importe en letras y leyenda de no válido como factura;
+      liquidación al propietario que reusa el cálculo existente. `Organization` ganó razón social,
+      CUIT, domicilio, teléfono, email, logo y color de marca, con pantalla propia en el panel.
+      QuestPDF con licencia Community (gratis bajo USD 1M de facturación anual).
+      Contrato en `docs/specs/pdf-recibos-liquidaciones.md`.
 - [ ] **Planes con límites reales.** `Organization.Plan` existe con valor `"free"` y no se usa en
       ningún lado: hoy el producto no le puede cobrar a nadie. → `Organization.cs:8`
 

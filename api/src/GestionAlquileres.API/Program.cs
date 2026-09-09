@@ -15,6 +15,14 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 
+// QuestPDF (recibos/liquidaciones): licencia Community, obligatoria antes de generar cualquier PDF
+// o tira excepción. UseEnvironmentFonts = false evita depender de las fuentes del sistema: el
+// contenedor Debian slim no trae fuentes, y sin esto el PDF sale distinto (o falla) en el contenedor
+// vs. en Windows. Se fija afuera de WebApplication.CreateBuilder porque es estado global de la
+// librería, no configuración de DI.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+QuestPDF.Settings.UseEnvironmentFonts = false;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Serilog — structured logging (INFRA-05)

@@ -4,6 +4,7 @@ using GestionAlquileres.Domain.Interfaces.Services;
 using GestionAlquileres.Infrastructure.ExternalServices;
 using GestionAlquileres.Infrastructure.Persistence;
 using GestionAlquileres.Infrastructure.Persistence.Repositories;
+using GestionAlquileres.Infrastructure.Reports;
 using GestionAlquileres.Infrastructure.Services;
 using GestionAlquileres.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +45,10 @@ public static class DependencyInjection
         services.AddScoped<ILeadRepository, LeadRepository>();
         services.AddSingleton<IDocumentTokenService, DocumentTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+        // QuestPDF es sin estado (la licencia se fija una vez en Program.cs) — un solo generador
+        // sirve para toda la vida de la app.
+        services.AddSingleton<IPdfReportGenerator, QuestPdfReportGenerator>();
 
         // Email: real SMTP relay when Email:Provider = "Smtp" (SES/Resend/etc.), else a no-op logger.
         services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
