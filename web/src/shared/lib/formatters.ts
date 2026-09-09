@@ -24,6 +24,20 @@ export const formatARS = (amount: number) =>
 export const formatMoney = (amount: number, currency: 'ARS' | 'USD') =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount)
 
+/**
+ * Importe con centavos. `formatARS` redondea a pesos enteros, que es lo que se quiere para
+ * alquileres y totales de cartera, pero NO para la rendición al propietario: la comisión es un
+ * porcentaje del cobrado y casi nunca cae en peso redondo, y el PDF que firma la inmobiliaria
+ * muestra los centavos. Redondear en pantalla lo que se le paga a una persona induce a error.
+ */
+export const formatARSExact = (amount: number) =>
+  new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount)
+
 export const formatPct = (n: number) => `${n.toFixed(2)}%`
 
 export const formatDate = (iso: string) =>

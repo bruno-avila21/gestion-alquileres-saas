@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { AdminTopbar } from '../layouts/AdminTopbar'
 import { QueryError } from '@/shared/components/ui/QueryError'
 import { IcCash, IcDownload } from '@/shared/components/ui/Icons'
-import { formatARS, formatPct } from '@/shared/lib/formatters'
+import { formatARSExact, formatPct } from '@/shared/lib/formatters'
 import { downloadBlob } from '@/shared/lib/downloadFile'
 import { useOwners, useOwnerSettlement } from '@/features/owners/hooks/useOwners'
 import { ownerService } from '@/features/owners/services/ownerService'
@@ -150,27 +150,27 @@ export default function RendicionesPage() {
                 {settlement.lines.map((line) => (
                   <tr key={line.contractId}>
                     <td>{line.propertyAddress}</td>
-                    <td className="num">{formatARS(line.collected)}</td>
+                    <td className="num">{formatARSExact(line.collected)}</td>
                     <td className="num">{formatPct(line.commissionPct)}</td>
-                    <td className="num">{formatARS(line.commission)}</td>
-                    <td className="num"><b>{formatARS(line.net)}</b></td>
+                    <td className="num">{formatARSExact(line.commission)}</td>
+                    <td className="num"><b>{formatARSExact(line.net)}</b></td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr>
                   <td style={{ fontWeight: 600, paddingLeft: 12 }}>Total cobrado</td>
-                  <td className="num" style={{ fontWeight: 700 }}>{formatARS(settlement.grossCollected)}</td>
+                  <td className="num" style={{ fontWeight: 700 }}>{formatARSExact(settlement.grossCollected)}</td>
                   <td colSpan={3} />
                 </tr>
                 <tr>
                   <td style={{ fontWeight: 600, paddingLeft: 12 }}>Comisión de administración</td>
-                  <td className="num" style={{ fontWeight: 700 }}>-{formatARS(settlement.commissionAmount)}</td>
+                  <td className="num" style={{ fontWeight: 700 }}>-{formatARSExact(settlement.commissionAmount)}</td>
                   <td colSpan={3} />
                 </tr>
                 <tr>
                   <td style={{ fontWeight: 700, paddingLeft: 12 }}>NETO A LIQUIDAR</td>
-                  <td className="num" style={{ fontWeight: 700, color: 'var(--ok)' }}>{formatARS(settlement.netToOwner)}</td>
+                  <td className="num" style={{ fontWeight: 700, color: 'var(--ok)' }}>{formatARSExact(settlement.netToOwner)}</td>
                   <td colSpan={3} />
                 </tr>
               </tfoot>
