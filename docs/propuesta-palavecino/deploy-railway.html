@@ -335,6 +335,7 @@
         <li><span class="ui">+ Create</span> → <span class="ui">Bucket</span>. Región: <strong>US East</strong> (la más cercana a Argentina). Dejale el nombre <strong>Bucket</strong>: las variables de abajo lo referencian con ese nombre.</li>
         <li>Abrí el Bucket → pestaña <span class="ui">Credentials</span> y fijate qué dice sobre el estilo de URL: <em>virtual-hosted</em> (lo normal hoy) o <em>path-style</em>. Lo vas a necesitar para una variable del paso 3.</li>
       </ol>
+      <div class="note"><b>Verificá que el Bucket exista antes del paso 3</b>El 8/9 el Bucket no se había creado y las seis variables <code>Storage__*</code> de <code>api</code> quedaron vacías: la API arrancaba bien pero cada foto daba error 500. Un Bucket no aparece como servicio en <code>railway status</code>; se ve con <code>railway bucket list</code>.</div>
       <div class="note"><b>Por qué Bucket y no MinIO</b>Railway Buckets es almacenamiento S3 nativo, privado, a USD 0,015 por GB al mes y sin costo de tráfico. Es un servicio menos que mantener y el código ya habla S3 (el mismo camino que usa MinIO en local).</div>
     </div>
   </section>
@@ -400,6 +401,7 @@ Email__FromEmail=no-reply@<span data-dom>demo.tudominio.com</span></pre></div>
           <tr><td>El Bucket dice <em>path-style</em> en Credentials</td><td>Cambiá <code>Storage__ForcePathStyle=true</code>.</td></tr>
           <tr><td>Postgres no tiene <code>PGDATABASE</code> / <code>PGUSER</code> en su pestaña Variables</td><td>Usá los nombres que sí muestre (la base suele ser <code>railway</code> y el usuario <code>postgres</code>).</td></tr>
           <tr><td>Le pusiste otro nombre al Bucket</td><td>Reemplazá <code>Bucket.</code> por <code>&lt;TuNombre&gt;.</code> en las seis referencias.</td></tr>
+          <tr><td>Las referencias <code>${{Bucket.…}}</code> quedan vacías (subir una foto da 500 y el log de <code>api</code> dice <em>Invalid region endpoint</em>)</td><td>Cargá los valores literales desde tu PC: <code>railway bucket credentials --bucket Bucket --json</code> te da endpoint, región (<code>auto</code>), nombre del bucket y las dos claves; pegalos en las variables de <code>api</code> y redesplegá. Es lo que se hizo en el demo.</td></tr>
         </tbody>
       </table></div>
 
@@ -461,7 +463,8 @@ API_UPSTREAM=${{api.RAILWAY_PRIVATE_DOMAIN}}:8080</pre></div>
       <div class="head"><h2>Migrar la base</h2><span class="meta">3 min · desde tu PC</span></div>
       <p>La API no migra al arrancar (a propósito). Corrés las migraciones una vez desde tu máquina contra la URL pública de Postgres.</p>
       <ol>
-        <li>Servicio <strong>Postgres</strong> → <span class="ui">Variables</span> → copiá <code>DATABASE_PUBLIC_URL</code>. Tiene esta forma: <code>postgresql://postgres:CLAVE@HOST.proxy.rlwy.net:PUERTO/railway</code>.</li>
+        <li>Servicio <strong>Postgres</strong> → <span class="ui">Settings</span> → <span class="ui">Networking</span> → <span class="ui">TCP Proxy</span> → <span class="ui">Enable</span>, puerto <code>5432</code>. Sin esto la base no tiene salida pública y <code>DATABASE_PUBLIC_URL</code> no existe.</li>
+        <li>Servicio <strong>Postgres</strong> → <span class="ui">Variables</span> → copiá <code>DATABASE_PUBLIC_URL</code>. Tiene esta forma: <code>postgresql://postgres:CLAVE@HOST.proxy.rlwy.net:PUERTO/railway</code>. (Con la CLI: <code>railway variables --service Postgres</code>; sin <code>--service</code> no la muestra.)</li>
         <li>Armá la cadena de conexión con esos cuatro datos y corré, en PowerShell, dentro de la carpeta <code>api</code>:</li>
       </ol>
       <div class="code"><button class="copy" type="button">Copiar</button><pre>cd api
