@@ -142,6 +142,25 @@
   --s-9: 28px;
 }
 
+/* ─── Paletas del panel ───────────────────────────────────────────────────
+   Se aplican con `data-palette` en el shell del panel y sólo redefinen el
+   acento: superficies, tinta y semánticos no se tocan, así que ninguna paleta
+   puede dejar ilegible un estado de error o un chip de "vencido".
+   La lista vive también en el dominio (PanelPalettes.cs) y la valida el API.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Azul institucional — la predeterminada. Está en :root, así que `azul` sólo
+   necesita existir como nombre válido; no redefine nada. */
+
+/* Violeta — el del sistema de diseño nuevo (Modelo-Stitch-Google) */
+[data-palette="violeta"] {
+  --brand: #6d28d9;
+  --brand-600: #5b21b6;
+  --brand-700: #4c1d95;
+  --brand-50: #f5f3ff;
+  --brand-100: #ddd6fe;
+}
+
 /* Paleta alternativa: Carbon (neutra, muy sobria) */
 [data-palette="carbon"] {
   --brand: #1f1f1f;

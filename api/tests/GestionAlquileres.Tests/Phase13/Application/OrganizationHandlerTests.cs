@@ -62,7 +62,7 @@ public class OrganizationLogoHandlerTests
 public class UpdateOrganizationCommandValidatorTests
 {
     private static UpdateOrganizationCommand Valid() =>
-        new("Inmobiliaria Test", null, null, null, null, null, null);
+        new("Inmobiliaria Test", null, null, null, null, null, null, null);
 
     [Fact]
     public void Color_de_marca_invalido_es_rechazado()
@@ -70,6 +70,36 @@ public class UpdateOrganizationCommandValidatorTests
         var validator = new UpdateOrganizationCommandValidator();
         var result = validator.Validate(Valid() with { BrandColor = "azul" });
         Assert.False(result.IsValid);
+    }
+
+    [Theory]
+    [InlineData("fucsia")]
+    [InlineData("#6d28d9")]
+    [InlineData("Violeta")]
+    public void Paleta_del_panel_fuera_de_la_lista_es_rechazada(string paleta)
+    {
+        var validator = new UpdateOrganizationCommandValidator();
+        var result = validator.Validate(Valid() with { PanelPalette = paleta });
+        Assert.False(result.IsValid);
+    }
+
+    [Theory]
+    [InlineData("azul")]
+    [InlineData("violeta")]
+    [InlineData("carbon")]
+    [InlineData("vino")]
+    public void Paleta_del_panel_de_la_lista_es_aceptada(string paleta)
+    {
+        var validator = new UpdateOrganizationCommandValidator();
+        var result = validator.Validate(Valid() with { PanelPalette = paleta });
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Sin_paleta_es_valido_y_significa_la_predeterminada()
+    {
+        var validator = new UpdateOrganizationCommandValidator();
+        Assert.True(validator.Validate(Valid() with { PanelPalette = null }).IsValid);
     }
 
     [Fact]

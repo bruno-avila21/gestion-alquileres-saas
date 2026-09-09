@@ -15,10 +15,14 @@ public record OrganizationDto(
     string? Phone,
     string? Email,
     string? BrandColor,
+    /// <summary>Paleta del panel. Nunca null hacia afuera: se resuelve a la predeterminada.</summary>
+    string PanelPalette,
     bool HasLogo,
     string Plan)
 {
     public static OrganizationDto From(Organization org) => new(
         org.Id, org.Name, org.LegalName, org.TaxId, org.Address, org.Phone, org.Email,
-        org.BrandColor, HasLogo: !string.IsNullOrWhiteSpace(org.LogoStorageKey), org.Plan);
+        org.BrandColor,
+        PanelPalette: PanelPalettes.IsValid(org.PanelPalette) ? org.PanelPalette! : PanelPalettes.Default,
+        HasLogo: !string.IsNullOrWhiteSpace(org.LogoStorageKey), org.Plan);
 }

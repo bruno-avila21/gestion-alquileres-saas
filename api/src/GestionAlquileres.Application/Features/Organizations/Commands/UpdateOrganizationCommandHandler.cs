@@ -28,6 +28,7 @@ public class UpdateOrganizationCommandHandler : IRequestHandler<UpdateOrganizati
         org.Phone = Normalize(request.Phone);
         org.Email = Normalize(request.Email);
         org.BrandColor = Normalize(request.BrandColor);
+        org.PanelPalette = Normalize(request.PanelPalette);
 
         await _repo.SaveChangesAsync(ct);
 

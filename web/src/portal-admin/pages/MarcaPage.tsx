@@ -75,6 +75,9 @@ export default function MarcaPage() {
       phone: values.phone || null,
       email: values.email || null,
       brandColor: values.brandColor || null,
+      // El PUT reemplaza la organización entera: si no reenviamos la paleta acá,
+      // guardar la marca la borraba y el panel volvía al azul sin que nadie lo pidiera.
+      panelPalette: org?.panelPalette ?? null,
     }
     update.mutate(req, { onSuccess: () => setSaved(true) })
   }

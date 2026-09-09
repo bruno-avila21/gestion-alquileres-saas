@@ -23,7 +23,7 @@ public class OrganizationController : AdminControllerBase
     {
         var result = await Mediator.Send(new UpdateOrganizationCommand(
             request.Name, request.LegalName, request.TaxId, request.Address,
-            request.Phone, request.Email, request.BrandColor), ct);
+            request.Phone, request.Email, request.BrandColor, request.PanelPalette), ct);
         return Ok(result);
     }
 

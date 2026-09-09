@@ -29,6 +29,15 @@ public class Organization
     public string? BrandColor { get; set; }
 
     /// <summary>
+    /// Paleta del panel de administración: una de las de <c>PanelPalettes</c>. Null = la
+    /// predeterminada (azul). Es distinta de <see cref="BrandColor"/> a propósito: aquel es el
+    /// color de la inmobiliaria y viaja impreso en los PDF, éste es el aspecto de la herramienta
+    /// que usa el operador todos los días. Mezclarlos haría que cambiar el membrete de un recibo
+    /// repintara el panel entero.
+    /// </summary>
+    public string? PanelPalette { get; set; }
+
+    /// <summary>
     /// Contador de recibos de la organización. Arranca en 0; se incrementa de forma atómica la
     /// primera vez que se pide el recibo de cada transacción de pago (ver IOrganizationRepository).
     /// </summary>

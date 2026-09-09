@@ -7,4 +7,6 @@ public record UpdateOrganizationRequest(
     string? Address,
     string? Phone,
     string? Email,
-    string? BrandColor);
+    string? BrandColor,
+    /// <summary>Paleta del panel: uno de los valores de <c>PanelPalettes</c>. Null = la predeterminada.</summary>
+    string? PanelPalette);

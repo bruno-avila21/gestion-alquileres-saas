@@ -26,6 +26,7 @@ public class OrganizationConfiguration : IEntityTypeConfiguration<Organization>
         builder.Property(o => o.Email).HasMaxLength(200);
         builder.Property(o => o.LogoStorageKey).HasMaxLength(200);
         builder.Property(o => o.BrandColor).HasMaxLength(7);
+        builder.Property(o => o.PanelPalette).HasMaxLength(16);
         builder.Property(o => o.ReceiptSequence).HasDefaultValue(0L);
     }
 }

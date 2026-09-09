@@ -11,4 +11,5 @@ public record UpdateOrganizationCommand(
     string? Address,
     string? Phone,
     string? Email,
-    string? BrandColor) : IRequest<OrganizationDto>;
+    string? BrandColor,
+    string? PanelPalette) : IRequest<OrganizationDto>;

@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { AdminTopbar } from '../layouts/AdminTopbar'
 import { useAuthStore } from '@/shared/stores/authStore'
+import { PalettePicker } from '../components/PalettePicker'
 
 export default function ConfiguracionPage() {
   const user = useAuthStore((s) => s.user)
@@ -26,6 +27,20 @@ export default function ConfiguracionPage() {
               <Row label="Slug" value={user?.organizationSlug ?? '—'} />
               <Row label="Usuario" value={user?.email ?? '—'} />
               <Row label="Rol" value={user?.role ?? '—'} />
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-h">
+              <h3>Color del panel</h3>
+              <div className="sub">cómo se ve la herramienta</div>
+            </div>
+            <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
+                Lo elegís una vez y lo ve todo el equipo. No afecta a los recibos ni al sitio
+                público: eso se configura en Marca.
+              </div>
+              <PalettePicker />
             </div>
           </div>
 
