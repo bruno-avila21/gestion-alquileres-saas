@@ -152,6 +152,20 @@ builder.Services.AddRateLimiter(options =>
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0,
             }));
+
+    // Público y anónimo (bloque A3, CRM de leads): sin esto, un bot podría inundar leads con el
+    // formulario de contacto del sitio. 10/min por IP alcanza para un visitante real que reintenta
+    // tras un error, sin abrir la puerta a un spam masivo.
+    options.AddPolicy("public-leads", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+            }));
     options.RejectionStatusCode = 429;
 });
 

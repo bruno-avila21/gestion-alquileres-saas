@@ -2,11 +2,12 @@ import { NavLink, useNavigate } from 'react-router'
 import { useAuthStore } from '@/shared/stores/authStore'
 import {
   IcHome, IcDoc, IcBuilding, IcUsers, IcCash,
-  IcTrend, IcSettings, IcLogout, IcCalendar,
+  IcTrend, IcSettings, IcLogout, IcCalendar, IcMail,
 } from '@/shared/components/ui/Icons'
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Panel', icon: <IcHome size={18} />, end: true },
+  { to: '/admin/consultas', label: 'Consultas', icon: <IcMail size={18} /> },
   { to: '/admin/contratos', label: 'Contratos', icon: <IcDoc size={18} /> },
   { to: '/admin/propiedades', label: 'Propiedades', icon: <IcBuilding size={18} /> },
   { to: '/admin/inquilinos', label: 'Inquilinos', icon: <IcUsers size={18} /> },

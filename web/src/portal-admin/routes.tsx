@@ -11,6 +11,10 @@ const IndexesPage = lazy(() => import('./pages/IndexesPage'))
 const PropiedadesPage = lazy(() => import('./pages/PropiedadesPage'))
 const InquilinosPage = lazy(() => import('./pages/InquilinosPage'))
 const PagosPage = lazy(() => import('./pages/PagosPage'))
+// Mismo falso positivo que las líneas de arriba (no se tocan, ver nota al pie del archivo): este
+// módulo exporta `adminRoutes`, no componentes, pero la regla igual marca cada `lazy(...)` local.
+// eslint-disable-next-line react-refresh/only-export-components -- ver nota arriba; no se suma un error nuevo a los preexistentes del archivo
+const ConsultasPage = lazy(() => import('./pages/ConsultasPage'))
 const AjustesPage = lazy(() => import('./pages/AjustesPage'))
 const DocumentosAdminPage = lazy(() => import('./pages/DocumentosAdminPage'))
 const ConfiguracionPage = lazy(() => import('./pages/ConfiguracionPage'))
@@ -42,6 +46,7 @@ export const adminRoutes: RouteObject[] = [
       { path: 'propiedades', element: <Lazy><PropiedadesPage /></Lazy> },
       { path: 'inquilinos', element: <Lazy><InquilinosPage /></Lazy> },
       { path: 'pagos', element: <Lazy><PagosPage /></Lazy> },
+      { path: 'consultas', element: <Lazy><ConsultasPage /></Lazy> },
       { path: 'ajustes', element: <Lazy><AjustesPage /></Lazy> },
       { path: 'documentos', element: <Lazy><DocumentosAdminPage /></Lazy> },
       { path: 'configuracion', element: <Lazy><ConfiguracionPage /></Lazy> },
