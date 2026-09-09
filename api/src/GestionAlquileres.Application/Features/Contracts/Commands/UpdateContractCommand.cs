@@ -15,6 +15,8 @@ public record UpdateContractCommand(
     AdjustmentType AdjustmentType,
     AdjustmentFrequency AdjustmentFrequency,
     decimal? AdjustmentPercent,
+    decimal? LateFeeDailyRate,
+    int LateFeeGraceDays,
     int DayOfMonth,
     decimal? DepositAmount,
     string? Notes

@@ -22,6 +22,7 @@ public class CreateContractCommandValidator : AbstractValidator<CreateContractCo
         // volvía como 500 en vez de un 400 que indique el campo.
         RuleFor(x => x.Notes).MaximumLength(2000);
 
-        ContractRules.Apply(this, x => x.AdjustmentType, x => x.AdjustmentPercent);
+        ContractRules.Apply(this, x => x.AdjustmentType, x => x.AdjustmentPercent,
+            x => x.LateFeeDailyRate, x => x.LateFeeGraceDays);
     }
 }

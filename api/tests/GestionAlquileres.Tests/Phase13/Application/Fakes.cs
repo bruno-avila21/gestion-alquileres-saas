@@ -36,7 +36,30 @@ internal sealed class FakeTransactionRepository : ITransactionRepository
         throw new NotImplementedException();
 
     public Task<IReadOnlyList<Transaction>> GetPendingChargesAsync(Guid contractId, CancellationToken ct) =>
-        throw new NotImplementedException();
+        Task.FromResult<IReadOnlyList<Transaction>>(All
+            .Where(t => t.ContractId == contractId && t.Status == TransactionStatus.Pending && t.IsCharge)
+            .OrderBy(t => t.Period)
+            .ThenBy(t => t.CreatedAt)
+            .ToList());
+
+    /// <summary>
+    /// Sólo la usa el job de punitorios, que no se ejercita a través de estos fakes: el job se
+    /// prueba por su servicio de devengamiento, que es donde vive la regla.
+    /// </summary>
+    public Task<IReadOnlyList<OverdueChargeRow>> GetOverdueChargesForLateFeeRawAsync(
+        DateOnly asOf, CancellationToken ct) => throw new NotImplementedException();
+
+    // Los fakes ignoran la organización a propósito: el aislamiento multi-tenant se prueba a nivel
+    // HTTP, no acá. Igual se filtra por ella para que un test que mezcle orgs no pase por accidente.
+    public Task<Transaction?> GetByIdRawAsync(Guid id, Guid organizationId, CancellationToken ct) =>
+        Task.FromResult(All.FirstOrDefault(t => t.Id == id && t.OrganizationId == organizationId));
+
+    public Task<Transaction?> GetLateFeeForChargeRawAsync(
+        Guid chargeId, Guid organizationId, CancellationToken ct) =>
+        Task.FromResult(All.FirstOrDefault(
+            t => t.RelatedTransactionId == chargeId
+                 && t.OrganizationId == organizationId
+                 && t.Type == TransactionType.LateFee));
 
     public Task<IReadOnlyList<Transaction>> GetRecentAsync(int limit, CancellationToken ct) =>
         throw new NotImplementedException();

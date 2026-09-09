@@ -33,7 +33,8 @@ public class ContractsController : AdminControllerBase
             OrganizationId, request.PropertyId, request.AppTenantId,
             request.StartDate, request.EndDate, request.MonthlyRent,
             request.Currency, request.AdjustmentType, request.AdjustmentFrequency,
-            request.AdjustmentPercent, request.DayOfMonth, request.DepositAmount, request.Notes), ct);
+            request.AdjustmentPercent, request.LateFeeDailyRate, request.LateFeeGraceDays,
+            request.DayOfMonth, request.DepositAmount, request.Notes), ct);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -45,7 +46,8 @@ public class ContractsController : AdminControllerBase
             id, request.PropertyId, request.AppTenantId,
             request.StartDate, request.EndDate, request.MonthlyRent,
             request.Currency, request.AdjustmentType, request.AdjustmentFrequency,
-            request.AdjustmentPercent, request.DayOfMonth, request.DepositAmount, request.Notes), ct);
+            request.AdjustmentPercent, request.LateFeeDailyRate, request.LateFeeGraceDays,
+            request.DayOfMonth, request.DepositAmount, request.Notes), ct);
         return result is null ? NotFound() : Ok(result);
     }
 

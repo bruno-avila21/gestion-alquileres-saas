@@ -19,6 +19,7 @@ public class UpdateContractCommandValidator : AbstractValidator<UpdateContractCo
         RuleFor(x => x.Currency).IsInEnum().WithMessage("Moneda no soportada.");
         RuleFor(x => x.Notes).MaximumLength(2000);
 
-        ContractRules.Apply(this, x => x.AdjustmentType, x => x.AdjustmentPercent);
+        ContractRules.Apply(this, x => x.AdjustmentType, x => x.AdjustmentPercent,
+            x => x.LateFeeDailyRate, x => x.LateFeeGraceDays);
     }
 }

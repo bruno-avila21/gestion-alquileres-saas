@@ -18,7 +18,9 @@ import {
 import { useContractDocuments, useUploadDocument, useDeleteDocument } from '@/features/documents/hooks/useDocuments'
 import { documentService } from '@/features/documents/services/documentService'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
-import type { ContractDto } from '@/features/contracts/types/contract.types'
+import type {
+  ContractDto, AdjustmentType, AdjustmentFrequency,
+} from '@/features/contracts/types/contract.types'
 import type { DocumentDownloadUrlDto } from '@/features/documents/types/document.types'
 
 type TabKey = 'overview' | 'payments' | 'adjustments' | 'documents'
@@ -54,8 +56,24 @@ function CalcCell({
 }
 
 function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: () => void }) {
-  const adjLabel = contract.adjustmentType === 'ICL' ? 'ICL' : contract.adjustmentType === 'IPC' ? 'IPC' : 'Manual'
-  const freqLabel = contract.adjustmentFrequency === 'Monthly' ? 'mensual' : contract.adjustmentFrequency === 'Quarterly' ? 'trimestral' : 'anual'
+  // Los mapas quedaron con los valores viejos del enum cuando se sumaron % fijo, cuatrimestral y
+  // semestral: un contrato al 8% trimestral se mostraba como "Manual". Se completan acá.
+  const ADJ_LABELS: Record<AdjustmentType, string> = {
+    ICL: 'ICL', IPC: 'IPC', Manual: 'Manual', FixedPercent: '% fijo',
+  }
+  const FREQ_LABELS: Record<AdjustmentFrequency, string> = {
+    Monthly: 'mensual', Quarterly: 'trimestral', FourMonthly: 'cuatrimestral',
+    SemiAnnual: 'semestral', Annual: 'anual',
+  }
+  const adjLabel = contract.adjustmentType === 'FixedPercent' && contract.adjustmentPercent != null
+    ? `${contract.adjustmentPercent}%`
+    : ADJ_LABELS[contract.adjustmentType]
+  const freqLabel = FREQ_LABELS[contract.adjustmentFrequency]
+
+  const punitorioLabel = contract.lateFeeDailyRate
+    ? `${contract.lateFeeDailyRate}% diario` +
+      (contract.lateFeeGraceDays > 0 ? ` · ${contract.lateFeeGraceDays} días de gracia` : '')
+    : 'sin punitorio'
 
   // Real projection from indices-api (null for Manual contracts).
   const { data: projection } = useAdjustmentProjection(contract.id)
@@ -145,6 +163,7 @@ function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: 
               { k: 'Depósito', v: contract.depositAmount != null ? formatARS(contract.depositAmount) : '—' },
               { k: 'Indexación', v: `${adjLabel} · ${freqLabel}` },
               { k: 'Día de pago', v: `día ${contract.dayOfMonth}` },
+              { k: 'Punitorio', v: punitorioLabel },
               { k: 'Moneda', v: contract.currency },
             ].map((kv) => (
               <div key={kv.k} className="between">

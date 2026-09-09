@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Common.Billing;
 using GestionAlquileres.Application.Common.Exceptions;
 using GestionAlquileres.Application.Common.Time;
 using GestionAlquileres.Application.Features.Transactions.DTOs;
@@ -12,11 +13,14 @@ public class RegisterPaymentCommandHandler : IRequestHandler<RegisterPaymentComm
 {
     private readonly IContractRepository _contractRepo;
     private readonly ITransactionRepository _txRepo;
+    private readonly ILateFeeAccrualService _lateFees;
 
-    public RegisterPaymentCommandHandler(IContractRepository contractRepo, ITransactionRepository txRepo)
+    public RegisterPaymentCommandHandler(
+        IContractRepository contractRepo, ITransactionRepository txRepo, ILateFeeAccrualService lateFees)
     {
         _contractRepo = contractRepo;
         _txRepo = txRepo;
+        _lateFees = lateFees;
     }
 
     public async Task<TransactionDto> Handle(RegisterPaymentCommand request, CancellationToken ct)
@@ -46,6 +50,12 @@ public class RegisterPaymentCommandHandler : IRequestHandler<RegisterPaymentComm
         // while the payment sits as an unlinked credit. Allocate the payment greedily: the charge for
         // the paid period first (the common "pago del mes" case), then the oldest pending charges.
         // Charges only fully covered by the remaining amount are marked Paid (no partial settlement).
+        // El punitorio se devenga hasta HOY antes de imputar, por dos motivos: queda congelado en el
+        // día del pago (y no en el de la próxima corrida del job, que le sumaría un día que el
+        // inquilino no debe), y entra en la cola de imputación de este mismo pago en vez de quedar
+        // colgado como deuda nueva justo después de cobrar.
+        await AccrueLateFeesAsync(contract, ct);
+
         var pending = (await _txRepo.GetPendingChargesAsync(contract.Id, ct))
             .OrderByDescending(c => c.Period == request.Period)
             .ThenBy(c => c.Period)
@@ -65,6 +75,23 @@ public class RegisterPaymentCommandHandler : IRequestHandler<RegisterPaymentComm
 
         return ToDto(tx);
     }
+
+    /// <summary>
+    /// Devenga el punitorio de todos los cargos impagos del contrato hasta hoy. Compartido por los
+    /// dos caminos de cobro para que ambos congelen el punitorio en el mismo momento.
+    /// </summary>
+    internal static async Task AccrueLateFeesAsync(
+        Contract contract, ITransactionRepository txRepo, ILateFeeAccrualService lateFees, CancellationToken ct)
+    {
+        if (contract.LateFeeDailyRate is not { } rate || rate <= 0m) return;
+
+        var today = ArgentinaTime.Today;
+        foreach (var charge in await txRepo.GetPendingChargesAsync(contract.Id, ct))
+            await lateFees.AccrueAsync(charge, rate, contract.LateFeeGraceDays, today, ct);
+    }
+
+    private Task AccrueLateFeesAsync(Contract contract, CancellationToken ct) =>
+        AccrueLateFeesAsync(contract, _txRepo, _lateFees, ct);
 
     /// <summary>
     /// Shared mapper. Derives the Overdue view state on read (a Pending charge past its due date)

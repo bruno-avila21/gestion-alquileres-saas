@@ -21,6 +21,18 @@ public class Contract : ITenantEntity
     /// Null para el resto de los tipos, que no lo usan.
     /// </summary>
     public decimal? AdjustmentPercent { get; set; }
+    /// <summary>
+    /// Tasa punitoria pactada, en porcentaje <b>diario</b> sobre el capital impago (por ejemplo
+    /// 0,1 para un 0,1% por día). Null o 0 significa que el contrato no devenga punitorios.
+    /// </summary>
+    public decimal? LateFeeDailyRate { get; set; }
+
+    /// <summary>
+    /// Días de tolerancia desde el vencimiento antes de que empiece a correr el punitorio
+    /// ("hasta el día 10 sin recargo"). 0 = el punitorio corre desde el día siguiente al vencimiento.
+    /// </summary>
+    public int LateFeeGraceDays { get; set; }
+
     public int DayOfMonth { get; set; } = 1;
     public decimal? DepositAmount { get; set; }
     public ContractStatus Status { get; set; } = ContractStatus.Active;

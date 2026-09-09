@@ -1,6 +1,7 @@
 using System.Reflection;
 using FluentValidation;
 using GestionAlquileres.Application.Common.Behaviors;
+using GestionAlquileres.Application.Common.Billing;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,6 +22,10 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly);
         services.AddAutoMapper(cfg => { }, assembly);
+
+        // Scoped: comparte el DbContext del request (o del scope del job), para que el
+        // devengamiento y la imputación del pago caigan en la misma unidad de trabajo.
+        services.AddScoped<ILateFeeAccrualService, LateFeeAccrualService>();
 
         return services;
     }

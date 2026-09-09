@@ -315,6 +315,12 @@ try
         job => job.ExecuteAsync(CancellationToken.None),
         Cron.Monthly(1, 7)); // 1st of month at 07:00 — before the adjustment job
 
+    RecurringJob.AddOrUpdate<GestionAlquileres.API.Jobs.LateFeeAccrualJob>(
+        "late-fee-accrual",
+        job => job.ExecuteAsync(CancellationToken.None),
+        Cron.Daily(5)); // diario a las 05:00 — antes del aviso de vencimientos de las 10:00, para
+                        // que el importe que se comunica ya incluya el punitorio del día
+
     RecurringJob.AddOrUpdate<GestionAlquileres.API.Jobs.RefreshTokenCleanupJob>(
         "refresh-token-cleanup",
         job => job.ExecuteAsync(CancellationToken.None),

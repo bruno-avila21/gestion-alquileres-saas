@@ -42,9 +42,14 @@ Sale del análisis de mercado. Es lo que hoy hace perder un cliente en la demo.
       - **Tope y piso de ajuste**, y **contratos en USD con cotización**.
       - Mover los índices de enum compilado a **configuración de datos**, para que sumar uno nuevo
         sea una fila y no un deploy (riesgo de reversión regulatoria).
-- [ ] **Punitorios e intereses automáticos.** 73% de los hogares inquilinos tiene deudas; es el
-      dolor número uno del administrador y la competencia ya lo vende.
-      → falta tipo en `TransactionType.cs:3`, tasa en `Contract`, job de devengamiento
+- [x] ~~**Punitorios e intereses automáticos.**~~ ✅ Tasa punitoria diaria y días de gracia por
+      contrato; el punitorio se devenga día a día sobre el capital impago (sin capitalizar), como una
+      única línea vinculada al cargo que crece hasta que se salda. Job diario `late-fee-accrual` a
+      las 05:00, idempotente. Los dos caminos de cobro devengan hasta la fecha del pago antes de
+      imputar, así el punitorio queda congelado en el día correcto y se puede saldar con ese mismo
+      pago. Contrato en `docs/specs/punitorios-mora.md`.
+      **Falta decidir:** si el punitorio le corresponde al propietario (hoy sí: entra en la
+      liquidación y se le descuenta comisión) o se lo queda la inmobiliaria.
 - [ ] **WhatsApp como canal.** Recordatorio de vencimiento, aviso de ajuste, envío de recibo, aviso
       de mora. Hoy el proveedor de email por defecto es un no-op: **no sale ningún mensaje**.
       → `appsettings.json:42`
@@ -54,6 +59,10 @@ Sale del análisis de mercado. Es lo que hoy hace perder un cliente en la demo.
       CUIT, domicilio, teléfono, email, logo y color de marca, con pantalla propia en el panel.
       QuestPDF con licencia Community (gratis bajo USD 1M de facturación anual).
       Contrato en `docs/specs/pdf-recibos-liquidaciones.md`.
+- [ ] **No hay pantalla de edición de contrato.** `useUpdateContract` existe y el endpoint `PUT`
+      funciona, pero ninguna vista lo usa: para corregir el alquiler, la indexación o el punitorio de
+      un contrato ya cargado hay que ir por la API. Se nota apenas se pactan punitorios sobre la
+      cartera existente.
 - [ ] **Planes con límites reales.** `Organization.Plan` existe con valor `"free"` y no se usa en
       ningún lado: hoy el producto no le puede cobrar a nadie. → `Organization.cs:8`
 

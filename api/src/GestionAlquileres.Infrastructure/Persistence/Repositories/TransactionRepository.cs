@@ -25,10 +25,43 @@ public class TransactionRepository : ITransactionRepository
         await _db.Transactions
             .Where(t => t.ContractId == contractId
                         && t.Status == TransactionStatus.Pending
-                        && (t.Type == TransactionType.RentCharge || t.Type == TransactionType.ManualDebit))
+                        && (t.Type == TransactionType.RentCharge
+                            || t.Type == TransactionType.ManualDebit
+                            || t.Type == TransactionType.LateFee))
             .OrderBy(t => t.Period)
             .ThenBy(t => t.CreatedAt)
             .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<OverdueChargeRow>> GetOverdueChargesForLateFeeRawAsync(
+        DateOnly asOf, CancellationToken ct) =>
+        // IgnoreQueryFilters: corre en background, sin tenant en el contexto, y abarca todas las orgs.
+        // El punitorio se excluye a propósito de los cargos elegibles — no devenga punitorio sobre
+        // punitorio (anatocismo, art. 770 CCyC).
+        await (from t in _db.Transactions.IgnoreQueryFilters()
+               join c in _db.Contracts.IgnoreQueryFilters() on t.ContractId equals c.Id
+               where t.Status == TransactionStatus.Pending
+                     && (t.Type == TransactionType.RentCharge || t.Type == TransactionType.ManualDebit)
+                     && t.DueDate != null && t.DueDate < asOf
+                     && c.Status == ContractStatus.Active
+                     && c.LateFeeDailyRate != null && c.LateFeeDailyRate > 0
+               select new OverdueChargeRow(
+                   t.Id, t.OrganizationId, t.ContractId, t.DueDate!.Value,
+                   c.LateFeeDailyRate!.Value, c.LateFeeGraceDays))
+            .ToListAsync(ct);
+
+    public Task<Transaction?> GetByIdRawAsync(Guid id, Guid organizationId, CancellationToken ct) =>
+        _db.Transactions
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.Id == id && t.OrganizationId == organizationId, ct);
+
+    public Task<Transaction?> GetLateFeeForChargeRawAsync(
+        Guid chargeId, Guid organizationId, CancellationToken ct) =>
+        _db.Transactions
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(
+                t => t.RelatedTransactionId == chargeId
+                     && t.OrganizationId == organizationId
+                     && t.Type == TransactionType.LateFee, ct);
 
     public async Task<IReadOnlyList<Transaction>> GetRecentAsync(int limit, CancellationToken ct) =>
         await _db.Transactions

@@ -24,6 +24,10 @@ export interface ContractDto {
   adjustmentFrequency: AdjustmentFrequency
   /** Sólo para adjustmentType 'FixedPercent'. */
   adjustmentPercent: number | null
+  /** Tasa punitoria diaria en % sobre el capital impago (0.1 = 0,1% por día). null = sin punitorio. */
+  lateFeeDailyRate: number | null
+  /** Días de tolerancia desde el vencimiento antes de que corra el punitorio. */
+  lateFeeGraceDays: number
   dayOfMonth: number
   depositAmount: number | null
   status: ContractStatus
@@ -43,6 +47,9 @@ export interface CreateContractRequest {
   adjustmentFrequency: AdjustmentFrequency
   /** Requerido cuando adjustmentType es 'FixedPercent'; debe ir null en el resto. */
   adjustmentPercent?: number | null
+  /** Tasa punitoria diaria en %. null o 0 = el contrato no pactó punitorio. */
+  lateFeeDailyRate?: number | null
+  lateFeeGraceDays: number
   dayOfMonth: number
   depositAmount?: number | null
   notes?: string | null
@@ -54,7 +61,13 @@ export interface TerminateContractRequest {
   notes?: string | null
 }
 
-export type TransactionType = 'RentCharge' | 'Payment' | 'ManualDebit' | 'ManualCredit'
+export type TransactionType =
+  | 'RentCharge'
+  | 'Payment'
+  | 'ManualDebit'
+  | 'ManualCredit'
+  /** Punitorio por mora, devengado día a día sobre un cargo impago. */
+  | 'LateFee'
 export type TransactionStatus = 'Pending' | 'Paid' | 'Overdue' | 'Cancelled'
 
 export interface RentHistoryDto {

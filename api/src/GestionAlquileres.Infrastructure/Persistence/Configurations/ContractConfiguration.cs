@@ -21,6 +21,11 @@ public class ContractConfiguration : IEntityTypeConfiguration<Contract>
         // pactado, sin dejar de acotar una carga errónea a nivel base.
         builder.Property(c => c.AdjustmentPercent).HasPrecision(6, 3);
         builder.Property(c => c.DayOfMonth).IsRequired();
+        // Tasa punitoria diaria. (6,4) admite hasta 99,9999% por día: holgado para cualquier
+        // punitorio pactado y a la vez acota a nivel base una carga erróneamente grande.
+        builder.Property(c => c.LateFeeDailyRate).HasPrecision(6, 4);
+        builder.Property(c => c.LateFeeGraceDays).IsRequired().HasDefaultValue(0);
+
         builder.Property(c => c.Notes).HasMaxLength(2000);
         builder.Property(c => c.CreatedAt).HasDefaultValueSql("now()");
 

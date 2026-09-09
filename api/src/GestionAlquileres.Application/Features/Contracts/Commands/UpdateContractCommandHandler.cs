@@ -55,6 +55,8 @@ public class UpdateContractCommandHandler : IRequestHandler<UpdateContractComman
         // El validador exige null cuando el tipo no es FixedPercent, así que cambiar de tipo
         // limpia el porcentaje en vez de dejarlo colgado.
         contract.AdjustmentPercent = request.AdjustmentPercent;
+        contract.LateFeeDailyRate = request.LateFeeDailyRate;
+        contract.LateFeeGraceDays = request.LateFeeGraceDays;
         contract.DayOfMonth = request.DayOfMonth;
         contract.DepositAmount = request.DepositAmount;
         contract.Notes = request.Notes?.Trim();

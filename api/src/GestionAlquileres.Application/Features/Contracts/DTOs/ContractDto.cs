@@ -17,6 +17,8 @@ public record ContractDto(
     AdjustmentType AdjustmentType,
     AdjustmentFrequency AdjustmentFrequency,
     decimal? AdjustmentPercent,
+    decimal? LateFeeDailyRate,
+    int LateFeeGraceDays,
     int DayOfMonth,
     decimal? DepositAmount,
     ContractStatus Status,

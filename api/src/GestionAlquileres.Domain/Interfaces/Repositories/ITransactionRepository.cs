@@ -14,6 +14,19 @@ public record OwnerCollectedRow(
     Guid ContractId,
     decimal Collected);
 
+/// <summary>
+/// Un cargo vencido e impago que ya devenga punitorio, junto con la tasa y la tolerancia del
+/// contrato. Es una proyección de lectura para el devengamiento diario: sin ella el job tendría que
+/// traer los contratos activos y consultar los cargos de cada uno, uno por uno.
+/// </summary>
+public record OverdueChargeRow(
+    Guid ChargeId,
+    Guid OrganizationId,
+    Guid ContractId,
+    DateOnly DueDate,
+    decimal DailyRate,
+    int GraceDays);
+
 public interface ITransactionRepository
 {
     Task<Transaction?> GetByIdAsync(Guid id, CancellationToken ct);
@@ -35,8 +48,28 @@ public interface ITransactionRepository
     /// </summary>
     Task<IReadOnlyList<OwnerCollectedRow>> GetCollectedByOwnerAsync(
         Guid ownerId, DateOnly periodFrom, DateOnly periodTo, CancellationToken ct);
-    /// <summary>Pending charges (RentCharge/ManualDebit, Status=Pending) of a contract, oldest first — for payment allocation.</summary>
+    /// <summary>
+    /// Cargos impagos de un contrato (RentCharge/ManualDebit/LateFee, Status=Pending), del más
+    /// viejo al más nuevo — para imputar un pago. Incluye los punitorios: son deuda del inquilino
+    /// como cualquier otro cargo, y dejarlos fuera haría que un pago que alcanza para todo dejara
+    /// el punitorio pendiente para siempre.
+    /// </summary>
     Task<IReadOnlyList<Transaction>> GetPendingChargesAsync(Guid contractId, CancellationToken ct);
+
+    /// <summary>
+    /// Cargos vencidos e impagos de contratos activos con punitorio pactado, en TODAS las
+    /// organizaciones. Sólo la usa el devengamiento programado, por eso pasa por encima del filtro
+    /// multi-tenant; cada fila trae su OrganizationId para que el trabajo siga siendo por tenant.
+    /// </summary>
+    Task<IReadOnlyList<OverdueChargeRow>> GetOverdueChargesForLateFeeRawAsync(
+        DateOnly asOf, CancellationToken ct);
+
+    /// <summary>Una transacción por id, con la organización explícita en vez del filtro global.</summary>
+    Task<Transaction?> GetByIdRawAsync(Guid id, Guid organizationId, CancellationToken ct);
+
+    /// <summary>El punitorio vivo de un cargo, si ya se devengó alguna vez. Organización explícita.</summary>
+    Task<Transaction?> GetLateFeeForChargeRawAsync(
+        Guid chargeId, Guid organizationId, CancellationToken ct);
     Task<IReadOnlyList<Transaction>> GetRecentAsync(int limit, CancellationToken ct);
     Task<IReadOnlyList<Transaction>> GetAllAsync(CancellationToken ct);
     Task AddAsync(Transaction transaction, CancellationToken ct);

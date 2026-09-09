@@ -13,10 +13,18 @@ internal static class ContractRules
     /// <summary>Tope del porcentaje: coincide con la precisión (6,3) de la columna.</summary>
     private const decimal MaxPercent = 999.999m;
 
+    /// <summary>Tope de la tasa punitoria diaria: coincide con la precisión (6,4) de la columna.</summary>
+    private const decimal MaxDailyRate = 99.9999m;
+
+    /// <summary>Tope de la tolerancia. Más de tres meses de gracia no es una tolerancia: es no tener punitorio.</summary>
+    private const int MaxGraceDays = 90;
+
     public static void Apply<T>(
         AbstractValidator<T> v,
         Func<T, AdjustmentType> type,
-        Func<T, decimal?> percent)
+        Func<T, decimal?> percent,
+        Func<T, decimal?> lateFeeDailyRate,
+        Func<T, int> lateFeeGraceDays)
     {
         // Sin IsInEnum, un adjustmentType inválido se persistía como entero crudo y el motor de
         // ajustes lo trataba como IPC: el contrato terminaba ajustado con el índice equivocado, y
@@ -51,5 +59,24 @@ internal static class ContractRules
             .WithName("adjustmentPercent")
             .WithMessage("El porcentaje de ajuste sólo aplica a contratos de porcentaje fijo.")
             .When(x => type(x) != AdjustmentType.FixedPercent);
+
+        // Punitorio. Es opcional: null o 0 significa que el contrato no lo pactó. Lo que no se
+        // admite es una tasa negativa, que convertiría el punitorio en un descuento por pagar tarde.
+        v.RuleFor(x => lateFeeDailyRate(x))
+            .GreaterThanOrEqualTo(0)
+            .WithName("lateFeeDailyRate")
+            .WithMessage("La tasa punitoria no puede ser negativa.")
+            .When(x => lateFeeDailyRate(x).HasValue);
+
+        v.RuleFor(x => lateFeeDailyRate(x))
+            .LessThanOrEqualTo(MaxDailyRate)
+            .WithName("lateFeeDailyRate")
+            .WithMessage($"La tasa punitoria diaria no puede superar {MaxDailyRate}%.")
+            .When(x => lateFeeDailyRate(x).HasValue);
+
+        v.RuleFor(x => lateFeeGraceDays(x))
+            .InclusiveBetween(0, MaxGraceDays)
+            .WithName("lateFeeGraceDays")
+            .WithMessage($"Los días de gracia deben estar entre 0 y {MaxGraceDays}.");
     }
 }

@@ -26,6 +26,8 @@ type FormState = {
   adjustmentType: AdjustmentType
   adjustmentFrequency: AdjustmentFrequency
   adjustmentPercent: string
+  lateFeeDailyRate: string
+  lateFeeGraceDays: string
   dayOfMonth: string
   depositAmount: string
   notes: string
@@ -36,6 +38,7 @@ const EMPTY_FORM: FormState = {
   startDate: '', endDate: '',
   monthlyRent: '', currency: 'ARS',
   adjustmentType: 'ICL', adjustmentFrequency: 'Quarterly', adjustmentPercent: '',
+  lateFeeDailyRate: '', lateFeeGraceDays: '0',
   dayOfMonth: '1', depositAmount: '', notes: '',
 }
 
@@ -120,6 +123,10 @@ export default function ContratosPage() {
         form.adjustmentType === 'FixedPercent' && form.adjustmentPercent
           ? parseFloat(form.adjustmentPercent)
           : null,
+      // Vacío significa "sin punitorio pactado", que no es lo mismo que 0: se manda null y el
+      // backend no devenga nada.
+      lateFeeDailyRate: form.lateFeeDailyRate ? parseFloat(form.lateFeeDailyRate) : null,
+      lateFeeGraceDays: parseInt(form.lateFeeGraceDays || '0', 10),
       dayOfMonth: parseInt(form.dayOfMonth, 10),
       depositAmount: form.depositAmount ? parseFloat(form.depositAmount) : null,
       notes: form.notes.trim() || null,
@@ -349,6 +356,39 @@ export default function ContratosPage() {
                     onChange={e => setForm(f => ({ ...f, dayOfMonth: e.target.value }))}
                     required
                   />
+                </div>
+                <div>
+                  <label className="label" htmlFor="lateFeeDailyRate">Punitorio diario</label>
+                  <input
+                    id="lateFeeDailyRate"
+                    className="input"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.0001"
+                    min="0"
+                    placeholder="0,1"
+                    value={form.lateFeeDailyRate}
+                    onChange={e => setForm(f => ({ ...f, lateFeeDailyRate: e.target.value }))}
+                  />
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', marginTop: 4 }}>
+                    % por día sobre lo impago. Vacío = el contrato no pactó punitorio.
+                  </div>
+                </div>
+                <div>
+                  <label className="label" htmlFor="lateFeeGraceDays">Días de gracia</label>
+                  <input
+                    id="lateFeeGraceDays"
+                    className="input"
+                    type="number"
+                    min="0"
+                    max="90"
+                    value={form.lateFeeGraceDays}
+                    onChange={e => setForm(f => ({ ...f, lateFeeGraceDays: e.target.value }))}
+                    disabled={!form.lateFeeDailyRate}
+                  />
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', marginTop: 4 }}>
+                    Tolerancia desde el vencimiento antes de que empiece a correr.
+                  </div>
                 </div>
               </div>
               <div>

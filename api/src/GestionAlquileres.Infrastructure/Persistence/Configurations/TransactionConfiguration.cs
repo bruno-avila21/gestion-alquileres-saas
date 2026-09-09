@@ -26,6 +26,20 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
             .IsUnique()
             .HasFilter("receipt_number IS NOT NULL");
 
+        // Un solo punitorio vivo por cargo. El devengamiento diario se apoya en esta unicidad:
+        // sin ella, dos corridas solapadas crearían dos punitorios sobre el mismo cargo y el
+        // inquilino vería la deuda duplicada.
+        builder.HasIndex(t => t.RelatedTransactionId)
+            .IsUnique()
+            .HasFilter("related_transaction_id IS NOT NULL");
+
+        // Sin cascada: borrar un cargo no debe llevarse en silencio el punitorio que lo acompaña,
+        // y tampoco dejarlo huérfano apuntando a un id que ya no existe.
+        builder.HasOne<Transaction>()
+            .WithMany()
+            .HasForeignKey(t => t.RelatedTransactionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(t => t.ContractId);
         builder.HasIndex(t => new { t.ContractId, t.Period });
         // Supports aging/morosidad queries over pending charges past their due date.

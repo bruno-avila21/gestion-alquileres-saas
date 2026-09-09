@@ -8,8 +8,11 @@ import {
 import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
 import { downloadCsv } from '@/shared/lib/exportCsv'
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard'
+import type { TransactionType } from '@/features/contracts/types/contract.types'
 
-const TX_LABEL = { Payment: 'Pago', RentCharge: 'Cargo', ManualDebit: 'Débito', ManualCredit: 'Crédito' } as const
+const TX_LABEL: Record<TransactionType, string> = {
+  Payment: 'Pago', RentCharge: 'Cargo', ManualDebit: 'Débito', ManualCredit: 'Crédito', LateFee: 'Punitorio',
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate()

@@ -17,6 +17,7 @@ const TX_LABELS: Record<TransactionType, string> = {
   Payment: 'Pago',
   ManualDebit: 'Débito manual',
   ManualCredit: 'Crédito manual',
+  LateFee: 'Punitorio',
 }
 
 const TX_CHIP: Record<TransactionType, string> = {
@@ -24,6 +25,7 @@ const TX_CHIP: Record<TransactionType, string> = {
   Payment: 'chip--ok',
   ManualDebit: 'chip--danger',
   ManualCredit: 'chip--warn',
+  LateFee: 'chip--danger',
 }
 
 type Filter = 'all' | TransactionType
@@ -74,6 +76,7 @@ export default function PagosPage() {
     { key: 'RentCharge', label: 'Cargos' },
     { key: 'ManualDebit', label: 'Débitos' },
     { key: 'ManualCredit', label: 'Créditos' },
+    { key: 'LateFee', label: 'Punitorios' },
   ]
 
   return (

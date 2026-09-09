@@ -12,6 +12,7 @@ const TX_LABELS: Record<TransactionType, string> = {
   Payment: 'Pago',
   ManualDebit: 'Débito',
   ManualCredit: 'Crédito',
+  LateFee: 'Punitorio',
 }
 
 function txBg(type: TransactionType): string {
@@ -21,7 +22,7 @@ function txBg(type: TransactionType): string {
 
 function txFg(type: TransactionType): string {
   if (type === 'Payment' || type === 'ManualCredit') return 'var(--ok)'
-  if (type === 'ManualDebit') return 'var(--danger)'
+  if (type === 'ManualDebit' || type === 'LateFee') return 'var(--danger)'
   return 'var(--muted)'
 }
 
@@ -48,6 +49,7 @@ export default function TenantPagosPage() {
     { k: 'RentCharge', label: 'Cargos' },
     { k: 'ManualDebit', label: 'Débitos' },
     { k: 'ManualCredit', label: 'Créditos' },
+    { k: 'LateFee', label: 'Punitorios' },
   ]
 
   return (

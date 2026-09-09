@@ -30,8 +30,22 @@ public class Transaction : ITenantEntity
     /// </summary>
     public string? ReceiptNumber { get; set; }
 
+    /// <summary>
+    /// Cargo que originó esta transacción. Sólo lo usa el punitorio (<see cref="TransactionType.LateFee"/>),
+    /// que apunta al cargo impago sobre el que se devenga. Único entre los no nulos: hay un solo
+    /// punitorio vivo por cargo, y eso es lo que hace idempotente al devengamiento diario.
+    /// </summary>
+    public Guid? RelatedTransactionId { get; set; }
+
+    /// <summary>
+    /// Último día devengado de un punitorio. Es el testigo de idempotencia del job: si ya llega a
+    /// hoy, la corrida no vuelve a tocar el importe. Null fuera de <see cref="TransactionType.LateFee"/>.
+    /// </summary>
+    public DateOnly? AccruedThroughDate { get; set; }
+
     /// <summary>A charge owed by the tenant (vs a payment/credit in their favor).</summary>
-    public bool IsCharge => Type is TransactionType.RentCharge or TransactionType.ManualDebit;
+    public bool IsCharge =>
+        Type is TransactionType.RentCharge or TransactionType.ManualDebit or TransactionType.LateFee;
 
     /// <summary>Due date for a period: the contract's day-of-month, clamped to the month length.</summary>
     public static DateOnly DueDateFor(DateOnly period, int dayOfMonth)
