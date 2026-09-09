@@ -14,6 +14,7 @@ namespace GestionAlquileres.Infrastructure.Reports;
 public class QuestPdfReportGenerator : IPdfReportGenerator
 {
     private const string LegalNotice = "Documento no válido como factura.";
+
     private static readonly string DefaultBrandColor = Colors.Grey.Darken3;
 
     public byte[] RenderReceipt(ReceiptReport report)
@@ -45,7 +46,7 @@ public class QuestPdfReportGenerator : IPdfReportGenerator
                     column.Item().Row(row =>
                     {
                         row.RelativeItem().Text($"SON: {report.AmountInWords}").FontSize(11);
-                        row.ConstantItem(140).AlignRight().Text($"{currencySymbol} {report.Amount:N2}")
+                        row.ConstantItem(140).AlignRight().Text($"{currencySymbol} {ReportFormats.Money(report.Amount)}")
                             .FontSize(14).Bold().FontColor(brandColor);
                     });
 
@@ -152,7 +153,7 @@ public class QuestPdfReportGenerator : IPdfReportGenerator
             row.ConstantItem(160).Column(meta =>
             {
                 meta.Item().AlignRight().Text($"RECIBO N° {report.Number}").Bold().FontSize(12);
-                meta.Item().AlignRight().Text($"Fecha: {report.IssuedOn:dd/MM/yyyy}").FontSize(9);
+                meta.Item().AlignRight().Text($"Fecha: {ReportFormats.Date(report.IssuedOn)}").FontSize(9);
             });
         });
     }
@@ -199,7 +200,7 @@ public class QuestPdfReportGenerator : IPdfReportGenerator
             row.ConstantItem(180).Column(meta =>
             {
                 meta.Item().AlignRight().Text("LIQUIDACIÓN AL PROPIETARIO").Bold().FontSize(12);
-                meta.Item().AlignRight().Text($"Período {report.PeriodFrom:MM/yyyy}–{report.PeriodTo:MM/yyyy}").FontSize(9);
+                meta.Item().AlignRight().Text($"Período {ReportFormats.MonthYear(report.PeriodFrom)}–{ReportFormats.MonthYear(report.PeriodTo)}").FontSize(9);
             });
         });
     }
@@ -235,10 +236,10 @@ public class QuestPdfReportGenerator : IPdfReportGenerator
             foreach (var line in report.Lines)
             {
                 table.Cell().Element(BodyCell).Text(line.PropertyAddress);
-                table.Cell().Element(BodyCell).AlignRight().Text($"$ {line.Collected:N2}");
-                table.Cell().Element(BodyCell).AlignRight().Text($"{line.CommissionPct:0.##}%");
-                table.Cell().Element(BodyCell).AlignRight().Text($"$ {line.Commission:N2}");
-                table.Cell().Element(BodyCell).AlignRight().Text($"$ {line.Net:N2}");
+                table.Cell().Element(BodyCell).AlignRight().Text($"$ {ReportFormats.Money(line.Collected)}");
+                table.Cell().Element(BodyCell).AlignRight().Text($"{ReportFormats.Percent(line.CommissionPct)}%");
+                table.Cell().Element(BodyCell).AlignRight().Text($"$ {ReportFormats.Money(line.Commission)}");
+                table.Cell().Element(BodyCell).AlignRight().Text($"$ {ReportFormats.Money(line.Net)}");
             }
 
             IContainer BodyCell(IContainer c) => c
@@ -256,7 +257,7 @@ public class QuestPdfReportGenerator : IPdfReportGenerator
             if (color is not null) textStyle = textStyle.FontColor(color);
 
             row.RelativeItem().Text(label).Style(textStyle);
-            row.ConstantItem(140).AlignRight().Text($"{(amount < 0 ? "-" : "")}$ {Math.Abs(amount):N2}").Style(textStyle);
+            row.ConstantItem(140).AlignRight().Text($"{(amount < 0 ? "-" : "")}$ {ReportFormats.Money(Math.Abs(amount))}").Style(textStyle);
         });
     }
 

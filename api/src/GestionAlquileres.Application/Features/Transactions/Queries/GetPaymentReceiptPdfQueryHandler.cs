@@ -1,3 +1,4 @@
+using System.Globalization;
 using GestionAlquileres.Application.Common.DTOs;
 using GestionAlquileres.Application.Common.Exceptions;
 using GestionAlquileres.Application.Common.Reports;
@@ -77,7 +78,7 @@ public class GetPaymentReceiptPdfQueryHandler : IRequestHandler<GetPaymentReceip
             PayerName: $"{contract.AppTenant.FirstName} {contract.AppTenant.LastName}".Trim(),
             PayerDocument: contract.AppTenant.Dni,
             PropertyAddress: propertyAddress,
-            Concept: $"Alquiler período {transaction.Period:MM/yyyy}",
+            Concept: $"Alquiler período {transaction.Period.ToString("MM/yyyy", CultureInfo.InvariantCulture)}",
             Amount: transaction.Amount,
             CurrencyCode: transaction.Currency.ToString(),
             AmountInWords: amountInWords,
