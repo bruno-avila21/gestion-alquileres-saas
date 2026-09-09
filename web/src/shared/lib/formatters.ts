@@ -43,8 +43,14 @@ export const formatPct = (n: number) => `${n.toFixed(2)}%`
 export const formatDate = (iso: string) =>
   new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }).format(parseApiDate(iso))
 
+/**
+ * Fecha compacta CON año. El año no es opcional acá: se usa para el período de un
+ * contrato de locación, que dura dos o tres años, y sin él "09 sept → 21 sept"
+ * se lee como un contrato de doce días en vez de uno que arrancó en 2024.
+ */
 export const formatDateShort = (iso: string) =>
-  new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short' }).format(parseApiDate(iso))
+  new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short', year: '2-digit' })
+    .format(parseApiDate(iso))
 
 /** Período mensual: acepta tanto `"2026-05"` como el `"2026-05-01"` que manda la API. */
 export const formatPeriod = (period: string) => {

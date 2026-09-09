@@ -482,7 +482,7 @@ export default function ContratosPage() {
                         <div className="row" style={{ gap: 10 }}>
                           <div className="mono-avatar">{initials}</div>
                           <div>
-                            <div style={{ fontWeight: 500 }}>{c.appTenantFullName}</div>
+                            <div style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{c.appTenantFullName}</div>
                             <div className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>
                               día {c.dayOfMonth} · {c.currency}
                             </div>
@@ -497,7 +497,7 @@ export default function ContratosPage() {
                       </td>
                       <td className="num"><b>{formatARS(c.monthlyRent)}</b></td>
                       <td>
-                        <div style={{ fontSize: 'var(--fs-xs)' }}>
+                        <div style={{ fontSize: 'var(--fs-xs)', whiteSpace: 'nowrap' }}>
                           {formatDateShort(c.startDate)} → {formatDateShort(c.endDate)}
                         </div>
                       </td>
