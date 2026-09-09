@@ -17,6 +17,7 @@ export const DocumentosAdminPage = lazy(() => import('./pages/DocumentosAdminPag
 export const ConfiguracionPage = lazy(() => import('./pages/ConfiguracionPage'))
 export const MarcaPage = lazy(() => import('./pages/MarcaPage'))
 export const SoportePage = lazy(() => import('./pages/SoportePage'))
+export const SitioPage = lazy(() => import('./pages/SitioPage'))
 export const RendicionesPage = lazy(() => import('./pages/RendicionesPage'))
 export const CambiarClavePage = lazy(() => import('./pages/CambiarClavePage'))
 export const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))

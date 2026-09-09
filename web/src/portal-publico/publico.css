@@ -79,7 +79,12 @@
 
   background: var(--ground);
   color: var(--ink);
-  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* La inmobiliaria puede cambiar la combinación tipográfica desde el panel; el layout
+     pisa estas dos variables. El valor de acá es el respaldo del diseño por defecto. */
+  --font-headings: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -121,6 +126,7 @@
 /* ---------- base ---------- */
 .pp-app, .pp-app *, .pp-app *::before, .pp-app *::after { box-sizing: border-box; }
 .pp-app h1, .pp-app h2, .pp-app h3, .pp-app h4 {
+  font-family: var(--font-headings);
   margin: 0;
   color: var(--ink);
   font-weight: 700;
@@ -674,7 +680,7 @@
 /* ---------- páginas simples ---------- */
 .pp-app .simple-page { padding-top: 56px; padding-bottom: 80px; }
 .pp-app .simple-page h1 { font-size: clamp(26px, 3.4vw, 36px); margin-bottom: 16px; }
-.pp-app .simple-page p { color: var(--muted); max-width: 64ch; line-height: 1.75; }
+.pp-app .simple-page p { color: var(--muted); max-width: 64ch; line-height: 1.75; white-space: pre-line; }
 .pp-app .contact-info { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
 .pp-app .contact-info a { color: var(--violet); font-weight: 700; }
 

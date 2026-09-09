@@ -61,6 +61,22 @@ export default function ConfiguracionPage() {
 
           <div className="card">
             <div className="card-h">
+              <h3>Sitio público</h3>
+              <div className="sub">color, tipografía y textos</div>
+            </div>
+            <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
+                Cómo se ve y qué dice el sitio que ven tus clientes. Lo que dejes vacío usa el
+                diseño por defecto.
+              </div>
+              <Link className="btn" to="/admin/configuracion/sitio" style={{ alignSelf: 'flex-start' }}>
+                Editar sitio
+              </Link>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-h">
               <h3>Seguridad</h3>
             </div>
             <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

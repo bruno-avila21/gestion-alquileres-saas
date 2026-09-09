@@ -30,6 +30,7 @@ public class AppDbContext : DbContext
     public DbSet<SentNotification> SentNotifications => Set<SentNotification>();
     public DbSet<Lead> Leads => Set<Lead>();
     public DbSet<LeadNote> LeadNotes => Set<LeadNote>();
+    public DbSet<SiteSettings> SiteSettings => Set<SiteSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,6 +43,12 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Owner>()
             .HasQueryFilter(o => o.OrganizationId == _currentTenant.OrganizationId);
+
+        // El sitio público lo lee sin JWT, pero TenantMiddleware resuelve la organización desde
+        // el slug de la URL antes de llegar acá, así que el filtro alcanza igual: no hace falta
+        // ningún IgnoreQueryFilters.
+        modelBuilder.Entity<SiteSettings>()
+            .HasQueryFilter(s => s.OrganizationId == _currentTenant.OrganizationId);
 
         modelBuilder.Entity<Property>()
             .HasQueryFilter(p => p.OrganizationId == _currentTenant.OrganizationId);

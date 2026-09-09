@@ -2,6 +2,8 @@ import { Link, Outlet, useLocation, useParams, useSearchParams } from 'react-rou
 import { usePublicOrg } from '@/features/public/hooks/usePublic'
 import '../publico.css'
 import { usePpTheme } from '../hooks/usePpTheme'
+import { useSiteFonts } from '../hooks/useSiteFonts'
+import { accentVars, FONT_PAIRINGS } from '@/features/public/utils/siteTheme'
 import { WhatsAppFloat } from '../components/WhatsAppFloat'
 import { BurgerIcon, MailIcon, PhoneIcon, PinIcon, ThemeIcon } from '../components/icons'
 import { PublicoNotFound } from '../pages/PublicoNotFound'
@@ -18,6 +20,7 @@ export default function PublicoLayout() {
   const { slug } = useParams<{ slug: string }>()
   const { data: org, isLoading, isError } = usePublicOrg(slug)
   const { theme, toggleTheme } = usePpTheme()
+  useSiteFonts(org?.site.fontPairing)
   const { pathname } = useLocation()
   const [searchParams] = useSearchParams()
 
@@ -47,8 +50,18 @@ export default function PublicoLayout() {
   const initial = org.name.charAt(0).toUpperCase()
   const telHref = org.phone ? `tel:${org.phone.replace(/[^\d+]/g, '')}` : null
 
+  // El acento y las familias tipográficas se pisan como variables en el nodo raíz del sitio,
+  // no en <html>: el panel y el portal de inquilinos comparten documento y tienen su propio
+  // color, así que teñir la raíz les cambiaría el aspecto a ellos también.
+  const fonts = FONT_PAIRINGS[org.site.fontPairing ?? 'jakarta']
+  const themeVars = {
+    ...accentVars(org.site.accentColor),
+    '--font-headings': fonts.headings,
+    '--font-body': fonts.body,
+  } as React.CSSProperties
+
   return (
-    <div className="pp-app" data-theme={theme ?? undefined}>
+    <div className="pp-app" data-theme={theme ?? undefined} style={themeVars}>
       <a href="#pp-main" className="visually-hidden">Saltar al contenido</a>
 
       <header className="topbar">
@@ -103,8 +116,8 @@ export default function PublicoLayout() {
                 </div>
               </div>
               <p>
-                Venta, alquiler y tasaciones con acompañamiento de principio a fin.
-                Contratos administrados con ajustes ICL e IPC calculados y notificados a tiempo.
+                {org.site.footerTagline
+                  ?? 'Venta, alquiler y tasaciones con acompañamiento de principio a fin. Contratos administrados con ajustes ICL e IPC calculados y notificados a tiempo.'}
               </p>
             </div>
 

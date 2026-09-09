@@ -99,11 +99,17 @@ export default function HomePage() {
             </div>
           ) : null}
 
-          <h1>Encontrá tu próxima propiedad con quien conoce la zona.</h1>
-          <p className="lede">
-            Venta y alquiler en {org.name}, con fichas claras, precios al día y contacto directo.
-            Si administramos tu contrato, los <b>ajustes ICL e IPC</b> se calculan y se avisan solos.
-          </p>
+          {/* Los textos de portada los edita la inmobiliaria desde el panel. Sin tocar nada,
+              quedan los del diseño — un sitio recién creado ya está terminado. */}
+          <h1>{org.site.heroTitle ?? 'Encontrá tu próxima propiedad con quien conoce la zona.'}</h1>
+          {org.site.heroSubtitle ? (
+            <p className="lede">{org.site.heroSubtitle}</p>
+          ) : (
+            <p className="lede">
+              Venta y alquiler en {org.name}, con fichas claras, precios al día y contacto directo.
+              Si administramos tu contrato, los <b>ajustes ICL e IPC</b> se calculan y se avisan solos.
+            </p>
+          )}
 
           <form className="searchcard" role="search" onSubmit={handleSearch}>
             <div className="search-tabs">

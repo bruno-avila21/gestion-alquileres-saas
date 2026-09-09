@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Features.SiteSettings.DTOs;
 using GestionAlquileres.Domain.Enums;
 
 namespace GestionAlquileres.Application.Features.Public.DTOs;
@@ -11,7 +12,9 @@ public record PublicOrganizationDto(
     string Slug,
     string? Address,
     string? Phone,
-    string? Email);
+    string? Email,
+    /// <summary>Aspecto y textos elegidos por la inmobiliaria. Campos en null = usar el diseño por defecto.</summary>
+    SiteSettingsDto Site);
 
 /// <summary>Tarjeta del listado público.</summary>
 public record PublicListingCardDto(

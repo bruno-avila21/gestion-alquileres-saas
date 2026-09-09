@@ -1,3 +1,5 @@
+import type { SiteSettingsDto } from '../utils/siteTheme'
+
 export type PublicOperationType = 'Sale' | 'Rent' | 'TemporaryRent'
 
 export type PublicPropertyType = 'House' | 'Apartment' | 'Commercial' | 'Land' | 'Other' | 'PH' | 'Office'
@@ -13,6 +15,8 @@ export interface PublicOrgDto {
   address: string | null
   phone: string | null
   email: string | null
+  /** Aspecto y textos elegidos por la inmobiliaria. Campos en null = usar el diseño por defecto. */
+  site: SiteSettingsDto
 }
 
 export interface FacetDto {
