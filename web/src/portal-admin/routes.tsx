@@ -1,35 +1,23 @@
-import { lazy, Suspense } from 'react'
 import type { RouteObject } from 'react-router'
 import AdminLayout from './layouts/AdminLayout'
 import AdminLoginPage from './pages/LoginPage'
 import RegisterOrgPage from './pages/RegisterOrgPage'
-
-const DashboardPage = lazy(() => import('./pages/DashboardPage'))
-const ContratosPage = lazy(() => import('./pages/ContratosPage'))
-const ContratoDetailPage = lazy(() => import('./pages/ContratoDetailPage'))
-const IndexesPage = lazy(() => import('./pages/IndexesPage'))
-const PropiedadesPage = lazy(() => import('./pages/PropiedadesPage'))
-const InquilinosPage = lazy(() => import('./pages/InquilinosPage'))
-const PagosPage = lazy(() => import('./pages/PagosPage'))
-// Mismo falso positivo que las líneas de arriba (no se tocan, ver nota al pie del archivo): este
-// módulo exporta `adminRoutes`, no componentes, pero la regla igual marca cada `lazy(...)` local.
-// eslint-disable-next-line react-refresh/only-export-components -- ver nota arriba; no se suma un error nuevo a los preexistentes del archivo
-const ConsultasPage = lazy(() => import('./pages/ConsultasPage'))
-const AjustesPage = lazy(() => import('./pages/AjustesPage'))
-const DocumentosAdminPage = lazy(() => import('./pages/DocumentosAdminPage'))
-const ConfiguracionPage = lazy(() => import('./pages/ConfiguracionPage'))
-const CambiarClavePage = lazy(() => import('./pages/CambiarClavePage'))
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
-
-function PageLoader() {
-  return (
-    <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
-  )
-}
-
-function Lazy({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<PageLoader />}>{children}</Suspense>
-}
+import {
+  Lazy,
+  DashboardPage,
+  ContratosPage,
+  ContratoDetailPage,
+  IndexesPage,
+  PropiedadesPage,
+  InquilinosPage,
+  PagosPage,
+  ConsultasPage,
+  AjustesPage,
+  DocumentosAdminPage,
+  ConfiguracionPage,
+  CambiarClavePage,
+  NotFoundPage,
+} from './routes.lazy'
 
 export const adminRoutes: RouteObject[] = [
   { path: 'login', element: <AdminLoginPage /> },
