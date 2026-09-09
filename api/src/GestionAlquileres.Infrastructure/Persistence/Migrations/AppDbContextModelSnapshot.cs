@@ -310,6 +310,234 @@ namespace GestionAlquileres.Infrastructure.Persistence.Migrations
                     b.ToTable("index_values", (string)null);
                 });
 
+            modelBuilder.Entity("GestionAlquileres.Domain.Entities.Lead", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTimeOffset?>("LastContactAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_contact_at");
+
+                    b.Property<Guid?>("ListingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("listing_id");
+
+                    b.Property<string>("LostReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("lost_reason");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("message");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("phone");
+
+                    b.Property<Guid?>("PropertyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id")
+                        .HasName("pk_leads");
+
+                    b.HasIndex("ListingId")
+                        .HasDatabaseName("ix_leads_listing_id");
+
+                    b.HasIndex("PropertyId")
+                        .HasDatabaseName("ix_leads_property_id");
+
+                    b.HasIndex("OrganizationId", "CreatedAt")
+                        .HasDatabaseName("ix_leads_organization_id_created_at");
+
+                    b.HasIndex("OrganizationId", "Status")
+                        .HasDatabaseName("ix_leads_organization_id_status");
+
+                    b.ToTable("leads", (string)null);
+                });
+
+            modelBuilder.Entity("GestionAlquileres.Domain.Entities.LeadNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CreatedByName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("created_by_name");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LeadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lead_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("text");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lead_notes");
+
+                    b.HasIndex("LeadId")
+                        .HasDatabaseName("ix_lead_notes_lead_id");
+
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("ix_lead_notes_organization_id");
+
+                    b.ToTable("lead_notes", (string)null);
+                });
+
+            modelBuilder.Entity("GestionAlquileres.Domain.Entities.Listing", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<decimal?>("Expenses")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("expenses");
+
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_featured");
+
+                    b.Property<string>("OperationType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("operation_type");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("price");
+
+                    b.Property<Guid>("PropertyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id")
+                        .HasName("pk_listings");
+
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("ix_listings_organization_id");
+
+                    b.HasIndex("PropertyId")
+                        .HasDatabaseName("ix_listings_property_id");
+
+                    b.HasIndex("OrganizationId", "Status")
+                        .HasDatabaseName("ix_listings_organization_id_status");
+
+                    b.ToTable("listings", (string)null);
+                });
+
             modelBuilder.Entity("GestionAlquileres.Domain.Entities.Organization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -438,10 +666,22 @@ namespace GestionAlquileres.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(300)")
                         .HasColumnName("address");
 
+                    b.Property<int?>("AgeYears")
+                        .HasColumnType("integer")
+                        .HasColumnName("age_years");
+
                     b.Property<decimal?>("AreaM2")
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)")
                         .HasColumnName("area_m2");
+
+                    b.Property<int?>("Bathrooms")
+                        .HasColumnType("integer")
+                        .HasColumnName("bathrooms");
+
+                    b.Property<int?>("Bedrooms")
+                        .HasColumnType("integer")
+                        .HasColumnName("bedrooms");
 
                     b.Property<string>("City")
                         .IsRequired()
@@ -449,10 +689,20 @@ namespace GestionAlquileres.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("city");
 
+                    b.Property<string>("Code")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("code");
+
                     b.Property<decimal?>("CommissionPct")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)")
                         .HasColumnName("commission_pct");
+
+                    b.Property<decimal?>("CoveredAreaM2")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("covered_area_m2");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -460,11 +710,39 @@ namespace GestionAlquileres.Infrastructure.Persistence.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Features")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("features");
+
+                    b.Property<int?>("Garages")
+                        .HasColumnType("integer")
+                        .HasColumnName("garages");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("latitude");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("longitude");
+
+                    b.Property<string>("Neighborhood")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("neighborhood");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
@@ -491,6 +769,14 @@ namespace GestionAlquileres.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("province");
 
+                    b.Property<int?>("Rooms")
+                        .HasColumnType("integer")
+                        .HasColumnName("rooms");
+
+                    b.Property<bool?>("SuitableForCredit")
+                        .HasColumnType("boolean")
+                        .HasColumnName("suitable_for_credit");
+
                     b.HasKey("Id")
                         .HasName("pk_properties");
 
@@ -500,7 +786,68 @@ namespace GestionAlquileres.Infrastructure.Persistence.Migrations
                     b.HasIndex("OwnerId")
                         .HasDatabaseName("ix_properties_owner_id");
 
+                    b.HasIndex("OrganizationId", "Code")
+                        .HasDatabaseName("ix_properties_organization_id_code");
+
                     b.ToTable("properties", (string)null);
+                });
+
+            modelBuilder.Entity("GestionAlquileres.Domain.Entities.PropertyPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("IsCover")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_cover");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("mime_type");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<Guid>("PropertyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("storage_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_property_photos");
+
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("ix_property_photos_organization_id");
+
+                    b.HasIndex("PropertyId", "SortOrder")
+                        .HasDatabaseName("ix_property_photos_property_id_sort_order");
+
+                    b.ToTable("property_photos", (string)null);
                 });
 
             modelBuilder.Entity("GestionAlquileres.Domain.Entities.RefreshToken", b =>
@@ -891,6 +1238,70 @@ namespace GestionAlquileres.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_documents_organizations_organization_id");
                 });
 
+            modelBuilder.Entity("GestionAlquileres.Domain.Entities.Lead", b =>
+                {
+                    b.HasOne("GestionAlquileres.Domain.Entities.Listing", "Listing")
+                        .WithMany()
+                        .HasForeignKey("ListingId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_leads_listings_listing_id");
+
+                    b.HasOne("GestionAlquileres.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_leads_organizations_organization_id");
+
+                    b.HasOne("GestionAlquileres.Domain.Entities.Property", "Property")
+                        .WithMany()
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_leads_properties_property_id");
+
+                    b.Navigation("Listing");
+
+                    b.Navigation("Property");
+                });
+
+            modelBuilder.Entity("GestionAlquileres.Domain.Entities.LeadNote", b =>
+                {
+                    b.HasOne("GestionAlquileres.Domain.Entities.Lead", "Lead")
+                        .WithMany("Notes")
+                        .HasForeignKey("LeadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_lead_notes_leads_lead_id");
+
+                    b.HasOne("GestionAlquileres.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_lead_notes_organizations_organization_id");
+
+                    b.Navigation("Lead");
+                });
+
+            modelBuilder.Entity("GestionAlquileres.Domain.Entities.Listing", b =>
+                {
+                    b.HasOne("GestionAlquileres.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_listings_organizations_organization_id");
+
+                    b.HasOne("GestionAlquileres.Domain.Entities.Property", "Property")
+                        .WithMany()
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_listings_properties_property_id");
+
+                    b.Navigation("Property");
+                });
+
             modelBuilder.Entity("GestionAlquileres.Domain.Entities.Owner", b =>
                 {
                     b.HasOne("GestionAlquileres.Domain.Entities.Organization", null)
@@ -915,6 +1326,23 @@ namespace GestionAlquileres.Infrastructure.Persistence.Migrations
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_properties_owners_owner_id");
+                });
+
+            modelBuilder.Entity("GestionAlquileres.Domain.Entities.PropertyPhoto", b =>
+                {
+                    b.HasOne("GestionAlquileres.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_property_photos_organizations_organization_id");
+
+                    b.HasOne("GestionAlquileres.Domain.Entities.Property", null)
+                        .WithMany()
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_property_photos_properties_property_id");
                 });
 
             modelBuilder.Entity("GestionAlquileres.Domain.Entities.RefreshToken", b =>
@@ -999,6 +1427,11 @@ namespace GestionAlquileres.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_users_organizations_organization_id");
+                });
+
+            modelBuilder.Entity("GestionAlquileres.Domain.Entities.Lead", b =>
+                {
+                    b.Navigation("Notes");
                 });
 #pragma warning restore 612, 618
         }

@@ -46,6 +46,13 @@ public class TenantLoginCommandHandler : IRequestHandler<TenantLoginCommand, Aut
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Invalid credentials.");
 
+        // La organización puede estar suspendida (morosa, dada de baja, comprometida). Se verifica
+        // DESPUÉS de validar la contraseña, a propósito: hacerlo antes convertiría la respuesta en
+        // un oráculo que revela qué inmobiliarias existen y cuáles están suspendidas, sin necesidad
+        // de credenciales válidas.
+        if (!org.IsActive)
+            throw new UnauthorizedAccessException("Invalid credentials.");
+
         return new AuthResponseDto(
             _jwt.GenerateToken(user),
             user.Id,

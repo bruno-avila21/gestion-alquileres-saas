@@ -299,6 +299,32 @@ export function IcMail({ size = 16, style, className }: IconProps) {
   )
 }
 
+export function IcCamera({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={style} className={className}>
+      <path d="M4 8h3l2-2h6l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/>
+      <circle cx="12" cy="13" r="3.5"/>
+    </svg>
+  )
+}
+
+export function IcStar({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={style} className={className}>
+      <path d="m12 3 2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7Z"/>
+    </svg>
+  )
+}
+
+export function IcTag({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={style} className={className}>
+      <path d="M12.6 3H6a2 2 0 0 0-2 2v6.6a1 1 0 0 0 .3.7l9 9a1 1 0 0 0 1.4 0l6.6-6.6a1 1 0 0 0 0-1.4l-9-9a1 1 0 0 0-.7-.3Z"/>
+      <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+    </svg>
+  )
+}
+
 // Sparkline component (shared utility)
 interface SparkProps {
   data: number[]

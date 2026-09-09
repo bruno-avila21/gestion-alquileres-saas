@@ -34,6 +34,10 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
         property.CommissionPct = request.CommissionPct;
         property.IsActive = request.IsActive;
 
+        // Details null = the caller (an older client) didn't send the public sheet: keep what's there.
+        if (request.Details is not null)
+            CreatePropertyCommandHandler.ApplyDetails(property, request.Details);
+
         await _repo.SaveChangesAsync(ct);
 
         return CreatePropertyCommandHandler.ToDto(property);

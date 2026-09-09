@@ -20,6 +20,10 @@ export const parseApiDate = (iso: string): Date => {
 export const formatARS = (amount: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(amount)
 
+/** Formatea un importe en la moneda indicada (publicaciones pueden ser ARS o USD). */
+export const formatMoney = (amount: number, currency: 'ARS' | 'USD') =>
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount)
+
 export const formatPct = (n: number) => `${n.toFixed(2)}%`
 
 export const formatDate = (iso: string) =>

@@ -66,6 +66,11 @@ public class RefreshAccessTokenCommandHandler
         var org = await _orgs.GetByIdAsync(stored.OrganizationId, ct)
             ?? throw new UnauthorizedAccessException("Invalid refresh token.");
 
+        // Una organización suspendida no puede renovar sesiones: si no, quien ya estaba adentro
+        // seguiría operando indefinidamente pese a la suspensión.
+        if (!org.IsActive)
+            throw new UnauthorizedAccessException("Invalid refresh token.");
+
         // Rotate: mint a new token, revoke the old one and link them for audit/reuse detection.
         var newRaw = _service.GenerateRawToken();
         var newHash = _service.Hash(newRaw);

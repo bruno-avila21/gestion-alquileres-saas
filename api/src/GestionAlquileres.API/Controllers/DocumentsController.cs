@@ -10,6 +10,10 @@ namespace GestionAlquileres.API.Controllers;
 [Route("api/v1/contracts/{contractId:guid}/documents")]
 public class DocumentsController : BaseController
 {
+    private readonly IConfiguration _config;
+
+    public DocumentsController(IConfiguration config) => _config = config;
+
     // Management of contract documents is staff-only. The download-url endpoint stays
     // accessible to any authenticated user (incl. Tenant) because the tenant portal
     // downloads its own documents through it — ownership is enforced in the handler.
@@ -62,9 +66,16 @@ public class DocumentsController : BaseController
             new GetDocumentDownloadUrlQuery(docId, contractId, CurrentUserId, IsStaff), ct);
         if (result is null) return NotFound();
 
-        // Build absolute URL from relative path returned by handler
-        var absoluteUrl = $"{Request.Scheme}://{Request.Host}{result.Url}";
-        return Ok(result with { Url = absoluteUrl });
+        // La base sale de la configuración cuando está definida, y sólo si no lo está se cae al
+        // encabezado Host de la petición. Armarla siempre con Host permite que un cliente elija el
+        // dominio de la URL que devolvemos: con un CDN adelante, esa respuesta envenenada se sirve a
+        // otros usuarios con el token de descarga adentro.
+        var configuredBase = _config["Api:PublicBaseUrl"]?.TrimEnd('/');
+        var baseUrl = string.IsNullOrWhiteSpace(configuredBase)
+            ? $"{Request.Scheme}://{Request.Host}"
+            : configuredBase;
+
+        return Ok(result with { Url = $"{baseUrl}{result.Url}" });
     }
 
     [HttpDelete("{docId:guid}")]
