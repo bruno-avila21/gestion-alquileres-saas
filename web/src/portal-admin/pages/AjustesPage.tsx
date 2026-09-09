@@ -8,6 +8,7 @@ import { contractService } from '@/features/contracts/services/contractService'
 import type { AdjustmentType } from '@/features/contracts/types/contract.types'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
 import { useDebounce } from '@/shared/hooks/useDebounce'
+import { SearchInput } from '@/shared/components/ui/SearchInput'
 
 const PAGE_SIZE = 20
 
@@ -87,12 +88,12 @@ export default function AjustesPage() {
               {t === 'all' ? 'Todos' : TYPE_LABELS[t]}
             </button>
           ))}
-          <input
-            className="input input--sm"
-            style={{ marginLeft: 'auto', width: 220 }}
-            placeholder="Buscar por inquilino, dirección o notas…"
+          <SearchInput
+            className="ml-auto"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0) }}
+            onChange={(v) => { setSearch(v); setPage(0) }}
+            placeholder="Buscar por inquilino, dirección o notas…"
+            ariaLabel="Buscar ajustes"
           />
         </div>
 

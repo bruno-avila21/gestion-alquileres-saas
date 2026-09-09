@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AdminTopbar } from '../layouts/AdminTopbar'
-import { IcPlus, IcSearch } from '@/shared/components/ui/Icons'
+import { IcPlus } from '@/shared/components/ui/Icons'
+import { SearchInput } from '@/shared/components/ui/SearchInput'
 import { LeadDetailDrawer } from '@/features/leads/components/LeadDetailDrawer'
 import { LeadFormModal } from '@/features/leads/components/LeadFormModal'
 import { LeadKanbanBoard } from '@/features/leads/components/LeadKanbanBoard'
@@ -62,22 +63,13 @@ export default function ConsultasPage() {
         <LeadMetrics />
 
         <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-          <div
-            className="row"
-            style={{
-              gap: 8, background: 'var(--surface)', border: '1px solid var(--hairline-2)',
-              borderRadius: 'var(--r-3)', padding: '0 10px', height: 'var(--input-h)', width: 340,
-            }}
-          >
-            <IcSearch size={14} style={{ color: 'var(--muted)' }} />
-            <input
-              style={{ border: 'none', outline: 'none', width: '100%', fontSize: 'var(--fs-sm)', background: 'transparent' }}
-              placeholder="Buscar por nombre, email, teléfono o propiedad…"
-              aria-label="Buscar consultas"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          <SearchInput
+            width={340}
+            value={search}
+            onChange={setSearch}
+            placeholder="Buscar por nombre, email, teléfono o propiedad…"
+            ariaLabel="Buscar consultas"
+          />
 
           <select
             className="select select--inline"

@@ -186,6 +186,7 @@
 .app button { font-family: inherit; }
 
 /* ─── Utility primitives ─── */
+.ml-auto { margin-left: auto; }
 .hairline { border: 1px solid var(--hairline); }
 .hairline-b { border-bottom: 1px solid var(--hairline); }
 .hairline-t { border-top: 1px solid var(--hairline); }

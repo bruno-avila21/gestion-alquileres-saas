@@ -9,6 +9,7 @@ import { IcBuilding, IcPlus, IcEdit, IcArchive, IcDoc, IcChev, IcChevDown } from
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { QueryError } from '@/shared/components/ui/QueryError'
+import { SearchInput } from '@/shared/components/ui/SearchInput'
 
 const PAGE_SIZE = 20
 
@@ -186,12 +187,11 @@ export default function PropiedadesPage() {
         </div>
       </div>
 
-      <input
-        className="input input--sm"
-        style={{ width: 280 }}
-        placeholder="Buscar por dirección o ciudad…"
+      <SearchInput
         value={search}
-        onChange={e => { setSearch(e.target.value); setPage(0) }}
+        onChange={(v) => { setSearch(v); setPage(0) }}
+        placeholder="Buscar por dirección o ciudad…"
+        ariaLabel="Buscar propiedades"
       />
 
       {error && <QueryError message="Error al cargar propiedades." />}

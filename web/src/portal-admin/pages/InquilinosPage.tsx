@@ -6,6 +6,7 @@ import { IcUsers, IcPlus, IcEdit, IcMail, IcArchive } from '@/shared/components/
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { QueryError } from '@/shared/components/ui/QueryError'
+import { SearchInput } from '@/shared/components/ui/SearchInput'
 
 const PAGE_SIZE = 20
 
@@ -132,12 +133,11 @@ export default function InquilinosPage() {
         </div>
       )}
 
-      <input
-        className="input input--sm"
-        style={{ width: 280 }}
-        placeholder="Buscar por nombre o DNI…"
+      <SearchInput
         value={search}
-        onChange={e => { setSearch(e.target.value); setPage(0) }}
+        onChange={(v) => { setSearch(v); setPage(0) }}
+        placeholder="Buscar por nombre o DNI…"
+        ariaLabel="Buscar inquilinos"
       />
 
       {inviteResult && (

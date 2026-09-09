@@ -6,13 +6,14 @@ import { useProperties } from '@/features/properties/hooks/useProperties'
 import { useAppTenants } from '@/features/apptenants/hooks/useAppTenants'
 import type { AdjustmentFrequency, AdjustmentType, ContractCurrency, ContractDto, ContractStatus, CreateContractRequest } from '@/features/contracts/types/contract.types'
 import {
-  IcPlus, IcSearch, IcChevDown, IcDownload, IcChev, IcDoc,
+  IcPlus, IcChevDown, IcDownload, IcChev, IcDoc,
 } from '@/shared/components/ui/Icons'
 import { formatARS, formatDateShort } from '@/shared/lib/formatters'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { QueryError } from '@/shared/components/ui/QueryError'
 import { downloadCsv } from '@/shared/lib/exportCsv'
+import { SearchInput } from '@/shared/components/ui/SearchInput'
 
 const PAGE_SIZE = 20
 
@@ -405,21 +406,13 @@ export default function ContratosPage() {
 
         {/* Filtros */}
         <div className="card card-b" style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '12px 14px' }}>
-          <div
-            className="row"
-            style={{ background: 'var(--surface-3)', borderRadius: 6, padding: '0 10px', height: 32, flex: 1 }}
-          >
-            <IcSearch size={14} />
-            <input
-              style={{
-                border: 'none', outline: 'none', background: 'transparent',
-                height: '100%', flex: 1, fontSize: 'var(--fs-sm)', fontFamily: 'inherit',
-              }}
-              placeholder="Buscar por inquilino o dirección…"
-              value={search}
-              onChange={e => handleSearch(e.target.value)}
-            />
-          </div>
+          <SearchInput
+            grow
+            value={search}
+            onChange={handleSearch}
+            placeholder="Buscar por inquilino o dirección…"
+            ariaLabel="Buscar contratos"
+          />
           <div style={{ width: 1, height: 24, background: 'var(--hairline)' }} />
           <button className="btn btn--sm">Estado <IcChevDown size={12} /></button>
           <button className="btn btn--sm">Índice <IcChevDown size={12} /></button>
