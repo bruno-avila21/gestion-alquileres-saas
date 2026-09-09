@@ -1,4 +1,5 @@
 using GestionAlquileres.Domain.Entities;
+using GestionAlquileres.Domain.Enums;
 
 namespace GestionAlquileres.Domain.Interfaces.Repositories;
 
@@ -11,6 +12,10 @@ public interface IUserRepository
 
     Task<User?> GetByEmailAsync(Guid organizationId, string email, CancellationToken ct);
     Task<User?> GetByEmailAcrossOrgsAsync(string email, CancellationToken ct);
+
+    /// <summary>Usuarios activos de una organización con un rol dado (p. ej. admins a notificar). No hay tenant en scope garantizado en el punto de llamada; el `organizationId` se filtra explícito.</summary>
+    Task<IReadOnlyList<User>> GetActiveByRoleAsync(Guid organizationId, UserRole role, CancellationToken ct);
+
     Task AddAsync(User user, CancellationToken ct);
     Task SaveChangesAsync(CancellationToken ct);
 }

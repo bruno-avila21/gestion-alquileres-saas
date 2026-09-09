@@ -104,3 +104,55 @@ migraciones y evitar el conflicto de archivos con esa instancia.
 | PATCH | /api/v1/leads/{id}/status | Cambiar estado (lostReason oblig. si Lost) | JWT Admin/Staff |
 | POST | /api/v1/leads/{id}/notes | Agregar nota (actualiza LastContactAt) | JWT Admin/Staff |
 | DELETE | /api/v1/leads/{id} | Eliminar | JWT Admin/Staff |
+
+## Adenda — aviso por email al entrar una consulta pública
+
+Complemento del bloque A3: `CreatePublicLeadCommand` ahora dispara un aviso por email a los admins
+de la organización cuando entra una consulta desde el sitio público. Sigue el mismo patrón que
+`SendRentAdjustmentNotificationAsync`/`SendContractExpiryNotificationAsync` (falla de SMTP no debe
+tumbar el alta, que ya persistió).
+
+### Domain
+- `Interfaces/Services/IEmailService.cs` — nuevo método `SendNewLeadNotificationAsync(toEmail,
+  organizationName, leadName, leadEmail?, leadPhone?, message, propertyTitle?, propertyAddress?,
+  leadId, ct)`.
+- `Interfaces/Repositories/IUserRepository.cs` — nuevo método `GetActiveByRoleAsync(organizationId,
+  role, ct)` para listar usuarios activos de un rol dado en una organización (usado para resolver los
+  admins a notificar).
+
+### Infrastructure
+- `Services/SmtpEmailService.cs` — implementación de `SendNewLeadNotificationAsync`: asunto `Nueva
+  consulta: {leadName}` (o `— {propertyTitle}` si hay publicación asociada), cuerpo HTML en español
+  con datos de contacto como enlaces `mailto:`/`tel:`, la propiedad si vino, el mensaje completo
+  (escapado) y una referencia (`Ref: {leadId}`) al pie para trazabilidad.
+- `Services/NullEmailService.cs` — stub que solo loguea (`[EMAIL-STUB] New lead notification`).
+- `Persistence/Repositories/UserRepository.cs` — `GetActiveByRoleAsync` filtra por
+  `OrganizationId`/`Role`/`IsActive` con `IgnoreQueryFilters()` (mismo criterio que
+  `GetByEmailAsync`: el `organizationId` es explícito y no viene del request, no hay tenant garantizado
+  en el punto de llamada).
+
+### Application
+- `Features/Public/Commands/CreatePublicLeadCommand.cs` — el handler ahora inyecta `IUserRepository`,
+  `IEmailService` y `ILogger<CreatePublicLeadCommandHandler>`. Después de persistir el lead
+  (`AddAsync` + `SaveChangesAsync`) y antes de retornar el id, busca los admins activos de la
+  organización (`GetActiveByRoleAsync(org.Id, UserRole.Admin, ct)`) y les envía la notificación. El
+  envío está en un `try/catch` que solo loguea `LogWarning` en caso de fallo — un problema de SMTP no
+  debe convertir el alta pública (ya confirmada en DB) en un 500. No aplica a `CreateLeadCommand`
+  (alta manual desde el panel) ni a tráfico de honeypot (se corta en el controller antes del Mediator).
+
+### Tests
+- `tests/GestionAlquileres.Tests/Phase12/LeadNotificationTests.cs` (nuevo, `[Trait("Phase",
+  "Phase12")]`) — `CountingLeadEmailService` (fake `IEmailService`) + `LeadNotificationApiFactory`
+  (hereda `Phase7ApiFactory`, reemplaza `IEmailService` por el fake), igual patrón que
+  `CountingEmailService`/`ExpiryJobApiFactory` en `Phase7/ContractExpiryNotificationJobTests.cs`.
+  Casos:
+  - `T1_Public_lead_with_listing_notifies_the_org_admin_once` — consulta pública con `listingId`
+    dispara una única notificación al `admin@{slug}.com` de la organización, con el título de la
+    publicación.
+  - `T2_Public_lead_without_listing_notifies_the_org_admin_once` — consulta general (sin listing)
+    también notifica una vez, sin `propertyTitle`.
+  - `T3_Honeypot_does_not_trigger_any_notification` — un lead con honeypot no dispara ninguna
+    notificación (204 sin tocar Mediator).
+- `tests/GestionAlquileres.Tests/Phase7/ContractExpiryNotificationJobTests.cs` — `CountingEmailService`
+  actualizado con una implementación no-op de `SendNewLeadNotificationAsync` para seguir cumpliendo
+  `IEmailService` tras el cambio de interfaz.

@@ -27,6 +27,11 @@ public class CountingEmailService : IEmailService
         ExpiryNotifications.Add(toEmail);
         return Task.CompletedTask;
     }
+
+    public Task SendNewLeadNotificationAsync(
+        string toEmail, string organizationName, string leadName, string? leadEmail, string? leadPhone,
+        string message, string? propertyTitle, string? propertyAddress, Guid leadId, CancellationToken ct) =>
+        Task.CompletedTask;
 }
 
 public class ExpiryJobApiFactory : Phase7ApiFactory

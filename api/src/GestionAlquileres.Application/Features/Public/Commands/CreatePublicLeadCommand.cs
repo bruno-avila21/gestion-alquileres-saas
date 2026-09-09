@@ -5,6 +5,7 @@ using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
 using GestionAlquileres.Domain.Interfaces.Services;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace GestionAlquileres.Application.Features.Public.Commands;
 
@@ -38,15 +39,27 @@ public class CreatePublicLeadCommandHandler : IRequestHandler<CreatePublicLeadCo
     private readonly IOrganizationRepository _orgs;
     private readonly IListingRepository _listings;
     private readonly ILeadRepository _leads;
+    private readonly IUserRepository _users;
+    private readonly IEmailService _emailService;
     private readonly ICurrentTenant _currentTenant;
+    private readonly ILogger<CreatePublicLeadCommandHandler> _logger;
 
     public CreatePublicLeadCommandHandler(
-        IOrganizationRepository orgs, IListingRepository listings, ILeadRepository leads, ICurrentTenant currentTenant)
+        IOrganizationRepository orgs,
+        IListingRepository listings,
+        ILeadRepository leads,
+        IUserRepository users,
+        IEmailService emailService,
+        ICurrentTenant currentTenant,
+        ILogger<CreatePublicLeadCommandHandler> logger)
     {
         _orgs = orgs;
         _listings = listings;
         _leads = leads;
+        _users = users;
+        _emailService = emailService;
         _currentTenant = currentTenant;
+        _logger = logger;
     }
 
     public async Task<Guid?> Handle(CreatePublicLeadCommand request, CancellationToken ct)
@@ -55,6 +68,8 @@ public class CreatePublicLeadCommandHandler : IRequestHandler<CreatePublicLeadCo
         if (org is null || !org.IsActive) return null;
 
         Guid? propertyId = null;
+        string? propertyTitle = null;
+        string? propertyAddress = null;
         if (request.ListingId is { } listingId)
         {
             // Tenant-scoped by the global filter (TenantMiddleware resolved the slug from the URL),
@@ -63,6 +78,8 @@ public class CreatePublicLeadCommandHandler : IRequestHandler<CreatePublicLeadCo
             if (listing is null || listing.Status != ListingStatus.Published)
                 throw new BusinessException("La publicación indicada no existe.");
             propertyId = listing.PropertyId;
+            propertyTitle = listing.Title;
+            propertyAddress = listing.Property?.Address;
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -83,6 +100,21 @@ public class CreatePublicLeadCommandHandler : IRequestHandler<CreatePublicLeadCo
 
         await _leads.AddAsync(lead, ct);
         await _leads.SaveChangesAsync(ct);
+
+        try
+        {
+            var admins = await _users.GetActiveByRoleAsync(org.Id, UserRole.Admin, ct);
+            foreach (var admin in admins)
+            {
+                await _emailService.SendNewLeadNotificationAsync(
+                    admin.Email, org.Name, lead.Name, lead.Email, lead.Phone, lead.Message,
+                    propertyTitle, propertyAddress, lead.Id, ct);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "No se pudo enviar el aviso de nueva consulta para el lead {LeadId} de la organización {OrganizationId}", lead.Id, org.Id);
+        }
 
         return lead.Id;
     }

@@ -72,6 +72,50 @@ public class SmtpEmailService : IEmailService
         return SendAsync(toEmail, subject, body, ct);
     }
 
+    public Task SendNewLeadNotificationAsync(
+        string toEmail,
+        string organizationName,
+        string leadName,
+        string? leadEmail,
+        string? leadPhone,
+        string message,
+        string? propertyTitle,
+        string? propertyAddress,
+        Guid leadId,
+        CancellationToken ct)
+    {
+        var subject = string.IsNullOrWhiteSpace(propertyTitle)
+            ? $"Nueva consulta: {leadName}"
+            : $"Nueva consulta: {leadName} — {propertyTitle}";
+
+        var contactLines = new List<string>();
+        if (!string.IsNullOrWhiteSpace(leadEmail))
+            contactLines.Add($"<li>Email: <a href=\"mailto:{WebEncode(leadEmail)}\">{WebEncode(leadEmail)}</a></li>");
+        if (!string.IsNullOrWhiteSpace(leadPhone))
+            contactLines.Add($"<li>Teléfono: <a href=\"tel:{WebEncode(leadPhone)}\">{WebEncode(leadPhone)}</a></li>");
+
+        var propertyLine = string.Empty;
+        if (!string.IsNullOrWhiteSpace(propertyTitle) || !string.IsNullOrWhiteSpace(propertyAddress))
+        {
+            var propertyText = string.Join(" — ", new[] { propertyTitle, propertyAddress }
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => WebEncode(v!)));
+            propertyLine = $"<p>Propiedad: <strong>{propertyText}</strong></p>";
+        }
+
+        var messageHtml = WebEncode(message).Replace(Environment.NewLine, "<br/>");
+
+        var body =
+            $"<p>Entró una nueva consulta para <strong>{WebEncode(organizationName)}</strong>.</p>" +
+            $"<p>De: <strong>{WebEncode(leadName)}</strong></p>" +
+            (contactLines.Count > 0 ? $"<ul>{string.Join("", contactLines)}</ul>" : string.Empty) +
+            propertyLine +
+            $"<p>{messageHtml}</p>" +
+            $"<p style=\"color:#888;font-size:12px\">Ref: {leadId}</p>";
+
+        return SendAsync(toEmail, subject, body, ct);
+    }
+
     private async Task SendAsync(string toEmail, string subject, string htmlBody, CancellationToken ct)
     {
         using var message = new MailMessage
