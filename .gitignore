@@ -86,3 +86,7 @@ tools/importar-sitio-tokko/salida-*/
 # nadie hiciera "git add ." sobre ella; con la guia de demo adentro (que lleva la clave del panel)
 # eso dejo de ser suficiente.
 docs/propuesta-palavecino/
+
+# Python: los tools se importan entre si (sanear-superficies carga scrape.py) y dejan cache.
+__pycache__/
+*.pyc

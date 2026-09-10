@@ -6,7 +6,7 @@ import { useProperties } from '@/features/properties/hooks/useProperties'
 import { useAppTenants } from '@/features/apptenants/hooks/useAppTenants'
 import type { AdjustmentFrequency, AdjustmentType, ContractCurrency, ContractDto, ContractStatus, CreateContractRequest } from '@/features/contracts/types/contract.types'
 import {
-  IcPlus, IcChevDown, IcDownload, IcChev, IcDoc,
+  IcPlus, IcDownload, IcChev, IcDoc,
 } from '@/shared/components/ui/Icons'
 import { formatARS, formatDateShort } from '@/shared/lib/formatters'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
@@ -56,6 +56,13 @@ const ADJ_LABELS: Record<AdjustmentType, string> = {
   FixedPercent: '% fijo',
 }
 
+/** Opciones del filtro por índice. Se derivan de ADJ_LABELS para que agregar un tipo de
+    ajuste no deje el filtro atrasado. */
+const ADJ_OPTIONS: { value: AdjustmentType | 'all'; label: string }[] = [
+  { value: 'all', label: 'Todos los índices' },
+  ...(Object.keys(ADJ_LABELS) as AdjustmentType[]).map(k => ({ value: k, label: ADJ_LABELS[k] })),
+]
+
 const FREQ_OPTIONS: { value: AdjustmentFrequency; label: string }[] = [
   { value: 'Monthly', label: 'Mensual' },
   { value: 'Quarterly', label: 'Trimestral' },
@@ -76,29 +83,35 @@ export default function ContratosPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [search, setSearch] = useState('')
   const [activeStatus, setActiveStatus] = useState<ContractStatus | 'all'>('all')
+  const [adjType, setAdjType] = useState<AdjustmentType | 'all'>('all')
   const [formErr, setFormErr] = useState('')
   const [page, setPage] = useState(0)
   const [confirmTerminate, setConfirmTerminate] = useState<ContractDto | null>(null)
   const [actionErr, setActionErr] = useState<string | null>(null)
 
-  const filtered = (contracts ?? []).filter(c => {
-    const matchStatus = activeStatus === 'all' || c.status === activeStatus
+  /* Búsqueda e índice se aplican antes que el estado porque los números de las solapas se
+     cuentan acá: si no, filtrar por ICL deja "Vigentes · 10" arriba de una tabla de 4. */
+  const enScope = (contracts ?? []).filter(c => {
+    const matchAdj = adjType === 'all' || c.adjustmentType === adjType
     const q = search.toLowerCase()
     const matchSearch = !q || c.appTenantFullName.toLowerCase().includes(q) || c.propertyAddress.toLowerCase().includes(q)
-    return matchStatus && matchSearch
+    return matchAdj && matchSearch
   })
+
+  const filtered = enScope.filter(c => activeStatus === 'all' || c.status === activeStatus)
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   function handleSearch(val: string) { setSearch(val); setPage(0) }
   function handleStatusChange(status: ContractStatus | 'all') { setActiveStatus(status); setPage(0) }
+  function handleAdjChange(t: AdjustmentType | 'all') { setAdjType(t); setPage(0) }
 
   const counts = {
-    all: contracts?.length ?? 0,
-    Active: contracts?.filter(c => c.status === 'Active').length ?? 0,
-    Expired: contracts?.filter(c => c.status === 'Expired').length ?? 0,
-    Terminated: contracts?.filter(c => c.status === 'Terminated').length ?? 0,
+    all: enScope.length,
+    Active: enScope.filter(c => c.status === 'Active').length,
+    Expired: enScope.filter(c => c.status === 'Expired').length,
+    Terminated: enScope.filter(c => c.status === 'Terminated').length,
   }
 
   function openCreate() {
@@ -414,8 +427,18 @@ export default function ContratosPage() {
             ariaLabel="Buscar contratos"
           />
           <div style={{ width: 1, height: 24, background: 'var(--hairline)' }} />
-          <button className="btn btn--sm">Estado <IcChevDown size={12} /></button>
-          <button className="btn btn--sm">Índice <IcChevDown size={12} /></button>
+          {/* El estado no va acá: lo filtran las solapas de abajo, que además muestran el
+              conteo. Dos controles para lo mismo es peor que uno. */}
+          <select
+            className="select select--inline"
+            aria-label="Filtrar por índice de ajuste"
+            value={adjType}
+            onChange={e => handleAdjChange(e.target.value as AdjustmentType | 'all')}
+          >
+            {ADJ_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
         </div>
 
         {/* Tabs */}
@@ -446,7 +469,9 @@ export default function ContratosPage() {
           ) : filtered.length === 0 ? (
             <div style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
               <IcDoc size={32} style={{ margin: '0 auto 8px', display: 'block' }} />
-              No hay contratos.
+              {(contracts?.length ?? 0) === 0
+                ? 'No hay contratos.'
+                : 'Ningún contrato coincide con los filtros.'}
             </div>
           ) : (
             <table className="tbl">

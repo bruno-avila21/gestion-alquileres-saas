@@ -62,13 +62,28 @@ def limpiar(s: str) -> str:
 
 
 def numero(s: str | None) -> float | None:
-    """'33,66 m²' -> 33.66 · '$ 800.000' -> 800000 · 'A estrenar' -> None"""
+    """'33,66 m²' -> 33.66 · '$ 800.000' -> 800000 · '86.59 m²' -> 86.59 · 'A estrenar' -> None
+
+    En la misma página conviven dos formatos: los precios vienen en es-AR, con el punto
+    como separador de miles ('$ 800.000'), y las superficies vienen con el punto como
+    separador decimal ('86.59 m²', '19.7 m²'). Una sola regla no puede servir para los dos,
+    así que se distingue por la forma: un grupo de miles SIEMPRE tiene tres dígitos, de
+    modo que un punto final seguido de una o dos cifras sólo puede ser un decimal.
+
+    Sin esto, el terreno de 86.59 m² de un PH se cargaba como 8.659 m².
+    """
     if not s:
         return None
     m = re.search(r"-?\d[\d\.]*(?:,\d+)?", s)
     if not m:
         return None
-    return float(m.group(0).replace(".", "").replace(",", "."))
+    crudo = m.group(0)
+    if "," in crudo:  # formato es-AR completo: el punto es de miles y la coma decimal
+        return float(crudo.replace(".", "").replace(",", "."))
+    entero, punto, ultimo = crudo.rpartition(".")
+    if punto and 1 <= len(ultimo) <= 2:
+        return float(f"{entero.replace('.', '')}.{ultimo}")
+    return float(crudo.replace(".", ""))
 
 
 def precio(s: str) -> tuple[str, float] | None:
