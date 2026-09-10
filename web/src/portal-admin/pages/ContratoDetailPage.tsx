@@ -18,6 +18,7 @@ import {
 import { useContractDocuments, useUploadDocument, useDeleteDocument } from '@/features/documents/hooks/useDocuments'
 import { documentService } from '@/features/documents/services/documentService'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
+import { EditarContratoModal } from '@/features/contracts/components/EditarContratoModal'
 import type {
   ContractDto, AdjustmentType, AdjustmentFrequency,
 } from '@/features/contracts/types/contract.types'
@@ -230,15 +231,15 @@ function PaymentsTab({ contractId }: { contractId: string }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 12 }}>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Importe</label>
-              <input className="inp" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="200000" />
+              <input className="input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="200000" />
             </div>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Período</label>
-              <input className="inp" type="date" value={period} onChange={e => setPeriod(e.target.value)} />
+              <input className="input" type="date" value={period} onChange={e => setPeriod(e.target.value)} />
             </div>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Notas (opcional)</label>
-              <input className="inp" type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Transferencia XXXX" />
+              <input className="input" type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Transferencia XXXX" />
             </div>
           </div>
           {err && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)' }}>{err}</div>}
@@ -337,15 +338,15 @@ function AdjustmentsTab({ contractId }: { contractId: string }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 12 }}>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Nuevo alquiler</label>
-              <input className="inp" type="number" value={newRent} onChange={e => setNewRent(e.target.value)} placeholder="250000" />
+              <input className="input" type="number" value={newRent} onChange={e => setNewRent(e.target.value)} placeholder="250000" />
             </div>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Fecha efectiva</label>
-              <input className="inp" type="date" value={adjDate} onChange={e => setAdjDate(e.target.value)} />
+              <input className="input" type="date" value={adjDate} onChange={e => setAdjDate(e.target.value)} />
             </div>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Nota (obligatoria)</label>
-              <input className="inp" type="text" value={adjNotes} onChange={e => setAdjNotes(e.target.value)} placeholder="Acuerdo entre partes…" />
+              <input className="input" type="text" value={adjNotes} onChange={e => setAdjNotes(e.target.value)} placeholder="Acuerdo entre partes…" />
             </div>
           </div>
           {err && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)' }}>{err}</div>}
@@ -558,6 +559,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
 export default function ContratoDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [tab, setTab] = useState<TabKey>('overview')
+  const [editando, setEditando] = useState(false)
   const { data: contract, isLoading } = useContractById(id)
 
   const statusLabel = contract?.status === 'Active' ? 'Vigente' : contract?.status === 'Terminated' ? 'Rescindido' : 'Expirado'
@@ -569,10 +571,21 @@ export default function ContratoDetailPage() {
         crumbs={['Contratos', id ?? '…']}
         right={
           <div className="row">
-            <button className="btn btn--sm"><IcEdit size={12} /> Editar</button>
+            <button
+              className="btn btn--sm"
+              onClick={() => setEditando(true)}
+              disabled={!contract || contract.status === 'Terminated'}
+              title={contract?.status === 'Terminated' ? 'Un contrato rescindido no se puede editar' : undefined}
+            >
+              <IcEdit size={12} /> Editar
+            </button>
             <button className="btn btn--sm btn--icon"><IcEllipsis size={12} /></button>
           </div>
         }
+      />
+      <EditarContratoModal
+        contract={editando ? contract ?? null : null}
+        onClose={() => setEditando(false)}
       />
       <div className="page" style={{ padding: 0, gap: 0 }}>
         <div style={{ padding: 'var(--s-9) var(--s-9) var(--s-7)', background: 'var(--surface)', borderBottom: '1px solid var(--hairline)' }}>

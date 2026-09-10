@@ -3,7 +3,7 @@
 Lista única y priorizada de lo que queda. El detalle de cada punto, con evidencia y escenario de
 falla, está en `AUDITORIA-2026-07-31.md`.
 
-**Última actualización:** 2026-09-09
+**Última actualización:** 2026-09-10
 
 ---
 
@@ -59,10 +59,11 @@ Sale del análisis de mercado. Es lo que hoy hace perder un cliente en la demo.
       CUIT, domicilio, teléfono, email, logo y color de marca, con pantalla propia en el panel.
       QuestPDF con licencia Community (gratis bajo USD 1M de facturación anual).
       Contrato en `docs/specs/pdf-recibos-liquidaciones.md`.
-- [ ] **No hay pantalla de edición de contrato.** `useUpdateContract` existe y el endpoint `PUT`
-      funciona, pero ninguna vista lo usa: para corregir el alquiler, la indexación o el punitorio de
-      un contrato ya cargado hay que ir por la API. Se nota apenas se pactan punitorios sobre la
-      cartera existente.
+- [x] ~~**No hay pantalla de edición de contrato.**~~ ✅ El botón "Editar" de la ficha abre un modal
+      con los mismos campos que el alta (`ContratoFormFields`, compartido para que no diverjan) y
+      guarda con `useUpdateContract`. Un contrato rescindido lo deshabilita, porque el backend lo
+      rechaza. El select ofrece la propiedad/inquilino actual aunque estén dados de baja: filtrar
+      sólo por activos habría reasignado el contrato en silencio al guardar.
 - [ ] **Planes con límites reales.** `Organization.Plan` existe con valor `"free"` y no se usa en
       ningún lado: hoy el producto no le puede cobrar a nadie. → `Organization.cs:8`
 
@@ -155,21 +156,23 @@ acceso a nadie.** Se resuelven en cadena.
 
 Flujos que la interfaz promete y no existen. Ver el detalle en la sección 6 de la auditoría.
 
-- [ ] **No se puede editar un contrato**: el botón existe y no hace nada. El hook está implementado
-      y sin usar. → `ContratoDetailPage.tsx:553`
+- [x] ~~**No se puede editar un contrato**: el botón existe y no hace nada.~~ ✅ Cableado a
+      `EditarContratoModal`. Ver el detalle en el bloque 1.
 - [ ] **"Ajustes" es sólo un historial**: no hay forma de ver ni aplicar los ajustes pendientes del
       período, que es la tarea recurrente más importante del administrador.
 - [ ] **No hay forma de crear débitos ni créditos manuales**, aunque los filtros los ofrecen.
       El descuento por una reparación no se puede registrar.
 - [ ] **Al inquilino se le muestra la URL prefirmada cruda**, con token y cronómetro.
-- [ ] **El panel muestra tendencias inventadas** junto a datos reales. Es un riesgo de producto: son
-      afirmaciones falsas sobre el negocio del cliente. → `DashboardPage.tsx:34-35`
-- [ ] **Los seis campos de registrar pago y ajuste manual usan una clase CSS inexistente**
-      (`className="inp"`). Arreglo de seis caracteres. → `ContratoDetailPage.tsx:214-329`
+- [x] ~~**El panel muestra tendencias inventadas** junto a datos reales.~~ ✅ Resuelto en `d1dc519`:
+      fuera los sparklines "(ilustrativa)"; cada tarjeta lleva un pie con un dato real derivado del
+      endpoint. Ver `BUGS.md` #4.
+- [x] ~~**Los seis campos de registrar pago y ajuste manual usan una clase CSS inexistente**
+      (`className="inp"`).~~ ✅ Pasaron a `input`, la clase que sí existe.
 - [ ] Accesibilidad: ~28 campos sin etiqueta asociada · cero navegación por teclado en filas
       clickeables · chips de estado por debajo del contraste mínimo.
-- [ ] **`pnpm lint` está roto**: 13 errores en `portal-admin/routes.tsx`. El CI no lo corre, así que
-      pasa desapercibido.
+- [x] ~~**`pnpm lint` está roto**: 13 errores en `portal-admin/routes.tsx`.~~ ✅ Verificado limpio el
+      2026-09-10 (`pnpm lint` sin salida). **Sigue abierto que el CI no lo corra**, que es lo que hizo
+      que pasara desapercibido.
 
 ---
 

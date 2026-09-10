@@ -4,7 +4,7 @@ import { AdminTopbar } from '../layouts/AdminTopbar'
 import { useContracts, useCreateContract, useTerminateContract } from '@/features/contracts/hooks/useContracts'
 import { useProperties } from '@/features/properties/hooks/useProperties'
 import { useAppTenants } from '@/features/apptenants/hooks/useAppTenants'
-import type { AdjustmentFrequency, AdjustmentType, ContractCurrency, ContractDto, ContractStatus, CreateContractRequest } from '@/features/contracts/types/contract.types'
+import type { AdjustmentType, ContractDto, ContractStatus } from '@/features/contracts/types/contract.types'
 import {
   IcPlus, IcDownload, IcChev, IcDoc,
 } from '@/shared/components/ui/Icons'
@@ -14,34 +14,12 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { QueryError } from '@/shared/components/ui/QueryError'
 import { downloadCsv } from '@/shared/lib/exportCsv'
 import { SearchInput } from '@/shared/components/ui/SearchInput'
+import { ContratoFormFields } from '@/features/contracts/components/ContratoFormFields'
+import {
+  EMPTY_CONTRACT_FORM, contractFormToRequest, type ContractFormState,
+} from '@/features/contracts/utils/contractForm'
 
 const PAGE_SIZE = 20
-
-type FormState = {
-  propertyId: string
-  appTenantId: string
-  startDate: string
-  endDate: string
-  monthlyRent: string
-  currency: ContractCurrency
-  adjustmentType: AdjustmentType
-  adjustmentFrequency: AdjustmentFrequency
-  adjustmentPercent: string
-  lateFeeDailyRate: string
-  lateFeeGraceDays: string
-  dayOfMonth: string
-  depositAmount: string
-  notes: string
-}
-
-const EMPTY_FORM: FormState = {
-  propertyId: '', appTenantId: '',
-  startDate: '', endDate: '',
-  monthlyRent: '', currency: 'ARS',
-  adjustmentType: 'ICL', adjustmentFrequency: 'Quarterly', adjustmentPercent: '',
-  lateFeeDailyRate: '', lateFeeGraceDays: '0',
-  dayOfMonth: '1', depositAmount: '', notes: '',
-}
 
 const STATUS_LABELS: Record<ContractStatus, { cls: string; lbl: string }> = {
   Active: { cls: 'chip--ok', lbl: 'Vigente' },
@@ -63,14 +41,6 @@ const ADJ_OPTIONS: { value: AdjustmentType | 'all'; label: string }[] = [
   ...(Object.keys(ADJ_LABELS) as AdjustmentType[]).map(k => ({ value: k, label: ADJ_LABELS[k] })),
 ]
 
-const FREQ_OPTIONS: { value: AdjustmentFrequency; label: string }[] = [
-  { value: 'Monthly', label: 'Mensual' },
-  { value: 'Quarterly', label: 'Trimestral' },
-  { value: 'FourMonthly', label: 'Cuatrimestral' },
-  { value: 'SemiAnnual', label: 'Semestral' },
-  { value: 'Annual', label: 'Anual' },
-]
-
 export default function ContratosPage() {
   const navigate = useNavigate()
   const { data: contracts, isLoading, error } = useContracts()
@@ -80,7 +50,7 @@ export default function ContratosPage() {
   const terminate = useTerminateContract()
 
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const [form, setForm] = useState<ContractFormState>(EMPTY_CONTRACT_FORM)
   const [search, setSearch] = useState('')
   const [activeStatus, setActiveStatus] = useState<ContractStatus | 'all'>('all')
   const [adjType, setAdjType] = useState<AdjustmentType | 'all'>('all')
@@ -115,7 +85,7 @@ export default function ContratosPage() {
   }
 
   function openCreate() {
-    setForm(EMPTY_FORM)
+    setForm(EMPTY_CONTRACT_FORM)
     setFormErr('')
     setShowForm(true)
   }
@@ -123,30 +93,8 @@ export default function ContratosPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormErr('')
-    const payload: CreateContractRequest = {
-      propertyId: form.propertyId,
-      appTenantId: form.appTenantId,
-      startDate: form.startDate,
-      endDate: form.endDate,
-      monthlyRent: parseFloat(form.monthlyRent),
-      currency: form.currency,
-      adjustmentType: form.adjustmentType,
-      adjustmentFrequency: form.adjustmentFrequency,
-      // Sólo viaja en contratos de % fijo: el backend rechaza un porcentaje en los demás tipos.
-      adjustmentPercent:
-        form.adjustmentType === 'FixedPercent' && form.adjustmentPercent
-          ? parseFloat(form.adjustmentPercent)
-          : null,
-      // Vacío significa "sin punitorio pactado", que no es lo mismo que 0: se manda null y el
-      // backend no devenga nada.
-      lateFeeDailyRate: form.lateFeeDailyRate ? parseFloat(form.lateFeeDailyRate) : null,
-      lateFeeGraceDays: parseInt(form.lateFeeGraceDays || '0', 10),
-      dayOfMonth: parseInt(form.dayOfMonth, 10),
-      depositAmount: form.depositAmount ? parseFloat(form.depositAmount) : null,
-      notes: form.notes.trim() || null,
-    }
     try {
-      await create.mutateAsync(payload)
+      await create.mutateAsync(contractFormToRequest(form))
       setShowForm(false)
     } catch {
       setFormErr('Error al crear el contrato. Verificá los datos seleccionados.')
@@ -221,194 +169,12 @@ export default function ContratosPage() {
             <h2 style={{ fontWeight: 600, margin: 0 }}>Nuevo contrato</h2>
             {formErr && <div role="alert" style={{ fontSize: 'var(--fs-sm)', color: 'var(--danger)' }}>{formErr}</div>}
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div className="grid-2">
-                <div>
-                  <label className="label">Propiedad *</label>
-                  <select
-                    className="select"
-                    value={form.propertyId}
-                    onChange={e => setForm(f => ({ ...f, propertyId: e.target.value }))}
-                    required
-                  >
-                    <option value="">Seleccioná una propiedad</option>
-                    {(properties ?? []).filter(p => p.isActive).map(p => (
-                      <option key={p.id} value={p.id}>{p.address} · {p.city}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Inquilino *</label>
-                  <select
-                    className="select"
-                    value={form.appTenantId}
-                    onChange={e => setForm(f => ({ ...f, appTenantId: e.target.value }))}
-                    required
-                  >
-                    <option value="">Seleccioná un inquilino</option>
-                    {(tenants ?? []).filter(t => t.isActive).map(t => (
-                      <option key={t.id} value={t.id}>{t.firstName} {t.lastName} · DNI {t.dni}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="grid-2">
-                <div>
-                  <label className="label">Inicio *</label>
-                  <input className="input"
-                    type="date"
-                    value={form.startDate}
-                    onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label">Fin *</label>
-                  <input className="input"
-                    type="date"
-                    value={form.endDate}
-                    onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid-3">
-                <div>
-                  <label className="label">Alquiler mensual *</label>
-                  <input className="input"
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    value={form.monthlyRent}
-                    onChange={e => setForm(f => ({ ...f, monthlyRent: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label">Moneda *</label>
-                  <select
-                    className="select"
-                    value={form.currency}
-                    onChange={e => setForm(f => ({ ...f, currency: e.target.value as ContractCurrency }))}
-                  >
-                    <option value="ARS">ARS</option>
-                    <option value="USD">USD</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Depósito</label>
-                  <input className="input"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.depositAmount}
-                    onChange={e => setForm(f => ({ ...f, depositAmount: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="grid-3">
-                <div>
-                  <label className="label" htmlFor="adjustmentType">Tipo de ajuste *</label>
-                  <select
-                    id="adjustmentType"
-                    className="select"
-                    value={form.adjustmentType}
-                    onChange={e => setForm(f => ({
-                      ...f,
-                      adjustmentType: e.target.value as AdjustmentType,
-                      // El backend exige que el porcentaje vaya vacío si el tipo no es % fijo.
-                      adjustmentPercent: e.target.value === 'FixedPercent' ? f.adjustmentPercent : '',
-                    }))}
-                  >
-                    <option value="ICL">ICL — Contratos de Locación (BCRA)</option>
-                    <option value="IPC">IPC — Precios al Consumidor (INDEC)</option>
-                    <option value="FixedPercent">% fijo pactado</option>
-                    <option value="Manual">Manual</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label" htmlFor="adjustmentFrequency">Frecuencia *</label>
-                  <select
-                    id="adjustmentFrequency"
-                    className="select"
-                    value={form.adjustmentFrequency}
-                    onChange={e => setForm(f => ({ ...f, adjustmentFrequency: e.target.value as AdjustmentFrequency }))}
-                  >
-                    {FREQ_OPTIONS.map(o => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-                </div>
-                {form.adjustmentType === 'FixedPercent' && (
-                  <div>
-                    <label className="label" htmlFor="adjustmentPercent">Porcentaje *</label>
-                    <input
-                      id="adjustmentPercent"
-                      className="input"
-                      type="number"
-                      inputMode="decimal"
-                      step="0.001"
-                      min="0"
-                      placeholder="8"
-                      value={form.adjustmentPercent}
-                      onChange={e => setForm(f => ({ ...f, adjustmentPercent: e.target.value }))}
-                      required
-                    />
-                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', marginTop: 4 }}>
-                      Se aplica en cada período. Ej: 8 para un 8% {(
-                        FREQ_OPTIONS.find(o => o.value === form.adjustmentFrequency)?.label ?? ''
-                      ).toLowerCase()}.
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <label className="label">Día de cobro *</label>
-                  <input className="input"
-                    type="number"
-                    min="1"
-                    max="28"
-                    value={form.dayOfMonth}
-                    onChange={e => setForm(f => ({ ...f, dayOfMonth: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label" htmlFor="lateFeeDailyRate">Punitorio diario</label>
-                  <input
-                    id="lateFeeDailyRate"
-                    className="input"
-                    type="number"
-                    inputMode="decimal"
-                    step="0.0001"
-                    min="0"
-                    placeholder="0,1"
-                    value={form.lateFeeDailyRate}
-                    onChange={e => setForm(f => ({ ...f, lateFeeDailyRate: e.target.value }))}
-                  />
-                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', marginTop: 4 }}>
-                    % por día sobre lo impago. Vacío = el contrato no pactó punitorio.
-                  </div>
-                </div>
-                <div>
-                  <label className="label" htmlFor="lateFeeGraceDays">Días de gracia</label>
-                  <input
-                    id="lateFeeGraceDays"
-                    className="input"
-                    type="number"
-                    min="0"
-                    max="90"
-                    value={form.lateFeeGraceDays}
-                    onChange={e => setForm(f => ({ ...f, lateFeeGraceDays: e.target.value }))}
-                    disabled={!form.lateFeeDailyRate}
-                  />
-                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', marginTop: 4 }}>
-                    Tolerancia desde el vencimiento antes de que empiece a correr.
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="label">Notas</label>
-                <input className="input" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-              </div>
+              <ContratoFormFields
+                form={form}
+                setForm={setForm}
+                properties={properties}
+                tenants={tenants}
+              />
               <div className="row" style={{ gap: 8, justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn--sm" onClick={() => setShowForm(false)}>Cancelar</button>
                 <button type="submit" className="btn btn--sm btn--primary" disabled={create.isPending}>Crear contrato</button>
