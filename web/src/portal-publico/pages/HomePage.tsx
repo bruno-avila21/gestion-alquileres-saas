@@ -8,6 +8,7 @@ import { waTasacion } from '@/features/public/utils/whatsapp'
 import { LeadForm } from '@/features/public/components/LeadForm'
 import type { PublicoOutletContext } from '../types'
 import { ListingCard, ListingCardSkeleton } from '../components/ListingCard'
+import { SegmentGroup } from '../components/SegmentGroup'
 import {
   ArrowRightIcon, BuildingIcon, ChartIcon, ChatIcon, CheckIcon, KeyIcon, MailIcon, PhoneIcon,
   PinIcon, SearchIcon, ShieldIcon, TagIcon,
@@ -129,19 +130,13 @@ export default function HomePage() {
 
           <form className="searchcard" role="search" onSubmit={handleSearch}>
             <div className="search-tabs">
-              <div className="seg" role="group" aria-label="Tipo de operación">
-                {OPERATION_TABS.map((tab) => (
-                  <button
-                    key={tab.label}
-                    type="button"
-                    className={operation === tab.value ? 'on' : undefined}
-                    aria-pressed={operation === tab.value}
-                    onClick={() => setOperation(tab.value)}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+              <SegmentGroup
+                variant="underline"
+                ariaLabel="Tipo de operación"
+                options={OPERATION_TABS}
+                value={operation}
+                onChange={setOperation}
+              />
               <span className="search-hint">
                 {data ? `${data.total} propiedades publicadas` : 'Cargando cartera…'}
               </span>

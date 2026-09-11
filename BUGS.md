@@ -308,3 +308,33 @@ de arreglar. El hook `qa-captura` deja el crudo en `.claude/qa/fallos.jsonl`.
   `palavecino`, no el nombre); (3) se probó con la credencial del portal de inquilinos.
 - **Próximo paso:** que Bruno reporte los tres valores exactos que tipeó, o que mire la
   pestaña Red (el cuerpo del `POST /auth/login` dice qué se mandó).
+
+---
+
+### 13. Los segmentos no se leían como un control, y el 401 del login no decía qué campo fallaba
+
+- **Lo que dijo Bruno (2026-09-10):** *"los botones de Todas Comprar Alquilar … no están bien
+  para mí"*, con dos referencias: el `Pivot` de Fluent UI para las solapas de la portada y el
+  `SegmentGroup` de Chakra (con `SegmentGroup.Indicator`) para el filtro Operación. Y:
+  *"sigo sin poder ingresar … con el usuario que me pusiste en el artefacto"*.
+- **Lo del login: la credencial de la guía es correcta y funciona.** `guia-demo.html:146-153`
+  trae los tres datos bien (`palavecino` / `admin@palavecino.demo` / `Palavecino2026!`) y el
+  `POST /auth/login` devuelve 200 con ellos. El problema es que el 401 nombra los tres campos
+  sin decir cuál falló, así que no hay forma de avanzar: se prueba a ciegas.
+- **Arreglo del login (no toca el backend):** el formulario, ante un 401, consulta
+  `GET /public/{slug}` —anónimo, el mismo que dibuja el sitio de cada inmobiliaria— y
+  distingue "esa organización no existe" de "la organización existe: es el email o la
+  contraseña". **No debilita la defensa contra enumeración**: ese endpoint ya responde eso a
+  cualquiera, es su función. Se suma un botón "Mostrar" en la contraseña, que es la
+  hipótesis principal: el campo Organización viene precargado, así que el formulario se ve
+  completo y el navegador puede autocompletar una credencial guardada sin que se note.
+- **Arreglo de los segmentos:** un componente `SegmentGroup` con indicador deslizante y dos
+  pieles — `underline` (Pivot) para la portada, `pill` (Chakra) para los filtros. El
+  indicador se posiciona **midiendo el botón activo**, no con `ancho / cantidad`: los
+  rótulos tienen largos distintos, el riel los acomoda en dos filas, y la inmobiliaria puede
+  cambiar la tipografía del sitio desde el panel. Un `ResizeObserver` sobre la pista y sobre
+  cada botón lo recalcula cuando la fuente de Google llega después del primer pintado.
+- **Lección:** el `.on` anterior sólo cambiaba color de fondo y texto — no había nada que
+  dijera "esto se mueve entre opciones". El indicador que viaja es lo que convierte tres
+  botones sueltos en un control. Y en un mensaje de error, "revisá estos tres campos" es
+  sólo un poco mejor que "error": si hay una forma legítima de saber cuál falló, usala.

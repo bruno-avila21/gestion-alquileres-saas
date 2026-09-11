@@ -12,6 +12,14 @@ import { isAxiosError } from 'axios'
  * revelaría qué inmobiliarias existen. Por eso el mensaje del 401 nombra los
  * tres campos — es la pista honesta más precisa que se puede dar.
  */
+/**
+ * El texto del 401. Se exporta para que el formulario lo reconozca y, sólo en ese caso,
+ * consulte si la organización existe — ese dato ya es público (lo sirve `/public/{slug}`,
+ * que es el que dibuja el sitio de cada inmobiliaria), así que usarlo acá no revela nada
+ * nuevo y convierte un mensaje que nombra tres campos en uno que nombra el que falla.
+ */
+export const CREDENTIAL_MISMATCH = 'Revisá la organización, el email y la contraseña: alguno no coincide.'
+
 export function loginErrorMessage(error: unknown): string {
   if (!isAxiosError(error)) return 'No pudimos ingresar. Probá de nuevo en unos minutos.'
 
@@ -23,7 +31,7 @@ export function loginErrorMessage(error: unknown): string {
 
   const { status, data } = error.response
 
-  if (status === 401) return 'Revisá la organización, el email y la contraseña: alguno no coincide.'
+  if (status === 401) return CREDENTIAL_MISMATCH
   if (status === 403) return 'Tu usuario no tiene permiso para entrar a este portal.'
   if (status === 429) return 'Demasiados intentos seguidos. Esperá un minuto y volvé a probar.'
   if (status >= 500) return 'El servidor tuvo un problema. Probá de nuevo en unos minutos.'

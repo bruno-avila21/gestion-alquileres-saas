@@ -1,6 +1,7 @@
 import type { FacetDto, PublicListingFacets, PublicListingFilters, PublicOperationType } from '@/features/public/types/public.types'
 import { PROPERTY_TYPE_LABELS } from '@/features/public/utils/labels'
 import { CloseIcon } from './icons'
+import { SegmentGroup } from './SegmentGroup'
 
 type Patch = Partial<PublicListingFilters>
 
@@ -12,6 +13,12 @@ interface FilterRailProps {
   open: boolean
   onClose: () => void
 }
+
+const CURRENCY_OPTIONS: { value: '' | 'USD' | 'ARS'; label: string }[] = [
+  { value: '', label: 'Todas' },
+  { value: 'USD', label: 'US$' },
+  { value: 'ARS', label: '$' },
+]
 
 function sortNumeric(facets: FacetDto[]): FacetDto[] {
   return [...facets].sort((a, b) => Number(a.value) - Number(b.value))
@@ -52,18 +59,14 @@ export function FilterRail({ facets, filters, onPatch, onClear, open, onClose }:
 
       <div className="fgroup">
         <label>Operación</label>
-        <div className="seg">
-          {operationOptions.map((opt) => (
-            <button
-              key={opt.value || 'all'}
-              type="button"
-              className={(filters.operation ?? '') === opt.value ? 'on' : undefined}
-              onClick={() => onPatch({ operation: opt.value || undefined, page: 1 })}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        <SegmentGroup
+          variant="pill"
+          className="segg--cols2"
+          ariaLabel="Operación"
+          options={operationOptions}
+          value={filters.operation ?? ''}
+          onChange={(operation) => onPatch({ operation: operation || undefined, page: 1 })}
+        />
       </div>
 
       <div className="fgroup">
@@ -117,18 +120,13 @@ export function FilterRail({ facets, filters, onPatch, onClear, open, onClose }:
 
       <div className="fgroup">
         <label>Precio</label>
-        <div className="seg">
-          {(['', 'USD', 'ARS'] as const).map((cur) => (
-            <button
-              key={cur || 'all'}
-              type="button"
-              className={(filters.currency ?? '') === cur ? 'on' : undefined}
-              onClick={() => onPatch({ currency: cur || undefined, page: 1 })}
-            >
-              {cur || 'Todas'}
-            </button>
-          ))}
-        </div>
+        <SegmentGroup
+          variant="pill"
+          ariaLabel="Moneda"
+          options={CURRENCY_OPTIONS}
+          value={filters.currency ?? ''}
+          onChange={(currency) => onPatch({ currency: currency || undefined, page: 1 })}
+        />
         <div className="price-inputs">
           <input
             type="number"

@@ -270,30 +270,65 @@
   padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--hairline);
   flex-wrap: wrap;
 }
-.pp-app .seg {
-  display: inline-flex; gap: 4px; padding: 4px;
+/* ---------- segmentos con indicador deslizante ----------
+   Un solo componente (components/SegmentGroup.tsx) con dos pieles. El indicador se mueve
+   con las variables --segg-* que el componente calcula midiendo el botón activo; acá cada
+   variante decide qué hacer con esas medidas. La transición va sobre `transform`, `width` y
+   `height`, que sí animan aunque su valor venga de una variable. */
+.pp-app .segg { position: relative; display: inline-flex; }
+.pp-app .segg button {
+  position: relative; z-index: 1;
+  border: none; background: none; font-family: inherit; white-space: nowrap;
+  color: var(--muted); transition: color .18s;
+}
+.pp-app .segg button:not([data-active="true"]):hover { color: var(--ink); }
+.pp-app .segg-indicator {
+  position: absolute; top: 0; left: 0; z-index: 0; opacity: 0;
+  transform: translate(var(--segg-x, 0), var(--segg-y, 0));
+  width: var(--segg-w, 0); height: var(--segg-h, 0);
+  transition:
+    transform .26s cubic-bezier(.34, 1.2, .38, 1),
+    width .26s cubic-bezier(.34, 1.2, .38, 1),
+    height .18s ease,
+    opacity .18s ease;
+}
+.pp-app .segg.is-ready .segg-indicator { opacity: 1; }
+
+/* Subrayado (portada) — solapas de texto al modo del Pivot de Fluent, con la línea base
+   que las une y el subrayado del ancho exacto del rótulo activo. */
+.pp-app .segg--underline { gap: 2px; border-bottom: 1px solid var(--hairline); }
+.pp-app .segg--underline button {
+  padding: 11px 14px 13px; border-radius: var(--r-xs) var(--r-xs) 0 0;
+  font-size: 14.5px; font-weight: 600; letter-spacing: -.005em;
+}
+.pp-app .segg--underline button:not([data-active="true"]):hover { background: var(--surface-2); }
+.pp-app .segg--underline button[data-active="true"] { color: var(--violet); font-weight: 700; }
+.pp-app .segg--underline .segg-indicator {
+  top: auto; bottom: -1px; height: 2px; border-radius: 2px 2px 0 0;
+  background: var(--violet);
+  transform: translateX(var(--segg-x, 0));
+}
+
+/* Pastilla (filtros) — indicador relleno que se desliza por detrás, al modo del
+   SegmentGroup de Chakra. La tinta del rótulo activo es la que contrasta contra el acento
+   elegido por la inmobiliaria (`--on-violet`), no un blanco fijo que se rompe con un
+   acento claro. */
+.pp-app .segg--pill {
+  gap: 3px; padding: 4px; width: 100%; flex-wrap: wrap;
   background: var(--surface-2); border: 1px solid var(--hairline); border-radius: var(--r-sm);
 }
-.pp-app .seg button {
-  border: none; background: none; padding: 8px 18px; border-radius: var(--r-xs);
-  font-size: 14px; font-weight: 600; color: var(--muted); transition: .15s; white-space: nowrap;
+.pp-app .segg--pill button {
+  flex: 1 1 auto; min-width: 64px; padding: 8px 12px; border-radius: calc(var(--r-sm) - 3px);
+  font-size: 12.5px; font-weight: 600;
 }
-/* El hover no toca la opción elegida: pintarla con el color de las otras la hacía
-   parpadear como si se hubiera deseleccionado al pasar el mouse por encima. */
-.pp-app .seg button:hover:not(.on) { color: var(--ink); background: var(--surface); }
-.pp-app .seg button.on {
-  background: var(--surface); color: var(--violet); font-weight: 700;
-  border: 1px solid var(--hairline); box-shadow: var(--e1);
-}
-.pp-app .seg button.on:hover { background: var(--surface); color: var(--violet); }
-/* En oscuro la opción elegida va con tinta casi blanca, no con el acento: el violeta
-   aclarado sobre la superficie oscura se lee como un texto más, no como lo seleccionado.
-   Se usa `--ink` y no `#fff` porque el acento lo elige la inmobiliaria y el blanco fijo
-   se rompe con un acento claro. */
-.pp-app[data-theme="dark"] .seg button.on,
-.pp-app[data-theme="dark"] .seg button.on:hover {
-  background: var(--surface-3); color: var(--ink);
-  border-color: var(--hairline-strong);
+.pp-app .segg--pill button[data-active="true"] { color: var(--on-violet); font-weight: 700; }
+.pp-app .segg--pill button:not([data-active="true"]):hover { background: var(--surface); }
+/* Cuatro opciones no entran en una fila de 288 px sin recortar "Temporario", y dejarlas
+   fluir da 3 + 1, que se lee como un control mal cerrado. Dos columnas parejas. */
+.pp-app .segg--cols2 button { flex: 1 1 calc(50% - 3px); }
+.pp-app .segg--pill .segg-indicator {
+  border-radius: calc(var(--r-sm) - 3px);
+  background: var(--violet); box-shadow: var(--e1);
 }
 .pp-app .search-hint { font-size: 12.5px; color: var(--muted); font-weight: 500; }
 
@@ -517,11 +552,6 @@
 .pp-app .price-inputs input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124, 58, 237, .15); }
 /* Cuatro operaciones no entran en una fila de 254px sin cortar "Temporario":
    en la barra lateral el segmentado va en dos filas de dos. */
-.pp-app .fgroup .seg { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
-.pp-app .fgroup .seg button { padding: 8px 6px; font-size: 12.5px; }
-/* Un tercer botón que queda solo en su fila ocupa las dos columnas (el "ARS" de Precio):
-   a media fila parecía un control a medio dibujar. */
-.pp-app .fgroup .seg button:nth-child(3):last-child { grid-column: span 2; }
 
 .pp-app .results-top {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -859,6 +889,7 @@
   .pp-app .card:hover { transform: none; }
   .pp-app .card:hover .card-media img { transform: none; }
   .pp-app .skeleton { animation: none; }
+  .pp-app .segg-indicator { transition: opacity .18s ease; }
   .pp-app .spinner { animation-duration: 1.4s; }
 }
 
