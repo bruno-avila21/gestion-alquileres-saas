@@ -286,9 +286,12 @@
   position: absolute; top: 0; left: 0; z-index: 0; opacity: 0;
   transform: translate(var(--segg-x, 0), var(--segg-y, 0));
   width: var(--segg-w, 0); height: var(--segg-h, 0);
+  /* Desaceleración exponencial, sin rebote. El sistema de diseño de este sitio es
+     "disciplina afilada, no almohadón": un indicador que se pasa de largo y vuelve se lee
+     como un juguete, y encima sugiere que la opción de al lado llegó a estar seleccionada. */
   transition:
-    transform .26s cubic-bezier(.34, 1.2, .38, 1),
-    width .26s cubic-bezier(.34, 1.2, .38, 1),
+    transform .26s cubic-bezier(.22, 1, .36, 1),
+    width .26s cubic-bezier(.22, 1, .36, 1),
     height .18s ease,
     opacity .18s ease;
 }
