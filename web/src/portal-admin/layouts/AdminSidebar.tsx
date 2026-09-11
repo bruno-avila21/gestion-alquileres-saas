@@ -2,19 +2,22 @@ import { NavLink, useNavigate } from 'react-router'
 import { useAuthStore } from '@/shared/stores/authStore'
 import {
   IcHome, IcDoc, IcBuilding, IcUsers, IcCash,
-  IcTrend, IcSettings, IcLogout, IcCalendar,
+  IcTrend, IcSettings, IcLogout, IcCalendar, IcMail, IcReceipt, IcHelp,
 } from '@/shared/components/ui/Icons'
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Panel', icon: <IcHome size={18} />, end: true },
+  { to: '/admin/consultas', label: 'CRM & Leads', icon: <IcMail size={18} /> },
   { to: '/admin/contratos', label: 'Contratos', icon: <IcDoc size={18} /> },
   { to: '/admin/propiedades', label: 'Propiedades', icon: <IcBuilding size={18} /> },
   { to: '/admin/inquilinos', label: 'Inquilinos', icon: <IcUsers size={18} /> },
   { to: '/admin/pagos', label: 'Pagos', icon: <IcCash size={18} /> },
+  { to: '/admin/rendiciones', label: 'Liquidaciones', icon: <IcReceipt size={18} /> },
   { to: '/admin/ajustes', label: 'Ajustes', icon: <IcCalendar size={18} /> },
   { to: '/admin/indices', label: 'Índices', icon: <IcTrend size={18} /> },
   { to: '/admin/documentos', label: 'Documentos', icon: <IcDoc size={18} /> },
   { to: '/admin/configuracion', label: 'Configuración', icon: <IcSettings size={18} /> },
+  { to: '/admin/soporte', label: 'Soporte', icon: <IcHelp size={18} /> },
 ]
 
 export function AdminSidebar() {
@@ -50,7 +53,7 @@ export function AdminSidebar() {
             className={({ isActive }) => isActive ? 'active' : ''}
           >
             {item.icon}
-            {item.label}
+            <span className="nav-label">{item.label}</span>
           </NavLink>
         ))}
       </nav>
@@ -62,7 +65,7 @@ export function AdminSidebar() {
         >
           {initials}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="user-email" style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user?.email ?? ''}
           </div>

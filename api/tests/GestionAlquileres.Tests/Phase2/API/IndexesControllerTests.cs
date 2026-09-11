@@ -158,13 +158,13 @@ public class IndexesControllerTests : IClassFixture<IndexesControllerTests.ApiFa
         var c = _factory.CreateClient();
 
         var regResp = await c.PostAsJsonAsync("/api/v1/auth/register-org",
-            new RegisterOrgCommand($"{slug} Org", slug, $"a@{slug}.com", "Password123", "A", "A"));
+            new RegisterOrgCommand($"{slug} Org", slug, $"a@{slug}.com", "Password1234", "A", "A"));
         var regBody = await regResp.Content.ReadAsStringAsync();
         Assert.True(regResp.IsSuccessStatusCode,
             $"register-org failed {regResp.StatusCode}: {regBody}");
 
         var loginResp = await c.PostAsJsonAsync("/api/v1/auth/login",
-            new LoginCommand($"a@{slug}.com", "Password123", slug));
+            new LoginCommand($"a@{slug}.com", "Password1234", slug));
         var loginBody = await loginResp.Content.ReadAsStringAsync();
         Assert.True(loginResp.IsSuccessStatusCode,
             $"login failed {loginResp.StatusCode}: {loginBody}");

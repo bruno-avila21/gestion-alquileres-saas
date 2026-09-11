@@ -1,6 +1,8 @@
 import { api } from '@/shared/lib/api'
+import { filenameFromContentDisposition } from '@/shared/lib/downloadFile'
 import type {
   AdjustmentProjection,
+  AdjustmentType,
   ApplyAdjustmentRequest,
   ContractDto,
   ContractStatus,
@@ -10,8 +12,11 @@ import type {
   RentHistoryDto,
   TerminateContractRequest,
   TransactionDto,
+  TransactionsPageDto,
+  TransactionType,
   UpdateContractRequest,
 } from '../types/contract.types'
+import type { PagedResult } from '@/shared/types/paged'
 
 export const contractService = {
   async list(params?: { tenantId?: string; propertyId?: string; status?: ContractStatus }): Promise<ContractDto[]> {
@@ -59,12 +64,12 @@ export const contractService = {
     const { data } = await api.post<TransactionDto>(`/contracts/${contractId}/charges`, req)
     return data
   },
-  async listAllTransactions(): Promise<TransactionDto[]> {
-    const { data } = await api.get<TransactionDto[]>('/transactions')
+  async listAllTransactions(params: { page: number; pageSize: number; type?: TransactionType; search?: string }): Promise<TransactionsPageDto> {
+    const { data } = await api.get<TransactionsPageDto>('/transactions', { params })
     return data
   },
-  async listAllRentHistory(): Promise<RentHistoryDto[]> {
-    const { data } = await api.get<RentHistoryDto[]>('/rent-adjustments')
+  async listAllRentHistory(params: { page: number; pageSize: number; type?: AdjustmentType; search?: string }): Promise<PagedResult<RentHistoryDto>> {
+    const { data } = await api.get<PagedResult<RentHistoryDto>>('/rent-adjustments', { params })
     return data
   },
   async exportTransactionsCsv(): Promise<Blob> {
@@ -74,5 +79,12 @@ export const contractService = {
   async exportAdjustmentsCsv(): Promise<Blob> {
     const { data } = await api.get<Blob>('/rent-adjustments/export', { responseType: 'blob' })
     return data
+  },
+  async downloadReceiptPdf(transactionId: string): Promise<{ blob: Blob; fileName: string }> {
+    const res = await api.get<Blob>(`/transactions/${transactionId}/receipt`, { responseType: 'blob' })
+    return {
+      blob: res.data,
+      fileName: filenameFromContentDisposition(res.headers['content-disposition']) ?? 'recibo.pdf',
+    }
   },
 }

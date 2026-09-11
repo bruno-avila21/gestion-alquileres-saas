@@ -4,12 +4,14 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/shared/lib/queryClient'
 import { adminRoutes } from '@/portal-admin/routes'
 import { inquilinoRoutes } from '@/portal-inquilino/routes'
+import { publicoRoutes } from '@/portal-publico/routes'
 
 const NotFoundPage = lazy(() => import('@/portal-admin/pages/NotFoundPage'))
 
 const router = createBrowserRouter([
   { path: '/admin/*', children: adminRoutes },
   { path: '/inquilino/*', children: inquilinoRoutes },
+  { path: '/sitio/:slug/*', children: publicoRoutes },
   { path: '/', element: <Navigate to="/admin/login" replace /> },
   { path: '*', element: <Suspense fallback={null}><NotFoundPage /></Suspense> },
 ])

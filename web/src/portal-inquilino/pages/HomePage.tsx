@@ -1,55 +1,17 @@
 import { useNavigate } from 'react-router'
 import { useAuthStore } from '@/shared/stores/authStore'
 import {
-  IcArrowR, IcDownload, IcTrend, IcBuilding, IcCheck, IcHome, IcDoc, IcShield, IcCash,
+  IcArrowR, IcDownload, IcTrend, IcBuilding, IcCheck,
 } from '@/shared/components/ui/Icons'
-import { formatARS, formatDate } from '@/shared/lib/formatters'
+import { QueryError } from '@/shared/components/ui/QueryError'
+import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
 import { useMyContract, useMyTransactions } from '@/features/me/hooks/useMe'
 
-interface BottomNavProps {
-  active: 'home' | 'contrato' | 'documentos' | 'pagos'
-}
-
-function BottomNav({ active }: BottomNavProps) {
-  const navigate = useNavigate()
-  const items = [
-    { k: 'home', label: 'Inicio', icon: <IcHome size={20} />, to: '/inquilino' },
-    { k: 'contrato', label: 'Contrato', icon: <IcDoc size={20} />, to: '/inquilino/contrato' },
-    { k: 'documentos', label: 'Docs', icon: <IcShield size={20} />, to: '/inquilino/documentos' },
-    { k: 'pagos', label: 'Pagos', icon: <IcCash size={20} />, to: '/inquilino/pagos' },
-  ] as const
-  return (
-    <div
-      style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: 'var(--surface)', borderTop: '1px solid var(--hairline)',
-        display: 'flex', justifyContent: 'space-around',
-        padding: '8px 0 16px', zIndex: 100,
-      }}
-    >
-      {items.map((item) => (
-        <button
-          key={item.k}
-          onClick={() => navigate(item.to)}
-          style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: active === item.k ? 'var(--brand)' : 'var(--muted)',
-            fontFamily: 'inherit',
-          }}
-        >
-          {item.icon}
-          <span style={{ fontSize: 10, fontWeight: 500 }}>{item.label}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
 export default function TenantHomePage() {
+  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const name = user?.email?.split('@')[0] ?? 'Inquilino'
-  const { data: contract, isLoading } = useMyContract()
+  const { data: contract, isLoading, isError, refetch } = useMyContract()
   const { data: transactions } = useMyTransactions()
 
   const recentPayments = (transactions ?? []).filter(t => t.type === 'Payment').slice(0, 3)
@@ -75,6 +37,8 @@ export default function TenantHomePage() {
       {/* Card alquiler vigente */}
       {isLoading ? (
         <div className="card" style={{ padding: 20, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
+      ) : isError ? (
+        <QueryError onRetry={() => refetch()} message="No pudimos cargar tu contrato." />
       ) : contract ? (
         <div
           className="card"
@@ -101,11 +65,17 @@ export default function TenantHomePage() {
             <button
               className="btn"
               style={{ background: 'white', color: 'var(--brand-700)', border: 'none', flex: 1, justifyContent: 'center', fontWeight: 600 }}
-              onClick={() => window.location.href = '/inquilino/contrato'}
+              onClick={() => navigate('/inquilino/contrato')}
             >
               Ver contrato <IcArrowR size={14} />
             </button>
-            <button className="btn btn--icon" style={{ background: 'rgba(255,255,255,.15)', color: 'white', border: 'none' }}>
+            <button
+              className="btn btn--icon"
+              style={{ background: 'rgba(255,255,255,.15)', color: 'white', border: 'none' }}
+              onClick={() => navigate('/inquilino/documentos')}
+              aria-label="Ver documentos"
+              title="Ver documentos"
+            >
               <IcDownload size={14} />
             </button>
           </div>
@@ -177,7 +147,7 @@ export default function TenantHomePage() {
                   <IcCheck size={12} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{formatDate(t.period)}</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{formatPeriod(t.period)}</div>
                   <div style={{ fontSize: 11, color: 'var(--muted)' }}>{t.notes ?? 'Pago registrado'}</div>
                 </div>
               </div>
@@ -187,7 +157,6 @@ export default function TenantHomePage() {
         </div>
       </div>
 
-      <BottomNav active="home" />
     </div>
   )
 }

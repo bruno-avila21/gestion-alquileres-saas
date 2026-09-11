@@ -19,20 +19,17 @@ public class GetDashboardQueryHandler : IRequestHandler<GetDashboardQuery, Dashb
 
     public async Task<DashboardDto> Handle(GetDashboardQuery request, CancellationToken ct)
     {
-        var contracts = await _contractRepo.ListAsync(null, null, ContractStatus.Active, ct);
         var today = ArgentinaTime.Today;
         var in30Days = today.AddDays(30);
+
+        // Los agregados se calculan en la base. Antes se traía la cartera activa completa, con
+        // Property y AppTenant incluidos, para contar y sumar en memoria.
+        var (activeCount, monthlyRevenue, expiringCount) =
+            await _contractRepo.GetDashboardStatsAsync(today, in30Days, ct);
 
         var recentTx = await _txRepo.GetRecentAsync(5, ct);
         var recentDtos = recentTx.Select(RegisterPaymentCommandHandler.ToDto).ToList();
 
-        return new DashboardDto(
-            contracts.Count,
-            contracts.Sum(c => c.MonthlyRent),
-            // "Expiring soon" = ends within the next 30 days. Bound below by today so already-expired
-            // contracts (EndDate in the past) don't inflate the count (audit C-9).
-            contracts.Count(c => c.EndDate >= today && c.EndDate <= in30Days),
-            recentDtos
-        );
+        return new DashboardDto(activeCount, monthlyRevenue, expiringCount, recentDtos);
     }
 }

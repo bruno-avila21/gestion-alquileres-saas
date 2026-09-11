@@ -16,6 +16,10 @@ public static class ArgentinaTime
 
     public static DateOnly Today => DateOnly.FromDateTime(Now.DateTime);
 
+    /// <summary>Convierte un instante a la fecha calendario en Buenos Aires (para recibos: PaidAt/CreatedAt).</summary>
+    public static DateOnly ToLocalDate(DateTimeOffset value) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(value, Tz).DateTime);
+
     private static TimeZoneInfo ResolveTimeZone()
     {
         foreach (var id in new[] { "America/Argentina/Buenos_Aires", "Argentina Standard Time" })

@@ -11,7 +11,7 @@ public class ListAllDocumentsQueryHandler : IRequestHandler<ListAllDocumentsQuer
     public async Task<IReadOnlyList<DocumentDto>> Handle(ListAllDocumentsQuery request, CancellationToken ct)
     {
         var docs = await _docs.GetAllAsync(ct);
-        return docs.Select(d => new DocumentDto(d.Id, d.ContractId, d.FileName, d.MimeType, d.SizeBytes, d.CreatedAt))
+        return docs.Select(d => new DocumentDto(d.Id, d.ContractId, d.FileName, d.MimeType, d.SizeBytes, d.CreatedAt, d.IsVisibleToTenant))
                    .ToList();
     }
 }

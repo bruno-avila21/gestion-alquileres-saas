@@ -1,5 +1,7 @@
+import { Link } from 'react-router'
 import { AdminTopbar } from '../layouts/AdminTopbar'
 import { useAuthStore } from '@/shared/stores/authStore'
+import { PalettePicker } from '../components/PalettePicker'
 
 export default function ConfiguracionPage() {
   const user = useAuthStore((s) => s.user)
@@ -25,6 +27,65 @@ export default function ConfiguracionPage() {
               <Row label="Slug" value={user?.organizationSlug ?? '—'} />
               <Row label="Usuario" value={user?.email ?? '—'} />
               <Row label="Rol" value={user?.role ?? '—'} />
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-h">
+              <h3>Color del panel</h3>
+              <div className="sub">cómo se ve la herramienta</div>
+            </div>
+            <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
+                Lo elegís una vez y lo ve todo el equipo. No afecta a los recibos ni al sitio
+                público: eso se configura en Marca.
+              </div>
+              <PalettePicker />
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-h">
+              <h3>Marca</h3>
+              <div className="sub">recibos y liquidaciones</div>
+            </div>
+            <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
+                Nombre, datos fiscales, logo y color que aparecen en los PDF de recibos y liquidaciones.
+              </div>
+              <Link className="btn" to="/admin/configuracion/marca" style={{ alignSelf: 'flex-start' }}>
+                Editar marca
+              </Link>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-h">
+              <h3>Sitio público</h3>
+              <div className="sub">color, tipografía y textos</div>
+            </div>
+            <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
+                Cómo se ve y qué dice el sitio que ven tus clientes. Lo que dejes vacío usa el
+                diseño por defecto.
+              </div>
+              <Link className="btn" to="/admin/configuracion/sitio" style={{ alignSelf: 'flex-start' }}>
+                Editar sitio
+              </Link>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-h">
+              <h3>Seguridad</h3>
+            </div>
+            <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
+                Al cambiar tu contraseña se cierran las sesiones abiertas en otros dispositivos.
+              </div>
+              <Link className="btn" to="/admin/cambiar-clave" style={{ alignSelf: 'flex-start' }}>
+                Cambiar contraseña
+              </Link>
             </div>
           </div>
 

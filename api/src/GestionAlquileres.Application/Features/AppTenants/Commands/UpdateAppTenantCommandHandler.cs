@@ -8,8 +8,16 @@ namespace GestionAlquileres.Application.Features.AppTenants.Commands;
 public class UpdateAppTenantCommandHandler : IRequestHandler<UpdateAppTenantCommand, AppTenantDto>
 {
     private readonly IAppTenantRepository _repo;
+    private readonly IUserRepository _users;
+    private readonly IRefreshTokenRepository _refreshTokens;
 
-    public UpdateAppTenantCommandHandler(IAppTenantRepository repo) => _repo = repo;
+    public UpdateAppTenantCommandHandler(
+        IAppTenantRepository repo, IUserRepository users, IRefreshTokenRepository refreshTokens)
+    {
+        _repo = repo;
+        _users = users;
+        _refreshTokens = refreshTokens;
+    }
 
     public async Task<AppTenantDto> Handle(UpdateAppTenantCommand request, CancellationToken ct)
     {
@@ -24,7 +32,12 @@ public class UpdateAppTenantCommandHandler : IRequestHandler<UpdateAppTenantComm
         tenant.Dni = request.Dni.Trim();
         tenant.Email = request.Email?.Trim().ToLowerInvariant();
         tenant.Phone = request.Phone?.Trim();
+        var wasActive = tenant.IsActive;
         tenant.IsActive = request.IsActive;
+
+        // Desactivar desde la edición tiene que cortar el acceso igual que la baja.
+        if (wasActive && !request.IsActive)
+            await TenantAccessRevoker.RevokeAsync(tenant, _users, _refreshTokens, ct);
 
         await _repo.SaveChangesAsync(ct);
 

@@ -1,5 +1,10 @@
 import { api } from '@/shared/lib/api'
-import type { AuthResponse, LoginRequest, RegisterOrgRequest } from '../types/auth.types'
+import type {
+  AuthResponse,
+  ChangePasswordRequest,
+  LoginRequest,
+  RegisterOrgRequest,
+} from '../types/auth.types'
 
 export const authService = {
   async login(req: LoginRequest): Promise<AuthResponse> {
@@ -12,6 +17,10 @@ export const authService = {
   },
   async registerOrg(req: RegisterOrgRequest): Promise<AuthResponse> {
     const { data } = await api.post<AuthResponse>('/auth/register-org', req)
+    return data
+  },
+  async changePassword(req: ChangePasswordRequest): Promise<AuthResponse> {
+    const { data } = await api.post<AuthResponse>('/auth/change-password', req)
     return data
   },
 }

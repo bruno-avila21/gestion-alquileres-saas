@@ -1,5 +1,7 @@
 import { api } from '@/shared/lib/api'
-import type { CreatePropertyRequest, PropertyDto, UpdatePropertyRequest } from '../types/property.types'
+import type {
+  CreatePropertyRequest, PropertyDto, PropertyPhotoDto, UpdatePropertyRequest,
+} from '../types/property.types'
 
 export const propertyService = {
   async list(): Promise<PropertyDto[]> {
@@ -20,5 +22,25 @@ export const propertyService = {
   },
   async remove(id: string): Promise<void> {
     await api.delete(`/properties/${id}`)
+  },
+
+  async listPhotos(propertyId: string): Promise<PropertyPhotoDto[]> {
+    const { data } = await api.get<PropertyPhotoDto[]>(`/properties/${propertyId}/photos`)
+    return data
+  },
+  async uploadPhoto(propertyId: string, file: File): Promise<PropertyPhotoDto> {
+    const form = new FormData()
+    form.append('file', file)
+    const { data } = await api.post<PropertyPhotoDto>(`/properties/${propertyId}/photos`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  },
+  async setCoverPhoto(propertyId: string, photoId: string): Promise<PropertyPhotoDto> {
+    const { data } = await api.put<PropertyPhotoDto>(`/properties/${propertyId}/photos/${photoId}/cover`)
+    return data
+  },
+  async deletePhoto(propertyId: string, photoId: string): Promise<void> {
+    await api.delete(`/properties/${propertyId}/photos/${photoId}`)
   },
 }

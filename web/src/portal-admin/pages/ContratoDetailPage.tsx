@@ -6,7 +6,7 @@ import {
   IcShield, IcBell, IcDownload, IcUpload, IcPlus,
   IcCalendar, IcDoc, IcChev, IcLink,
 } from '@/shared/components/ui/Icons'
-import { formatARS, formatDate } from '@/shared/lib/formatters'
+import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
 import {
   useContractById,
   useRentHistory,
@@ -17,7 +17,11 @@ import {
 } from '@/features/contracts/hooks/useContracts'
 import { useContractDocuments, useUploadDocument, useDeleteDocument } from '@/features/documents/hooks/useDocuments'
 import { documentService } from '@/features/documents/services/documentService'
-import type { ContractDto } from '@/features/contracts/types/contract.types'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
+import { EditarContratoModal } from '@/features/contracts/components/EditarContratoModal'
+import type {
+  ContractDto, AdjustmentType, AdjustmentFrequency,
+} from '@/features/contracts/types/contract.types'
 import type { DocumentDownloadUrlDto } from '@/features/documents/types/document.types'
 
 type TabKey = 'overview' | 'payments' | 'adjustments' | 'documents'
@@ -53,8 +57,24 @@ function CalcCell({
 }
 
 function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: () => void }) {
-  const adjLabel = contract.adjustmentType === 'ICL' ? 'ICL' : contract.adjustmentType === 'IPC' ? 'IPC' : 'Manual'
-  const freqLabel = contract.adjustmentFrequency === 'Monthly' ? 'mensual' : contract.adjustmentFrequency === 'Quarterly' ? 'trimestral' : 'anual'
+  // Los mapas quedaron con los valores viejos del enum cuando se sumaron % fijo, cuatrimestral y
+  // semestral: un contrato al 8% trimestral se mostraba como "Manual". Se completan acá.
+  const ADJ_LABELS: Record<AdjustmentType, string> = {
+    ICL: 'ICL', IPC: 'IPC', Manual: 'Manual', FixedPercent: '% fijo',
+  }
+  const FREQ_LABELS: Record<AdjustmentFrequency, string> = {
+    Monthly: 'mensual', Quarterly: 'trimestral', FourMonthly: 'cuatrimestral',
+    SemiAnnual: 'semestral', Annual: 'anual',
+  }
+  const adjLabel = contract.adjustmentType === 'FixedPercent' && contract.adjustmentPercent != null
+    ? `${contract.adjustmentPercent}%`
+    : ADJ_LABELS[contract.adjustmentType]
+  const freqLabel = FREQ_LABELS[contract.adjustmentFrequency]
+
+  const punitorioLabel = contract.lateFeeDailyRate
+    ? `${contract.lateFeeDailyRate}% diario` +
+      (contract.lateFeeGraceDays > 0 ? ` · ${contract.lateFeeGraceDays} días de gracia` : '')
+    : 'sin punitorio'
 
   // Real projection from indices-api (null for Manual contracts).
   const { data: projection } = useAdjustmentProjection(contract.id)
@@ -76,11 +96,12 @@ function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: 
           <div className="card-h">
             <div>
               <h3>Próximo ajuste — cómo se calcula</h3>
-              <div className="sub">{adjLabel} · {freqLabel} · auto-aplicable</div>
+              <div className="sub">{adjLabel} · {freqLabel}</div>
             </div>
             <div className="row">
               <button className="btn btn--sm" onClick={onAdjust}><IcEdit size={12} /> Ajuste manual</button>
-              <button className="btn btn--sm btn--primary" onClick={onAdjust}>Aplicar ahora <IcChev size={12} /></button>
+              {/* Solo navega a la pestaña de ajustes; no aplica nada por si mismo (audit M9). */}
+              <button className="btn btn--sm btn--primary" onClick={onAdjust}>Ver ajuste <IcChev size={12} /></button>
             </div>
           </div>
           <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -98,8 +119,16 @@ function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: 
             </div>
 
             <div className="between" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>
+              {/* El sello se muestra solo cuando corresponde y con la fuente correcta: ICL→BCRA,
+                  IPC→INDEC. Antes decia "verificado con BCRA" siempre, incluso en contratos Manual
+                  o IPC y sin proyeccion disponible (audit M9/M15). */}
               <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                <IcShield size={12} /> Datos verificados con BCRA
+                <IcShield size={12} />
+                {contract.adjustmentType === 'Manual'
+                  ? 'Ajuste manual — sin índice'
+                  : projection
+                    ? `Datos verificados con ${contract.adjustmentType === 'ICL' ? 'BCRA' : 'INDEC'}`
+                    : 'Esperando índice del período'}
               </span>
               <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
                 <IcBell size={12} /> Inquilino será notificado por email
@@ -135,6 +164,7 @@ function OverviewTab({ contract, onAdjust }: { contract: ContractDto; onAdjust: 
               { k: 'Depósito', v: contract.depositAmount != null ? formatARS(contract.depositAmount) : '—' },
               { k: 'Indexación', v: `${adjLabel} · ${freqLabel}` },
               { k: 'Día de pago', v: `día ${contract.dayOfMonth}` },
+              { k: 'Punitorio', v: punitorioLabel },
               { k: 'Moneda', v: contract.currency },
             ].map((kv) => (
               <div key={kv.k} className="between">
@@ -201,15 +231,15 @@ function PaymentsTab({ contractId }: { contractId: string }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 12 }}>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Importe</label>
-              <input className="inp" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="200000" />
+              <input className="input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="200000" />
             </div>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Período</label>
-              <input className="inp" type="date" value={period} onChange={e => setPeriod(e.target.value)} />
+              <input className="input" type="date" value={period} onChange={e => setPeriod(e.target.value)} />
             </div>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Notas (opcional)</label>
-              <input className="inp" type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Transferencia XXXX" />
+              <input className="input" type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Transferencia XXXX" />
             </div>
           </div>
           {err && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)' }}>{err}</div>}
@@ -242,7 +272,7 @@ function PaymentsTab({ contractId }: { contractId: string }) {
             <tbody>
               {payments.map((t) => (
                 <tr key={t.id}>
-                  <td><b>{formatDate(t.period)}</b></td>
+                  <td><b>{formatPeriod(t.period)}</b></td>
                   <td>
                     {t.type === 'Payment'
                       ? <span className="chip chip--ok"><span className="dot" />Pago</span>
@@ -308,15 +338,15 @@ function AdjustmentsTab({ contractId }: { contractId: string }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 12 }}>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Nuevo alquiler</label>
-              <input className="inp" type="number" value={newRent} onChange={e => setNewRent(e.target.value)} placeholder="250000" />
+              <input className="input" type="number" value={newRent} onChange={e => setNewRent(e.target.value)} placeholder="250000" />
             </div>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Fecha efectiva</label>
-              <input className="inp" type="date" value={adjDate} onChange={e => setAdjDate(e.target.value)} />
+              <input className="input" type="date" value={adjDate} onChange={e => setAdjDate(e.target.value)} />
             </div>
             <div>
               <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Nota (obligatoria)</label>
-              <input className="inp" type="text" value={adjNotes} onChange={e => setAdjNotes(e.target.value)} placeholder="Acuerdo entre partes…" />
+              <input className="input" type="text" value={adjNotes} onChange={e => setAdjNotes(e.target.value)} placeholder="Acuerdo entre partes…" />
             </div>
           </div>
           {err && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)' }}>{err}</div>}
@@ -362,7 +392,7 @@ function AdjustmentsTab({ contractId }: { contractId: string }) {
                     <td className="num">{formatARS(a.previousRent)}</td>
                     <td className="num"><b>{formatARS(a.newRent)}</b></td>
                     <td className="num">
-                      <span className="delta-pill up"><IcArrowUp size={10} />+{pct.toFixed(2)}%</span>
+                      <span className="delta-pill neutral"><IcArrowUp size={10} />+{pct.toFixed(2)}%</span>
                     </td>
                     <td style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>{a.notes ?? '—'}</td>
                   </tr>
@@ -383,6 +413,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [urlModal, setUrlModal] = useState<DocumentDownloadUrlDto | null>(null)
   const [loadingDocId, setLoadingDocId] = useState<string | null>(null)
+  const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<string | null>(null)
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -469,10 +500,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
                         style={{ color: 'var(--danger)' }}
                         title="Eliminar documento"
                         aria-label="Eliminar documento"
-                        onClick={() => {
-                          if (window.confirm('¿Eliminar este documento? Esta acción no se puede deshacer.'))
-                            deleteDoc.mutate(d.id)
-                        }}
+                        onClick={() => setConfirmDeleteDoc(d.id)}
                       >
                         ×
                       </button>
@@ -484,6 +512,16 @@ function DocumentsTab({ contractId }: { contractId: string }) {
           </table>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDeleteDoc}
+        title="Eliminar documento"
+        description="El documento se eliminará de forma permanente. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={() => { if (confirmDeleteDoc) deleteDoc.mutate(confirmDeleteDoc); setConfirmDeleteDoc(null) }}
+        onCancel={() => setConfirmDeleteDoc(null)}
+      />
 
       {urlModal && (
         <div
@@ -521,6 +559,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
 export default function ContratoDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [tab, setTab] = useState<TabKey>('overview')
+  const [editando, setEditando] = useState(false)
   const { data: contract, isLoading } = useContractById(id)
 
   const statusLabel = contract?.status === 'Active' ? 'Vigente' : contract?.status === 'Terminated' ? 'Rescindido' : 'Expirado'
@@ -532,10 +571,21 @@ export default function ContratoDetailPage() {
         crumbs={['Contratos', id ?? '…']}
         right={
           <div className="row">
-            <button className="btn btn--sm"><IcEdit size={12} /> Editar</button>
+            <button
+              className="btn btn--sm"
+              onClick={() => setEditando(true)}
+              disabled={!contract || contract.status === 'Terminated'}
+              title={contract?.status === 'Terminated' ? 'Un contrato rescindido no se puede editar' : undefined}
+            >
+              <IcEdit size={12} /> Editar
+            </button>
             <button className="btn btn--sm btn--icon"><IcEllipsis size={12} /></button>
           </div>
         }
+      />
+      <EditarContratoModal
+        contract={editando ? contract ?? null : null}
+        onClose={() => setEditando(false)}
       />
       <div className="page" style={{ padding: 0, gap: 0 }}>
         <div style={{ padding: 'var(--s-9) var(--s-9) var(--s-7)', background: 'var(--surface)', borderBottom: '1px solid var(--hairline)' }}>

@@ -7,6 +7,8 @@ namespace GestionAlquileres.Application.Features.Owners.DTOs;
 public record OwnerSettlementDto(
     Guid OwnerId,
     string OwnerName,
+    /// <summary>CBU o alias del propietario. Null = todavía no lo cargaron; sin esto no se le puede transferir.</summary>
+    string? OwnerCbu,
     DateOnly PeriodFrom,
     DateOnly PeriodTo,
     decimal GrossCollected,

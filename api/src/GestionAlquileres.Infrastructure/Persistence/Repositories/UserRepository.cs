@@ -1,4 +1,5 @@
 using GestionAlquileres.Domain.Entities;
+using GestionAlquileres.Domain.Enums;
 using GestionAlquileres.Domain.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,11 @@ public class UserRepository : IUserRepository
 
     public Task<User?> GetByEmailAcrossOrgsAsync(string email, CancellationToken ct) =>
         _db.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == email, ct);
+
+    public async Task<IReadOnlyList<User>> GetActiveByRoleAsync(Guid organizationId, UserRole role, CancellationToken ct) =>
+        await _db.Users.IgnoreQueryFilters()
+            .Where(u => u.OrganizationId == organizationId && u.Role == role && u.IsActive)
+            .ToListAsync(ct);
 
     public async Task AddAsync(User user, CancellationToken ct)
     {

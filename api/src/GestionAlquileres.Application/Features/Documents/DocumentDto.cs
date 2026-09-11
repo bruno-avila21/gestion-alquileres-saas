@@ -6,6 +6,7 @@ public record DocumentDto(
     string FileName,
     string MimeType,
     long SizeBytes,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    bool IsVisibleToTenant);
 
 public record DocumentDownloadUrlDto(string Token, string Url, DateTimeOffset ExpiresAt);

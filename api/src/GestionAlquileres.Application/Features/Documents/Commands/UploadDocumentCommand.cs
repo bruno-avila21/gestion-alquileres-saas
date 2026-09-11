@@ -9,4 +9,5 @@ public record UploadDocumentCommand(
     string MimeType,
     long SizeBytes,
     Stream Content,
-    Guid UploadedByUserId) : IRequest<DocumentDto>;
+    Guid UploadedByUserId,
+    bool IsVisibleToTenant) : IRequest<DocumentDto>;

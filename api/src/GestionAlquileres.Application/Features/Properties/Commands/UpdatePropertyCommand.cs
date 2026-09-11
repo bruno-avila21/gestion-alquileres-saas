@@ -14,5 +14,6 @@ public record UpdatePropertyCommand(
     string? Notes,
     Guid? OwnerId,
     decimal? CommissionPct,
-    bool IsActive)
+    bool IsActive,
+    PropertyListingDetails? Details = null)
     : IRequest<PropertyDto>;

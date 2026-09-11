@@ -5,6 +5,7 @@ import TenantHomePage from './pages/HomePage'
 import TenantContratoPage from './pages/ContratoPage'
 import TenantDocumentosPage from './pages/DocumentosPage'
 import TenantPagosPage from './pages/PagosPage'
+import TenantCambiarClavePage from './pages/CambiarClavePage'
 
 export const inquilinoRoutes: RouteObject[] = [
   { path: 'login', element: <TenantLoginPage /> },
@@ -16,6 +17,7 @@ export const inquilinoRoutes: RouteObject[] = [
       { path: 'contrato', element: <TenantContratoPage /> },
       { path: 'documentos', element: <TenantDocumentosPage /> },
       { path: 'pagos', element: <TenantPagosPage /> },
+      { path: 'cambiar-clave', element: <TenantCambiarClavePage /> },
     ],
   },
 ]

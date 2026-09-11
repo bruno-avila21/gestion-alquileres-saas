@@ -1,0 +1,47 @@
+# Override para un VPS (Oracle Cloud Always Free, Hetzner, el que sea).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm migrate
+#
+# Diferencias con el modo local:
+#   · ASPNETCORE_ENVIRONMENT=Production → Swagger apagado, rate limiter encendido, CSP y HSTS
+#     activos, y el panel de Hangfire pasa a SOLO LECTURA con autenticación de Admin.
+#   · Caddy escucha en 80/443 y saca el certificado TLS solo, contra el dominio de SITE_ADDRESS.
+#   · Postgres y MinIO dejan de exponerse a internet: se atan a loopback, para llegar por túnel SSH.
+#   · La API deja de exponer su puerto: sólo se llega a través de Caddy.
+#
+# Antes de levantarlo hay que apuntar el registro A del dominio a la IP del servidor, o Caddy no
+# va a poder validar el certificado.
+
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  minio:
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    ports: !override []
+
+  web:
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?definir SITE_ADDRESS con el dominio, ej. alquilar.tudominio.com}
+      API_UPSTREAM: api:8080
+    ports: !override
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      # Persistir los certificados: sin esto, cada redeploy vuelve a pedirlos y Let's Encrypt
+      # tiene límite de emisiones por semana.
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

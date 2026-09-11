@@ -98,7 +98,7 @@ public class AuthTests : IClassFixture<AuthTests.ApiFactory>
     public async Task RegisterOrg_rejects_duplicate_slug_with_409()
     {
         var client = _factory.CreateClient();
-        var cmd = new RegisterOrgCommand("Beta", "beta-org", "b@b.com", "Password123", "B", "B");
+        var cmd = new RegisterOrgCommand("Beta", "beta-org", "b@b.com", "Password1234", "B", "B");
         var r1 = await client.PostAsJsonAsync("/api/v1/auth/register-org", cmd);
         Assert.Equal(HttpStatusCode.OK, r1.StatusCode);
         var r2 = await client.PostAsJsonAsync("/api/v1/auth/register-org", cmd with { AdminEmail = "b2@b.com" });
@@ -109,7 +109,7 @@ public class AuthTests : IClassFixture<AuthTests.ApiFactory>
     public async Task RegisterOrg_with_invalid_email_returns_400()
     {
         var client = _factory.CreateClient();
-        var cmd = new RegisterOrgCommand("Gamma", "gamma", "not-an-email", "Password123", "G", "G");
+        var cmd = new RegisterOrgCommand("Gamma", "gamma", "not-an-email", "Password1234", "G", "G");
         var r = await client.PostAsJsonAsync("/api/v1/auth/register-org", cmd);
         Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode);
     }
@@ -119,10 +119,10 @@ public class AuthTests : IClassFixture<AuthTests.ApiFactory>
     {
         var client = _factory.CreateClient();
         await client.PostAsJsonAsync("/api/v1/auth/register-org",
-            new RegisterOrgCommand("Delta", "delta", "d@d.com", "Password123", "D", "D"));
+            new RegisterOrgCommand("Delta", "delta", "d@d.com", "Password1234", "D", "D"));
 
         var login = await client.PostAsJsonAsync("/api/v1/auth/login",
-            new LoginCommand("d@d.com", "Password123", "delta"));
+            new LoginCommand("d@d.com", "Password1234", "delta"));
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
     }
 
@@ -131,7 +131,7 @@ public class AuthTests : IClassFixture<AuthTests.ApiFactory>
     {
         var client = _factory.CreateClient();
         await client.PostAsJsonAsync("/api/v1/auth/register-org",
-            new RegisterOrgCommand("Epsilon", "epsilon", "e@e.com", "Password123", "E", "E"));
+            new RegisterOrgCommand("Epsilon", "epsilon", "e@e.com", "Password1234", "E", "E"));
         var login = await client.PostAsJsonAsync("/api/v1/auth/login",
             new LoginCommand("e@e.com", "WrongPassword", "epsilon"));
         Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
@@ -142,10 +142,10 @@ public class AuthTests : IClassFixture<AuthTests.ApiFactory>
     {
         var client = _factory.CreateClient();
         await client.PostAsJsonAsync("/api/v1/auth/register-org",
-            new RegisterOrgCommand("Zeta", "zeta", "z@z.com", "Password123", "Z", "Z"));
+            new RegisterOrgCommand("Zeta", "zeta", "z@z.com", "Password1234", "Z", "Z"));
         // Admin trying to use tenant-login endpoint
         var login = await client.PostAsJsonAsync("/api/v1/auth/tenant-login",
-            new TenantLoginCommand("z@z.com", "Password123", "zeta"));
+            new TenantLoginCommand("z@z.com", "Password1234", "zeta"));
         Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
     }
 
@@ -155,7 +155,7 @@ public class AuthTests : IClassFixture<AuthTests.ApiFactory>
         // Seed a Tenant user directly via DI
         var client = _factory.CreateClient();
         await client.PostAsJsonAsync("/api/v1/auth/register-org",
-            new RegisterOrgCommand("Eta", "eta", "admin@eta.com", "Password123", "A", "A"));
+            new RegisterOrgCommand("Eta", "eta", "admin@eta.com", "Password1234", "A", "A"));
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -165,7 +165,7 @@ public class AuthTests : IClassFixture<AuthTests.ApiFactory>
             {
                 OrganizationId = org.Id,
                 Email = "tenant@eta.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123"),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password1234"),
                 FirstName = "T",
                 LastName = "T",
                 Role = UserRole.Tenant,
@@ -175,7 +175,7 @@ public class AuthTests : IClassFixture<AuthTests.ApiFactory>
         }
 
         var login = await client.PostAsJsonAsync("/api/v1/auth/tenant-login",
-            new TenantLoginCommand("tenant@eta.com", "Password123", "eta"));
+            new TenantLoginCommand("tenant@eta.com", "Password1234", "eta"));
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         var body = await login.Content.ReadFromJsonAsync<AuthResponseDto>();
         Assert.Equal("Tenant", body!.Role);
@@ -195,10 +195,10 @@ public class AuthTests : IClassFixture<AuthTests.ApiFactory>
     {
         var client = _factory.CreateClient();
         await client.PostAsJsonAsync("/api/v1/auth/register-org",
-            new RegisterOrgCommand("Iota", "iota", "admin@iota.com", "Password123", "A", "A"));
+            new RegisterOrgCommand("Iota", "iota", "admin@iota.com", "Password1234", "A", "A"));
 
         var login = await client.PostAsJsonAsync("/api/v1/auth/login",
-            new LoginCommand("admin@iota.com", "Password123", "iota"));
+            new LoginCommand("admin@iota.com", "Password1234", "iota"));
         login.EnsureSuccessStatusCode();
 
         Assert.True(login.Headers.TryGetValues("Set-Cookie", out var cookies));

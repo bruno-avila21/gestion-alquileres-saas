@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { LoginForm } from '@/features/auth/components/LoginForm'
 import { useLogin } from '@/features/auth/hooks/useLogin'
+import { loginErrorMessage } from '@/features/auth/utils/loginError'
 import { IcArrowR } from '@/shared/components/ui/Icons'
 
 const ICL_SERIES = [1.1218, 1.1542, 1.1981, 1.2358, 1.2794, 1.3210, 1.3680, 1.4115, 1.4602, 1.5104, 1.5621, 1.6210]
@@ -26,7 +27,7 @@ function MiniSpark({ data, color, w = 280, h = 48 }: { data: number[]; color: st
 
 export default function AdminLoginPage() {
   const mutation = useLogin()
-  const errorMessage = mutation.isError ? 'Credenciales inválidas' : undefined
+  const errorMessage = mutation.isError ? loginErrorMessage(mutation.error) : undefined
 
   return (
     <div

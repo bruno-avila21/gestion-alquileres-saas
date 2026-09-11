@@ -234,16 +234,25 @@ public class DashboardAndMeTests : IClassFixture<Phase6ApiFactory>
         Assert.Equal(300_000m, txs[0].Amount);
     }
 
+    /// <summary>
+    /// Re-invitar regenera la contraseña temporal en vez de rechazar con 409. El contrato anterior
+    /// dejaba sin ninguna vía para rotar una credencial perdida o filtrada.
+    /// </summary>
     [Fact]
-    public async Task T10_Invite_already_invited_tenant_returns_409()
+    public async Task T10_Invite_twice_regenerates_the_temp_password()
     {
         var (_, tenantId, adminClient) = await _factory.SetupContractWithTenantAsync("me-t10");
 
-        // First invite succeeds
-        (await adminClient.PostAsync($"/api/v1/tenants/{tenantId}/invite", null)).EnsureSuccessStatusCode();
+        var r1 = await adminClient.PostAsync($"/api/v1/tenants/{tenantId}/invite", null);
+        r1.EnsureSuccessStatusCode();
+        var primera = (await r1.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>())
+            .GetProperty("tempPassword").GetString();
 
-        // Second invite should fail
         var r2 = await adminClient.PostAsync($"/api/v1/tenants/{tenantId}/invite", null);
-        Assert.Equal(HttpStatusCode.Conflict, r2.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, r2.StatusCode);
+        var segunda = (await r2.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>())
+            .GetProperty("tempPassword").GetString();
+
+        Assert.NotEqual(primera, segunda);
     }
 }

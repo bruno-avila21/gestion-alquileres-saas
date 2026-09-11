@@ -34,10 +34,13 @@ public class GetDocumentDownloadUrlQueryHandler
         // enumerating other contracts' documents through a mismatched route.
         if (doc.ContractId != req.ContractId) return null;
 
-        // Tenants may only download documents from one of their own contracts.
-        // Staff (Admin/Staff) may download any document within the organization.
+        // Tenants may only download documents from one of their own contracts, and only those an
+        // admin has shared with them (audit A2). Staff (Admin/Staff) may download any document
+        // within the organization, visible or not.
         if (!req.IsStaff)
         {
+            if (!doc.IsVisibleToTenant) return null;
+
             var appTenant = await _tenants.GetByUserIdAsync(req.RequestingUserId, ct);
             if (appTenant is null) return null;
 

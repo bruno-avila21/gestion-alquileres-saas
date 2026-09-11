@@ -13,5 +13,6 @@ public record CreatePropertyCommand(
     decimal? AreaM2,
     string? Notes,
     Guid? OwnerId,
-    decimal? CommissionPct)
+    decimal? CommissionPct,
+    PropertyListingDetails? Details = null)
     : IRequest<PropertyDto>;

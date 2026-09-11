@@ -19,6 +19,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.Property(d => d.SizeBytes).IsRequired();
         builder.Property(d => d.UploadedByUserId).IsRequired();
         builder.Property(d => d.CreatedAt).HasDefaultValueSql("now()");
+        builder.Property(d => d.IsVisibleToTenant).IsRequired().HasDefaultValue(false);
 
         builder.HasIndex(d => d.OrganizationId);
         builder.HasIndex(d => d.ContractId);

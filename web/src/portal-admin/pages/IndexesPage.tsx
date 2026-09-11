@@ -3,9 +3,6 @@ import { AdminTopbar } from '../layouts/AdminTopbar'
 import { useIndexes } from '@/features/indexes/hooks/useIndexes'
 import { IndexTable } from '@/features/indexes/components/IndexTable'
 import { SyncIndexDialog } from '@/features/indexes/components/SyncIndexDialog'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
-import { Label } from '@/shared/components/ui/label'
 import type { IndexType } from '@/features/indexes/types/index.types'
 
 function firstOfMonthISO(monthsAgo = 0): string {
@@ -27,57 +24,50 @@ export default function IndexesPage() {
     <>
       <AdminTopbar
         crumbs={['Índices']}
-        right={<Button size="sm" onClick={() => setDialogOpen(true)}>Sincronizar</Button>}
+        right={<button className="btn btn--sm btn--primary" onClick={() => setDialogOpen(true)}>Sincronizar</button>}
       />
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Índices BCRA/INDEC</h1>
-      </div>
-
-      <div className="flex gap-4 items-end flex-wrap">
-        <div>
-          <Label>Tipo</Label>
-          <div className="flex gap-2 mt-1">
-            {(['ICL', 'IPC'] as const).map((t) => (
-              <Button
-                key={t}
-                variant={type === t ? 'default' : 'outline'}
-                onClick={() => setType(t)}
-                aria-pressed={type === t}
-              >
-                {t}
-              </Button>
-            ))}
+      <div className="page">
+        <div className="page-h">
+          <div>
+            <h1>Índices BCRA/INDEC</h1>
+            <div className="lead">Valores sincronizados de ICL e IPC</div>
           </div>
         </div>
-        <div>
-          <Label htmlFor="from">Desde</Label>
-          <Input
-            id="from"
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-          />
+
+        <div className="row" style={{ gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div>
+            <label className="label">Tipo</label>
+            <div className="row" style={{ gap: 6, marginTop: 4 }}>
+              {(['ICL', 'IPC'] as const).map((t) => (
+                <button
+                  key={t}
+                  className={`btn btn--sm${type === t ? ' btn--primary' : ''}`}
+                  onClick={() => setType(t)}
+                  aria-pressed={type === t}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="label" htmlFor="from">Desde</label>
+            <input id="from" className="input input--sm" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div>
+            <label className="label" htmlFor="to">Hasta</label>
+            <input id="to" className="input input--sm" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
         </div>
-        <div>
-          <Label htmlFor="to">Hasta</Label>
-          <Input
-            id="to"
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-          />
-        </div>
+
+        <IndexTable rows={data} isLoading={isLoading} error={error} />
+
+        <SyncIndexDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          defaultIndexType={type}
+        />
       </div>
-
-      <IndexTable rows={data} isLoading={isLoading} error={error} />
-
-      <SyncIndexDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        defaultIndexType={type}
-      />
-    </div>
     </>
   )
 }

@@ -16,6 +16,7 @@ export function useRegisterOrg() {
         role: data.role,
         organizationId: data.organizationId,
         organizationSlug: data.organizationSlug,
+        mustChangePassword: data.mustChangePassword,
       })
       navigate('/admin', { replace: true })
     },

@@ -4,9 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useSyncIndex } from '../hooks/useSyncIndex'
 import type { IndexType, SyncIndexResult } from '../types/index.types'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
-import { Label } from '@/shared/components/ui/label'
 
 const currentYear = new Date().getFullYear()
 
@@ -102,85 +99,62 @@ export function SyncIndexDialog({ open, onOpenChange, defaultIndexType = 'ICL' }
 
   const errorMsg = error instanceof Error ? error.message : null
 
+  const resultColor =
+    resultMsg?.type === 'warning' ? 'var(--warn)'
+      : resultMsg?.type === 'success' ? 'var(--ok)'
+        : 'var(--brand-700)'
+
   return (
     <dialog
       ref={dialogRef}
       onClose={handleClose}
-      className="rounded-lg shadow-xl p-6 w-full max-w-md backdrop:bg-black/50"
+      className="card"
+      style={{ padding: 20, width: '100%', maxWidth: 420, border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,.2)' }}
     >
-      <h2 className="text-lg font-semibold mb-4">Sincronizar Índice</h2>
+      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 16px' }}>Sincronizar índice</h2>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <Label htmlFor="indexType">Tipo de índice</Label>
-          <select
-            id="indexType"
-            {...register('indexType')}
-            className="mt-1 block w-full border border-slate-300 rounded px-3 py-2 text-sm"
-          >
+          <label className="label" htmlFor="indexType">Tipo de índice</label>
+          <select id="indexType" className="select" {...register('indexType')}>
             <option value="ICL">ICL</option>
             <option value="IPC">IPC</option>
           </select>
-          {errors.indexType && (
-            <p role="alert" className="text-red-600 text-xs mt-1">{errors.indexType.message}</p>
-          )}
+          {errors.indexType && <p role="alert" style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)', marginTop: 4 }}>{errors.indexType.message}</p>}
         </div>
 
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <Label htmlFor="month">Mes (1–12)</Label>
-            <Input
-              id="month"
-              type="number"
-              min={1}
-              max={12}
-              {...register('month')}
-            />
-            {errors.month && (
-              <p role="alert" className="text-red-600 text-xs mt-1">{errors.month.message}</p>
-            )}
+        <div className="row" style={{ gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label className="label" htmlFor="month">Mes (1–12)</label>
+            <input id="month" className="input" type="number" min={1} max={12} {...register('month')} />
+            {errors.month && <p role="alert" style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)', marginTop: 4 }}>{errors.month.message}</p>}
           </div>
-          <div className="flex-1">
-            <Label htmlFor="year">Año</Label>
-            <Input
-              id="year"
-              type="number"
-              min={2000}
-              max={currentYear}
-              {...register('year')}
-            />
-            {errors.year && (
-              <p role="alert" className="text-red-600 text-xs mt-1">{errors.year.message}</p>
-            )}
+          <div style={{ flex: 1 }}>
+            <label className="label" htmlFor="year">Año</label>
+            <input id="year" className="input" type="number" min={2000} max={currentYear} {...register('year')} />
+            {errors.year && <p role="alert" style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)', marginTop: 4 }}>{errors.year.message}</p>}
           </div>
         </div>
 
         {errorMsg && (
-          <div role="alert" className="text-red-700 bg-red-50 rounded p-3 text-sm">
+          <div role="alert" style={{ color: 'var(--danger)', background: 'var(--danger-50)', borderRadius: 8, padding: '10px 12px', fontSize: 'var(--fs-sm)' }}>
             {errorMsg}
           </div>
         )}
 
         {resultMsg && (
-          <div
-            className={[
-              'rounded p-3 text-sm',
-              resultMsg.type === 'warning' ? 'bg-yellow-50 text-yellow-800' : '',
-              resultMsg.type === 'info' ? 'bg-blue-50 text-blue-800' : '',
-              resultMsg.type === 'success' ? 'bg-green-50 text-green-800' : '',
-            ].join(' ')}
-          >
+          <div style={{ color: resultColor, background: 'var(--surface-2)', border: '1px solid var(--hairline)', borderRadius: 8, padding: '10px 12px', fontSize: 'var(--fs-sm)' }}>
             {resultMsg.text}
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>
+        <div className="row" style={{ justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
+          <button type="button" className="btn btn--sm" onClick={handleClose} disabled={isPending}>
             Cancelar
-          </Button>
-          <Button type="submit" disabled={isPending}>
+          </button>
+          <button type="submit" className="btn btn--sm btn--primary" disabled={isPending}>
             {isPending ? 'Sincronizando…' : 'Sincronizar'}
-          </Button>
+          </button>
         </div>
       </form>
     </dialog>

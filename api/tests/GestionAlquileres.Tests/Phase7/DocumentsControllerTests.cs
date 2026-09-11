@@ -195,4 +195,118 @@ public class DocumentsControllerTests : IClassFixture<Phase7ApiFactory>
         var urlRespFromB = await clientB.GetAsync($"/api/v1/contracts/{contractIdA}/documents/{docId}/download-url");
         Assert.Equal(HttpStatusCode.NotFound, urlRespFromB.StatusCode);
     }
+
+    // T11 — REGRESSION (audit 2026-07-31, critical): visibility may only be changed through the
+    // document's OWN contract route. The controller used to check ownership *after* the command
+    // had already saved, so this call returned 404 while the flag was persisted — and the tenant
+    // of the other contract could then download the file via /me/documents.
+    [Fact]
+    public async Task T11_SetVisibility_DocumentFromAnotherContract_Returns404AndDoesNotWrite()
+    {
+        var (contractA, client) = await _factory.SetupContractAsync("doc-t11");
+        var contractB = await CreateSecondContractAsync(client, "doc-t11");
+
+        // Contract B gets a private document.
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent(Encoding.UTF8.GetBytes("informe privado"))
+            { Headers = { { "Content-Type", "application/pdf" } } }, "file", "privado.pdf");
+        content.Add(new StringContent("false"), "isVisibleToTenant");
+        var uploadResp = await client.PostAsync($"/api/v1/contracts/{contractB}/documents", content);
+        uploadResp.EnsureSuccessStatusCode();
+        var uploaded = await uploadResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        var docId = uploaded.GetProperty("id").GetGuid();
+        Assert.False(uploaded.GetProperty("isVisibleToTenant").GetBoolean());
+
+        // Same org, same staff user — but the document is addressed through contract A.
+        var patchResp = await client.PatchAsJsonAsync(
+            $"/api/v1/contracts/{contractA}/documents/{docId}/visibility",
+            new { isVisibleToTenant = true });
+        Assert.Equal(HttpStatusCode.NotFound, patchResp.StatusCode);
+
+        // The 404 must mean "nothing happened": the document is still private.
+        var listResp = await client.GetAsync($"/api/v1/contracts/{contractB}/documents");
+        listResp.EnsureSuccessStatusCode();
+        var docs = await listResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal(1, docs.GetArrayLength());
+        Assert.False(docs[0].GetProperty("isVisibleToTenant").GetBoolean());
+    }
+
+    // T12 — the matching pair still works, so T11 is not passing because visibility is broken.
+    [Fact]
+    public async Task T12_SetVisibility_OwnContract_Returns200AndFlips()
+    {
+        var (contractId, client) = await _factory.SetupContractAsync("doc-t12");
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent(Encoding.UTF8.GetBytes("contrato firmado"))
+            { Headers = { { "Content-Type", "application/pdf" } } }, "file", "contrato.pdf");
+        content.Add(new StringContent("false"), "isVisibleToTenant");
+        var uploadResp = await client.PostAsync($"/api/v1/contracts/{contractId}/documents", content);
+        uploadResp.EnsureSuccessStatusCode();
+        var uploaded = await uploadResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        var docId = uploaded.GetProperty("id").GetGuid();
+
+        var patchResp = await client.PatchAsJsonAsync(
+            $"/api/v1/contracts/{contractId}/documents/{docId}/visibility",
+            new { isVisibleToTenant = true });
+        Assert.Equal(HttpStatusCode.OK, patchResp.StatusCode);
+
+        var patched = await patchResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.True(patched.GetProperty("isVisibleToTenant").GetBoolean());
+        Assert.Equal(contractId, patched.GetProperty("contractId").GetGuid());
+    }
+
+    // T13 — an unknown document id now yields 404 instead of the previous unhandled
+    // KeyNotFoundException, which the exception middleware turned into a 500.
+    [Fact]
+    public async Task T13_SetVisibility_UnknownDocument_Returns404()
+    {
+        var (contractId, client) = await _factory.SetupContractAsync("doc-t13");
+
+        var patchResp = await client.PatchAsJsonAsync(
+            $"/api/v1/contracts/{contractId}/documents/{Guid.NewGuid()}/visibility",
+            new { isVisibleToTenant = true });
+
+        Assert.Equal(HttpStatusCode.NotFound, patchResp.StatusCode);
+    }
+
+    /// <summary>Creates a second property/tenant/contract inside the SAME organization as `client`.</summary>
+    private static async Task<Guid> CreateSecondContractAsync(HttpClient client, string slug)
+    {
+        var propResp = await client.PostAsJsonAsync("/api/v1/properties", new
+        {
+            address = "Corrientes 2000", city = "CABA", province = "CABA",
+            propertyType = "Apartment", areaM2 = (decimal?)null, notes = (string?)null,
+        });
+        propResp.EnsureSuccessStatusCode();
+        var propId = (await propResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>())
+            .GetProperty("id").GetGuid();
+
+        var tenantResp = await client.PostAsJsonAsync("/api/v1/tenants", new
+        {
+            firstName = "Beto", lastName = "Pérez", dni = "29999222",
+            email = $"beto@{slug}.com", phone = (string?)null,
+        });
+        tenantResp.EnsureSuccessStatusCode();
+        var tenantId = (await tenantResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>())
+            .GetProperty("id").GetGuid();
+
+        var contractResp = await client.PostAsJsonAsync("/api/v1/contracts", new
+        {
+            propertyId = propId,
+            appTenantId = tenantId,
+            startDate = "2026-01-01",
+            endDate = "2028-01-01",
+            monthlyRent = 300_000m,
+            currency = "ARS",
+            adjustmentType = "Manual",
+            adjustmentFrequency = "Quarterly",
+            dayOfMonth = 1,
+            depositAmount = (decimal?)null,
+            notes = (string?)null,
+        });
+        contractResp.EnsureSuccessStatusCode();
+        return (await contractResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>())
+            .GetProperty("id").GetGuid();
+    }
 }

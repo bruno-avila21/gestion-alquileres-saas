@@ -9,5 +9,15 @@
   },
   "DocumentToken": {
     "Secret": "generate-a-random-32+-char-secret-for-local-dev"
+  },
+
+  "_storage_comment": "Recomendado: usar S3 contra el MinIO de docker-compose, para que el entorno local ejercite el MISMO camino de código que producción (donde SecuritySettingsValidator exige Provider=S3). Levantalo con 'docker compose up -d minio minio-init'. Si preferís no depender de Docker, poné Provider=Local y BasePath a una carpeta absoluta — NUNCA lo dejes en \"\", porque un string vacío no es null y rompe el primer upload.",
+  "Storage": {
+    "Provider": "S3",
+    "Bucket": "documents",
+    "ServiceUrl": "http://localhost:9000",
+    "AccessKey": "minioadmin",
+    "SecretKey": "minioadmin",
+    "ForcePathStyle": true
   }
 }

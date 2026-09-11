@@ -14,6 +14,16 @@ export function IcDoc({ size = 16, style, className }: IconProps) {
   )
 }
 
+export function IcArchive({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={style} className={className}>
+      <rect x="3" y="4" width="18" height="4" rx="1"/>
+      <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/>
+      <path d="M10 12h4"/>
+    </svg>
+  )
+}
+
 export function IcAlert({ size = 16, style, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={style} className={className}>
@@ -289,6 +299,32 @@ export function IcMail({ size = 16, style, className }: IconProps) {
   )
 }
 
+export function IcCamera({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={style} className={className}>
+      <path d="M4 8h3l2-2h6l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/>
+      <circle cx="12" cy="13" r="3.5"/>
+    </svg>
+  )
+}
+
+export function IcStar({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={style} className={className}>
+      <path d="m12 3 2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7Z"/>
+    </svg>
+  )
+}
+
+export function IcTag({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={style} className={className}>
+      <path d="M12.6 3H6a2 2 0 0 0-2 2v6.6a1 1 0 0 0 .3.7l9 9a1 1 0 0 0 1.4 0l6.6-6.6a1 1 0 0 0 0-1.4l-9-9a1 1 0 0 0-.7-.3Z"/>
+      <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+    </svg>
+  )
+}
+
 // Sparkline component (shared utility)
 interface SparkProps {
   data: number[]
@@ -311,6 +347,25 @@ export function Spark({ data, color = 'var(--brand)', w = 96, h = 28 }: SparkPro
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
       <polygon points={areaPts} fill={color} opacity={0.1} />
       <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function IcCalculator({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={style} className={className} aria-hidden="true">
+      <rect x="4" y="2.5" width="16" height="19" rx="2.5" />
+      <path d="M8 6.5h8M8 11h.01M12 11h.01M16 11h.01M8 14.5h.01M12 14.5h.01M16 14.5h.01M8 18h.01M12 18h4" />
+    </svg>
+  )
+}
+
+export function IcHelp({ size = 16, style, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={style} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="9.25" />
+      <path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 4" />
+      <path d="M12 17.3h.01" />
     </svg>
   )
 }

@@ -16,7 +16,16 @@ public class ContractConfiguration : IEntityTypeConfiguration<Contract>
         builder.Property(c => c.AppTenantId).IsRequired();
         builder.Property(c => c.MonthlyRent).HasPrecision(14, 2).IsRequired();
         builder.Property(c => c.DepositAmount).HasPrecision(14, 2);
+
+        // Porcentaje de ajuste fijo. (6,3) admite hasta 999,999% — holgado para cualquier escalón
+        // pactado, sin dejar de acotar una carga errónea a nivel base.
+        builder.Property(c => c.AdjustmentPercent).HasPrecision(6, 3);
         builder.Property(c => c.DayOfMonth).IsRequired();
+        // Tasa punitoria diaria. (6,4) admite hasta 99,9999% por día: holgado para cualquier
+        // punitorio pactado y a la vez acota a nivel base una carga erróneamente grande.
+        builder.Property(c => c.LateFeeDailyRate).HasPrecision(6, 4);
+        builder.Property(c => c.LateFeeGraceDays).IsRequired().HasDefaultValue(0);
+
         builder.Property(c => c.Notes).HasMaxLength(2000);
         builder.Property(c => c.CreatedAt).HasDefaultValueSql("now()");
 
@@ -24,6 +33,14 @@ public class ContractConfiguration : IEntityTypeConfiguration<Contract>
         builder.HasIndex(c => new { c.OrganizationId, c.Status });
         builder.HasIndex(c => c.AppTenantId);
         builder.HasIndex(c => c.PropertyId);
+
+        // Optimistic concurrency on the contract (audit M7). The unique (ContractId, EffectiveDate)
+        // index stops a duplicate RentHistory row, but it does NOT stop a lost update on MonthlyRent
+        // when a manual adjustment and the scheduled job run concurrently with different effective
+        // dates: both read the same previous rent and the last writer wins. Mapping PostgreSQL's system
+        // column xmin as the concurrency token makes the second SaveChanges fail loudly (→ 409 via the
+        // exception middleware) instead of silently overwriting. No real column is added.
+        builder.UseXminAsConcurrencyToken();
 
         builder.HasOne(c => c.Property)
             .WithMany()

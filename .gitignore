@@ -23,20 +23,32 @@ dist/
 
 # Claude Code settings locales
 .claude/settings.local.json
+# Capturas de fallos del hook qa-captura (efímeras, por máquina). Se crean en el
+# directorio desde el que se corrió el runner — `cd web && pnpm test` las deja en
+# web/.claude/ — así que el patrón tiene que valer a cualquier profundidad.
+**/.claude/qa/
 
 # Entorno
 .env
 .env.local
 .env.*.local
 
-# Storage local
-uploads/
-storage/
-minio-data/
+# Storage local (datos en disco, NO código).
+# Las reglas van ancladas con "/" inicial: sin anclar, "storage/" matchea cualquier carpeta con ese
+# nombre a cualquier profundidad y se tragaba api/src/GestionAlquileres.Infrastructure/Storage/,
+# dejando LocalFileStorageService, S3StorageService y DocumentTokenService fuera del repositorio
+# (un clone limpio no compilaba).
+/uploads/
+/storage/
+/minio-data/
+**/bin/uploads/
 
 # Logs
 logs/
 *.log
+
+# PDF de muestra generados al verificar QuestPDF (recibos/liquidaciones) — no son código.
+api/artifacts-qa/
 
 # IDE
 .idea/
@@ -60,3 +72,21 @@ Template/
 
 # Claude worktrees
 .claude/worktrees/
+
+# graphify — grafo generado, no versionar
+graphify-out/
+
+# Secretos de deploy y salidas de herramientas (nunca commitear)
+*.local.txt
+tools/importar-sitio-tokko/salida-*/
+.env.prod
+
+# Propuesta comercial de Palavecino: analisis del cliente, precios y credenciales de la demo.
+# El repositorio es PUBLICO, asi que esta carpeta no se versiona. Hasta ahora dependia de que
+# nadie hiciera "git add ." sobre ella; con la guia de demo adentro (que lleva la clave del panel)
+# eso dejo de ser suficiente.
+docs/propuesta-palavecino/
+
+# Python: los tools se importan entre si (sanear-superficies carga scrape.py) y dejan cache.
+__pycache__/
+*.pyc

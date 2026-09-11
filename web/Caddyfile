@@ -1,0 +1,34 @@
+# Un solo origen para el SPA y la API.
+#
+# Local  : SITE_ADDRESS sin definir → escucha en :8080 por HTTP plano.
+# VPS    : SITE_ADDRESS=alquilar.tudominio.com → Caddy saca y renueva el certificado TLS solo.
+#
+# Servir ambos desde el mismo origen elimina CORS por completo (el navegador ni manda Origin) y
+# hace que la cookie HttpOnly de sesión viaje sin configuración extra.
+{$SITE_ADDRESS::8080} {
+	encode gzip zstd
+
+	handle /api/* {
+		reverse_proxy {$API_UPSTREAM:api:8080}
+	}
+
+	handle /health* {
+		reverse_proxy {$API_UPSTREAM:api:8080}
+	}
+
+	handle /hangfire* {
+		reverse_proxy {$API_UPSTREAM:api:8080}
+	}
+
+	handle /swagger* {
+		reverse_proxy {$API_UPSTREAM:api:8080}
+	}
+
+	# El SPA: cualquier ruta que no sea un archivo real cae en index.html, o recargar
+	# /admin/contratos daría 404.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

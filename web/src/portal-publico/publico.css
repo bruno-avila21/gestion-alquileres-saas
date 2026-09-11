@@ -1,0 +1,953 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Sitio público de la inmobiliaria — sistema de diseño "Palavecino Sovereign
+   Modern", tomado de Modelo-Stitch-Google/stitch_plataforma_crm_inmobiliaria_
+   multi_tenant (DESIGN.md + portal_inmobiliario_web_desktop_light_mode).
+
+   Corporate Modern con inflexiones editoriales: fondo claro y aireado,
+   bordes hairline de 1px que hacen de estructura (nunca sombras pesadas), y
+   un violeta real reservado para la acción de alto valor. Tipografía Plus
+   Jakarta Sans con kerning ajustado en los títulos y cifras tabulares en
+   todo lo que sea plata o métrica.
+
+   Todo queda bajo `.pp-app` a propósito: `index.css` ya define clases
+   globales con los mismos nombres (`.btn`, `.chip`, `.card`…) para el panel
+   admin, y este sitio se monta en el mismo documento. El ancestro `.pp-app`
+   le da a cada regla especificidad (0,2,0) o más, por encima del (0,1,0) de
+   esas reglas globales, así que el sitio público nunca hereda estilos del
+   panel ni al revés — sin tener que renombrar clases.
+
+   El tema por defecto es CLARO. A diferencia de la versión anterior, no se
+   sigue `prefers-color-scheme`: el modelo de diseño es light-first y una
+   inmobiliaria se muestra de día. El oscuro queda como elección explícita
+   del visitante (`data-theme="dark"`), y está diseñado, no derivado.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.pp-app {
+  /* Superficies — base clínica, aireada */
+  --ground: #f8fafc;          /* lienzo de la página */
+  --surface: #ffffff;         /* tarjetas, inputs, modales */
+  --surface-2: #f1f5f9;       /* pistas de segmentos, chips, huecos */
+  --surface-3: #e5eeff;       /* realce frío para bandas */
+
+  /* Tinta */
+  --ink: #0f172a;             /* títulos, cifras críticas */
+  --muted: #64748b;           /* subtexto, unidades, metadatos */
+  --faint: #94a3b8;           /* placeholders, sellos */
+
+  /* Estructura */
+  --hairline: #e2e8f0;        /* la línea que ordena todo */
+  --hairline-strong: #cbd5e1;
+
+  /* Violeta de firma — sólo acción de alto valor */
+  --violet: #6d28d9;
+  --violet-deep: #5300b7;
+  --violet-bright: #7c3aed;
+  --violet-tint: #f5f3ff;
+  --violet-edge: #ddd6fe;
+  /* Tinta sobre relleno violeta. En oscuro el violeta se aclara para verse sobre
+     el fondo, y el blanco encima pierde contraste: ahí la tinta pasa a ser oscura. */
+  --on-violet: #ffffff;
+
+  /* Pizarra profunda — hero, footer, cintas invertidas */
+  --slate: #213145;
+  --slate-deep: #16223160;
+  --on-slate: #eaf1ff;
+  --on-slate-soft: #b8c6dc;
+
+  /* Semánticos */
+  --wa: #059669;
+  --mint: #ecfdf5;
+  --mint-ink: #047857;
+  --mint-edge: #a7f3d0;
+  --amber: #fef3c7;
+  --amber-ink: #92400e;
+  --amber-edge: #fde68a;
+  --danger: #e11d48;
+
+  /* Elevación — hairline + sombra difusa teñida de violeta */
+  --e1: 0 1px 3px 0 rgba(15, 23, 42, .04), 0 1px 2px -1px rgba(15, 23, 42, .02);
+  --e2: 0 10px 25px -5px rgba(15, 23, 42, .06), 0 8px 10px -6px rgba(109, 40, 217, .04);
+  --e3: 0 20px 35px -10px rgba(15, 23, 42, .12), 0 12px 16px -8px rgba(109, 40, 217, .08);
+
+  /* Radios — disciplina afilada, no almohadón */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 16px;
+
+  --maxw: 1280px;
+
+  background: var(--ground);
+  color: var(--ink);
+  /* La inmobiliaria puede cambiar la combinación tipográfica desde el panel; el layout
+     pisa estas dos variables. El valor de acá es el respaldo del diseño por defecto. */
+  --font-headings: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.pp-app[data-theme="dark"] {
+  --ground: #0f1620;
+  --surface: #17202c;
+  --surface-2: #1e2837;
+  --surface-3: #243146;
+  --ink: #e8eef7;
+  --muted: #94a3b8;
+  --faint: #64748b;
+  --hairline: #2a3546;
+  --hairline-strong: #3b4759;
+  --violet: #a78bfa;
+  --violet-deep: #8b5cf6;
+  --violet-bright: #c4b5fd;
+  --violet-tint: #241b3d;
+  --violet-edge: #3b2d5e;
+  --on-violet: #1b1233;
+  --slate: #16202e;
+  --on-slate: #e8eef7;
+  --on-slate-soft: #9fb0c8;
+  --mint: #0d2b21;
+  --mint-ink: #6ee7b7;
+  --mint-edge: #1c4a3a;
+  --amber: #2e2410;
+  --amber-ink: #fcd34d;
+  --amber-edge: #4a3a14;
+  --e1: 0 1px 3px rgba(0, 0, 0, .4);
+  --e2: 0 10px 25px -5px rgba(0, 0, 0, .5);
+  --e3: 0 20px 35px -10px rgba(0, 0, 0, .6);
+}
+
+/* ---------- base ---------- */
+.pp-app, .pp-app *, .pp-app *::before, .pp-app *::after { box-sizing: border-box; }
+.pp-app h1, .pp-app h2, .pp-app h3, .pp-app h4 {
+  font-family: var(--font-headings);
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.pp-app h1 { letter-spacing: -.025em; }
+.pp-app a { color: inherit; text-decoration: none; }
+.pp-app img { display: block; max-width: 100%; }
+.pp-app button { font-family: inherit; cursor: pointer; }
+.pp-app :focus-visible { outline: 2px solid var(--violet-bright); outline-offset: 2px; border-radius: 2px; }
+.pp-app .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; width: 100%; }
+.pp-app .num { font-variant-numeric: tabular-nums lining-nums; }
+.pp-app .visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* Etiquetas chicas: versalitas con tracking, según el sistema */
+.pp-app .label {
+  font-size: 11px; font-weight: 700; line-height: 1.3;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+
+/* ---------- top bar ---------- */
+.pp-app .topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--hairline);
+}
+.pp-app .topbar .wrap { display: flex; align-items: center; gap: 28px; height: 72px; }
+.pp-app .brand { display: flex; align-items: center; gap: 12px; margin-right: auto; min-width: 0; }
+.pp-app .brand-mark {
+  width: 40px; height: 40px; border-radius: var(--r-sm); flex-shrink: 0;
+  background: linear-gradient(145deg, var(--violet-bright), var(--violet-deep));
+  display: grid; place-items: center; color: var(--on-violet);
+  font-weight: 800; font-size: 18px; letter-spacing: -.03em;
+  box-shadow: 0 1px 2px rgba(109, 40, 217, .28);
+}
+/* El logo se encaja en la misma caja que el monograma, con `contain`: un logo apaisado o
+   uno cuadrado entran los dos sin deformarse ni empujar la barra. */
+.pp-app .brand-logo {
+  height: 40px; width: auto; max-width: 168px; object-fit: contain; flex-shrink: 0;
+}
+.pp-app .brand-name { font-weight: 700; font-size: 17px; letter-spacing: -.02em; line-height: 1.2; }
+.pp-app .brand-name small {
+  display: block; font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); margin-top: 2px;
+}
+.pp-app .nav { display: flex; align-items: center; gap: 4px; }
+.pp-app .nav a {
+  position: relative; padding: 8px 12px; border-radius: var(--r-sm);
+  color: var(--muted); font-weight: 600; font-size: 14px;
+  transition: color .15s, background .15s;
+}
+.pp-app .nav a:hover { color: var(--ink); background: var(--surface-2); }
+.pp-app .nav a.active { color: var(--violet); background: transparent; }
+.pp-app .nav a.active::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px;
+  height: 2px; border-radius: 2px; background: var(--violet);
+}
+.pp-app .top-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.pp-app .icon-btn {
+  width: 40px; height: 40px; border-radius: var(--r-sm);
+  border: 1px solid var(--hairline); background: var(--surface);
+  color: var(--muted); display: grid; place-items: center; transition: .15s;
+}
+.pp-app .icon-btn:hover { color: var(--violet); border-color: var(--hairline-strong); background: var(--surface-2); }
+.pp-app .top-cta {
+  display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 18px;
+  border-radius: var(--r-sm); background: var(--violet); color: var(--on-violet);
+  font-weight: 700; font-size: 14px; border: none; white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(109, 40, 217, .2); transition: background .15s;
+}
+.pp-app .top-cta:hover { background: var(--violet-deep); }
+.pp-app .burger { display: none; }
+
+/* ---------- hero ---------- */
+.pp-app .hero {
+  position: relative; overflow: hidden;
+  background: var(--slate); color: var(--on-slate);
+  padding: 64px 0 72px;
+  border-bottom: 1px solid var(--hairline);
+}
+.pp-app .hero-bg { position: absolute; inset: 0; z-index: 0; }
+/* La foto del hero se ve. El scrim de antes (brillo .42 + dos degradados al 58% y 82%)
+   dejaba pasar menos del 5% de la imagen: era un fondo negro con una foto adentro que
+   nadie distinguía. Ahora el velo alcanza para que el título se lea —con su sombra de
+   texto— y la propiedad se reconozca. */
+.pp-app .hero-bg img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: brightness(.72) contrast(1.04); transform: scale(1.05);
+}
+.pp-app .hero-bg::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(to top, rgba(33, 49, 69, .9) 0%, rgba(33, 49, 69, .44) 34%, rgba(33, 49, 69, .12) 78%, rgba(33, 49, 69, .04) 100%),
+    linear-gradient(to right, rgba(33, 49, 69, .52), rgba(33, 49, 69, .04) 58%, rgba(33, 49, 69, .22));
+}
+.pp-app .hero .wrap { position: relative; z-index: 1; }
+.pp-app .hero-pill {
+  display: inline-flex; align-items: center; gap: 9px; margin-bottom: 24px;
+  padding: 7px 14px; border-radius: 999px;
+  background: rgba(255, 255, 255, .12); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, .18);
+  font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--on-slate);
+}
+.pp-app .hero-pill .live {
+  width: 7px; height: 7px; border-radius: 50%; background: #c4b5fd;
+  box-shadow: 0 0 0 3px rgba(196, 181, 253, .25); animation: pp-live 2.4s ease-in-out infinite;
+}
+@keyframes pp-live { 50% { opacity: .45; } }
+.pp-app .hero h1 {
+  color: #fff; font-size: clamp(32px, 4.6vw, 48px); font-weight: 800;
+  max-width: 20ch; line-height: 1.1;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, .55), 0 1px 3px rgba(0, 0, 0, .35);
+}
+.pp-app .hero .lede {
+  color: rgba(234, 241, 255, .94); font-size: 16px; line-height: 1.65;
+  max-width: 58ch; margin: 20px 0 0;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, .5);
+}
+.pp-app .hero .lede b { color: #d3bbff; font-weight: 700; }
+
+/* ---------- buscador flotante ---------- */
+.pp-app .searchcard {
+  margin-top: 36px; padding: 22px;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--hairline); border-radius: var(--r-lg);
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, .35);
+  color: var(--ink);
+}
+/* El contador va pegado a las solapas, no en el extremo derecho: ahí lo tapa el
+   botón flotante de WhatsApp, que es fijo y cae justo sobre esta franja al
+   cargar la página. */
+.pp-app .search-tabs {
+  display: flex; align-items: center; gap: 18px;
+  padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--hairline);
+  flex-wrap: wrap;
+}
+/* ---------- segmentos con indicador deslizante ----------
+   Un solo componente (components/SegmentGroup.tsx) con dos pieles. El indicador se mueve
+   con las variables --segg-* que el componente calcula midiendo el botón activo; acá cada
+   variante decide qué hacer con esas medidas. La transición va sobre `transform`, `width` y
+   `height`, que sí animan aunque su valor venga de una variable. */
+.pp-app .segg { position: relative; display: inline-flex; }
+.pp-app .segg button {
+  position: relative; z-index: 1;
+  border: none; background: none; font-family: inherit; white-space: nowrap;
+  color: var(--muted); transition: color .18s;
+}
+.pp-app .segg button:not([data-active="true"]):hover { color: var(--ink); }
+.pp-app .segg-indicator {
+  position: absolute; top: 0; left: 0; z-index: 0; opacity: 0;
+  transform: translate(var(--segg-x, 0), var(--segg-y, 0));
+  width: var(--segg-w, 0); height: var(--segg-h, 0);
+  /* Desaceleración exponencial, sin rebote. El sistema de diseño de este sitio es
+     "disciplina afilada, no almohadón": un indicador que se pasa de largo y vuelve se lee
+     como un juguete, y encima sugiere que la opción de al lado llegó a estar seleccionada. */
+  transition:
+    transform .26s cubic-bezier(.22, 1, .36, 1),
+    width .26s cubic-bezier(.22, 1, .36, 1),
+    height .18s ease,
+    opacity .18s ease;
+}
+.pp-app .segg.is-ready .segg-indicator { opacity: 1; }
+
+/* Subrayado (portada) — solapas de texto al modo del Pivot de Fluent, con la línea base
+   que las une y el subrayado del ancho exacto del rótulo activo. */
+.pp-app .segg--underline { gap: 2px; border-bottom: 1px solid var(--hairline); }
+.pp-app .segg--underline button {
+  padding: 11px 14px 13px; border-radius: var(--r-xs) var(--r-xs) 0 0;
+  font-size: 14.5px; font-weight: 600; letter-spacing: -.005em;
+}
+.pp-app .segg--underline button:not([data-active="true"]):hover { background: var(--surface-2); }
+.pp-app .segg--underline button[data-active="true"] { color: var(--violet); font-weight: 700; }
+.pp-app .segg--underline .segg-indicator {
+  top: auto; bottom: -1px; height: 2px; border-radius: 2px 2px 0 0;
+  background: var(--violet);
+  transform: translateX(var(--segg-x, 0));
+}
+
+/* Pastilla (filtros) — indicador relleno que se desliza por detrás, al modo del
+   SegmentGroup de Chakra. La tinta del rótulo activo es la que contrasta contra el acento
+   elegido por la inmobiliaria (`--on-violet`), no un blanco fijo que se rompe con un
+   acento claro. */
+.pp-app .segg--pill {
+  gap: 3px; padding: 4px; width: 100%; flex-wrap: wrap;
+  background: var(--surface-2); border: 1px solid var(--hairline); border-radius: var(--r-sm);
+}
+.pp-app .segg--pill button {
+  flex: 1 1 auto; min-width: 64px; padding: 8px 12px; border-radius: calc(var(--r-sm) - 3px);
+  font-size: 12.5px; font-weight: 600;
+}
+.pp-app .segg--pill button[data-active="true"] { color: var(--on-violet); font-weight: 700; }
+.pp-app .segg--pill button:not([data-active="true"]):hover { background: var(--surface); }
+/* Cuatro opciones no entran en una fila de 288 px sin recortar "Temporario", y dejarlas
+   fluir da 3 + 1, que se lee como un control mal cerrado. Dos columnas parejas. */
+.pp-app .segg--cols2 button { flex: 1 1 calc(50% - 3px); }
+.pp-app .segg--pill .segg-indicator {
+  border-radius: calc(var(--r-sm) - 3px);
+  background: var(--violet); box-shadow: var(--e1);
+}
+.pp-app .search-hint { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+
+.pp-app .search-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap: 14px; align-items: end; }
+.pp-app .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.pp-app .field > label { font-size: 12px; font-weight: 700; color: var(--ink); letter-spacing: -.005em; }
+.pp-app .field .ctrl { position: relative; display: flex; align-items: center; }
+.pp-app .field .ctrl > svg { position: absolute; left: 13px; color: var(--faint); pointer-events: none; }
+.pp-app .field input, .pp-app .field select {
+  width: 100%; height: 48px; padding: 0 14px 0 38px;
+  background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-sm);
+  font-family: inherit; font-size: 14.5px; font-weight: 500; color: var(--ink);
+  outline: none; transition: border-color .15s, box-shadow .15s;
+  appearance: none;
+}
+.pp-app .field select { cursor: pointer; padding-right: 34px; }
+.pp-app .field .ctrl::after {
+  content: ""; position: absolute; right: 15px; width: 7px; height: 7px; pointer-events: none;
+  border-right: 1.8px solid var(--faint); border-bottom: 1.8px solid var(--faint);
+  transform: translateY(-2px) rotate(45deg);
+}
+.pp-app .field .ctrl:not(:has(select))::after { display: none; }
+/* Importe + moneda en un solo control: el presupuesto sin moneda mezclaba dólares con
+   pesos en el listado. El selector va pegado a la derecha del número, no en otro campo. */
+.pp-app .field .ctrl--money { gap: 8px; }
+.pp-app .field .ctrl--money input { flex: 1; min-width: 0; }
+.pp-app .field .cur-select {
+  flex: 0 0 auto; width: auto; min-width: 98px; padding-left: 12px; padding-right: 30px;
+  color: var(--muted); font-weight: 600;
+}
+.pp-app .field input::placeholder { color: var(--faint); }
+.pp-app .field input:focus, .pp-app .field select:focus {
+  border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124, 58, 237, .15);
+}
+.pp-app .search-btn {
+  height: 48px; padding: 0 26px; border: none; border-radius: var(--r-sm);
+  background: var(--violet); color: var(--on-violet); font-weight: 700; font-size: 15px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  box-shadow: 0 1px 2px rgba(109, 40, 217, .2); transition: background .15s, box-shadow .15s;
+  white-space: nowrap;
+}
+.pp-app .search-btn:hover { background: var(--violet-deep); box-shadow: var(--e2); }
+
+.pp-app .quicktags {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--hairline);
+  font-size: 12.5px;
+}
+.pp-app .quicktags .qt-label { color: var(--muted); font-weight: 600; }
+.pp-app .quicktags button {
+  padding: 5px 11px; border-radius: var(--r-xs);
+  background: var(--surface-2); border: 1px solid var(--hairline);
+  color: var(--ink); font-size: 12.5px; font-weight: 500; transition: .15s;
+}
+.pp-app .quicktags button:hover { background: var(--violet-tint); border-color: var(--violet-edge); color: var(--violet); }
+
+/* ---------- cinta de métricas ---------- */
+.pp-app .trustband { background: var(--surface); border-bottom: 1px solid var(--hairline); padding: 28px 0; }
+.pp-app .trustband .cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+.pp-app .metric { display: flex; align-items: center; gap: 14px; padding: 4px 24px; }
+.pp-app .metric + .metric { border-left: 1px solid var(--hairline); }
+.pp-app .metric:first-child { padding-left: 0; }
+.pp-app .metric .ico {
+  width: 46px; height: 46px; border-radius: var(--r-sm); flex-shrink: 0;
+  background: var(--surface-2); border: 1px solid var(--hairline);
+  color: var(--violet); display: grid; place-items: center;
+}
+.pp-app .metric .v { font-size: 21px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+.pp-app .metric .k { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+
+/* ---------- secciones ---------- */
+.pp-app .section { padding: 72px 0; }
+.pp-app .section--alt { background: var(--surface); border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+.pp-app .section-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 20px; margin-bottom: 36px; flex-wrap: wrap;
+}
+.pp-app .section-head .kicker {
+  font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--violet); margin-bottom: 10px;
+}
+.pp-app .section-head h2 { font-size: clamp(24px, 3vw, 32px); }
+.pp-app .section-head p { color: var(--muted); margin: 10px 0 0; font-size: 15px; max-width: 60ch; }
+.pp-app .head-aside { display: flex; align-items: center; gap: 14px; }
+.pp-app .head-aside .count { font-size: 13px; color: var(--muted); font-weight: 500; }
+.pp-app .link-btn {
+  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  padding: 9px 16px; border-radius: var(--r-sm);
+  border: 1px solid var(--hairline); background: var(--surface);
+  color: var(--violet); font-weight: 700; font-size: 14px; transition: .15s;
+}
+.pp-app .link-btn:hover { background: var(--surface-2); border-color: var(--hairline-strong); }
+
+/* ---------- tarjeta de propiedad ---------- */
+.pp-app .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px; }
+.pp-app .card {
+  position: relative; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r);
+  box-shadow: var(--e1); transition: box-shadow .2s, border-color .2s, transform .2s;
+}
+.pp-app .card:hover { box-shadow: var(--e2); border-color: var(--hairline-strong); transform: translateY(-2px); }
+.pp-app .card:focus-within { border-color: var(--violet); }
+.pp-app .card-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--surface-2); }
+.pp-app .card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
+.pp-app .card:hover .card-media img { transform: scale(1.05); }
+
+/* Enlace estirado: la tarjeta entera navega a la ficha, pero los botones de
+   acción quedan por encima (z-index 2) para que sigan siendo cliqueables.
+   Evita anidar <a> dentro de <a>, que es HTML inválido. */
+.pp-app .card-link::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+
+.pp-app .card-tags { position: absolute; top: 12px; left: 12px; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; }
+.pp-app .tag {
+  display: inline-flex; align-items: center; padding: 4px 10px; border-radius: var(--r-xs);
+  font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+  border: 1px solid transparent; box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
+}
+.pp-app .tag--sale { background: var(--violet-tint); color: var(--violet); border-color: var(--violet-edge); }
+.pp-app .tag--rent { background: var(--mint); color: var(--mint-ink); border-color: var(--mint-edge); }
+.pp-app .tag--featured { background: var(--amber); color: var(--amber-ink); border-color: var(--amber-edge); }
+.pp-app .tag--soft {
+  background: color-mix(in srgb, var(--surface) 90%, transparent); color: var(--ink);
+  border-color: var(--hairline); backdrop-filter: blur(4px); letter-spacing: .03em;
+}
+.pp-app .card-code {
+  position: absolute; bottom: 12px; left: 12px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: var(--r-xs);
+  background: rgba(15, 23, 42, .72); backdrop-filter: blur(4px);
+  color: #fff; font-size: 11px; font-weight: 600; letter-spacing: .04em;
+}
+
+.pp-app .card-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.pp-app .price-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pp-app .price {
+  font-size: 22px; font-weight: 800; letter-spacing: -.025em; color: var(--ink);
+  font-variant-numeric: tabular-nums lining-nums; white-space: nowrap;
+}
+.pp-app .price .cur { font-size: 15px; font-weight: 700; color: var(--muted); margin-right: 2px; }
+.pp-app .price .per { font-size: 13px; font-weight: 500; color: var(--muted); }
+.pp-app .expenses { font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pp-app .card h3 {
+  font-size: 17px; font-weight: 700; line-height: 1.35; letter-spacing: -.01em;
+  transition: color .15s;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pp-app .card:hover h3 { color: var(--violet); }
+.pp-app .addr { display: flex; align-items: flex-start; gap: 7px; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.pp-app .addr svg { flex-shrink: 0; color: var(--faint); margin-top: 2px; }
+
+/* Franja de métricas: 3 columnas separadas por hairlines, como en el modelo */
+.pp-app .specs {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  margin-top: auto; padding: 14px 0;
+  border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline);
+  text-align: center;
+}
+.pp-app .spec { min-width: 0; }
+.pp-app .spec .k { display: block; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+.pp-app .spec .v {
+  display: block; margin-top: 2px; font-size: 15px; font-weight: 700; color: var(--ink);
+  letter-spacing: -.01em; font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pp-app .card-actions { display: flex; align-items: center; gap: 10px; position: relative; z-index: 2; }
+.pp-app .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 42px; padding: 0 18px; border-radius: var(--r-sm); border: 1px solid transparent;
+  font-family: inherit; font-weight: 700; font-size: 14px; transition: .15s; white-space: nowrap;
+}
+.pp-app .btn--soft {
+  flex: 1; background: var(--surface-2); border-color: var(--hairline); color: var(--violet);
+}
+.pp-app .btn--soft:hover { background: var(--violet-tint); border-color: var(--violet-edge); }
+.pp-app .btn--primary { background: var(--violet); color: var(--on-violet); box-shadow: 0 1px 2px rgba(109, 40, 217, .2); }
+.pp-app .btn--primary:hover { background: var(--violet-deep); }
+.pp-app .btn--ghost { background: var(--surface); border-color: var(--hairline-strong); color: var(--ink); }
+.pp-app .btn--ghost:hover { background: var(--surface-2); border-color: var(--violet); color: var(--violet); }
+.pp-app .btn--wa { background: var(--wa); color: #fff; }
+.pp-app .btn--wa:hover { filter: brightness(1.08); }
+.pp-app .btn--block { width: 100%; }
+
+/* ---------- listado ---------- */
+.pp-app .listado { display: grid; grid-template-columns: 288px 1fr; gap: 32px; align-items: start; padding-top: 40px; padding-bottom: 80px; }
+.pp-app .filters {
+  position: sticky; top: 88px; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r);
+  box-shadow: var(--e1); max-height: calc(100vh - 112px); overflow-y: auto;
+}
+.pp-app .filters-h {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 16px 18px; border-bottom: 1px solid var(--hairline); background: var(--ground);
+  position: sticky; top: 0; z-index: 1;
+}
+.pp-app .filters-h h3 { font-size: 15px; }
+.pp-app .filters-h button { background: none; border: none; color: var(--violet); font-weight: 700; font-size: 13px; font-family: inherit; }
+.pp-app .fgroup { padding: 16px 18px; border-bottom: 1px solid var(--hairline); }
+.pp-app .fgroup:last-child { border-bottom: none; }
+/* El título del grupo. El `:not(.facet)` no es opcional: las filas de facet
+   también son <label> hijos directos de .fgroup, y sin excluirlas heredaban el
+   `display:block` y el mayúsculas de acá, que aplastaba su layout flex y pegaba
+   el contador al nombre ("CASA35"). */
+.pp-app .fgroup > label:not(.facet) {
+  display: block; margin-bottom: 12px;
+  font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+}
+.pp-app .facet {
+  display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer;
+  font-size: 14px; color: var(--ink); transition: color .12s;
+}
+.pp-app .facet input { accent-color: var(--violet); width: 16px; height: 16px; flex-shrink: 0; border-radius: var(--r-xs); }
+.pp-app .facet .cnt { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--faint); font-variant-numeric: tabular-nums; }
+.pp-app .facet:hover { color: var(--violet); }
+.pp-app .facet-empty { font-size: 13px; color: var(--faint); }
+.pp-app .price-inputs { display: flex; gap: 8px; align-items: center; }
+.pp-app .price-inputs input {
+  width: 100%; height: 40px; padding: 0 10px;
+  border: 1px solid var(--hairline); background: var(--surface); border-radius: var(--r-sm);
+  font-family: inherit; font-size: 13.5px; font-variant-numeric: tabular-nums; color: var(--ink); outline: none;
+}
+.pp-app .price-inputs input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124, 58, 237, .15); }
+/* Cuatro operaciones no entran en una fila de 254px sin cortar "Temporario":
+   en la barra lateral el segmentado va en dos filas de dos. */
+
+.pp-app .results-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-bottom: 20px; flex-wrap: wrap;
+}
+.pp-app .results-top .count { font-size: 14px; color: var(--muted); }
+.pp-app .results-top .count b { color: var(--ink); font-size: 18px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.pp-app .sortsel { display: flex; align-items: center; gap: 10px; }
+.pp-app .sortsel label { font-size: 13px; color: var(--muted); font-weight: 500; }
+.pp-app .sortsel select {
+  height: 40px; padding: 0 12px; border: 1px solid var(--hairline); background: var(--surface);
+  border-radius: var(--r-sm); font-family: inherit; font-size: 14px; font-weight: 600; color: var(--ink); outline: none; cursor: pointer;
+}
+.pp-app .sortsel select:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124, 58, 237, .15); }
+.pp-app .filter-toggle { display: none; }
+.pp-app .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.pp-app .chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--violet-tint); color: var(--violet); border: 1px solid var(--violet-edge);
+  border-radius: var(--r-xs); padding: 5px 8px 5px 12px; font-size: 13px; font-weight: 600;
+}
+.pp-app .chip button { border: none; background: none; color: inherit; font-size: 15px; line-height: 1; padding: 0; display: grid; place-items: center; }
+.pp-app .empty { grid-column: 1 / -1; text-align: center; padding: 80px 20px; color: var(--muted); }
+.pp-app .empty svg { color: var(--hairline-strong); margin-bottom: 14px; }
+
+/* ---------- paginación ---------- */
+.pp-app .pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 40px; }
+.pp-app .pagination button {
+  height: 40px; padding: 0 18px; border: 1px solid var(--hairline); background: var(--surface);
+  color: var(--ink); border-radius: var(--r-sm); font-family: inherit; font-weight: 700; font-size: 13.5px; transition: .15s;
+}
+.pp-app .pagination button:disabled { opacity: .45; cursor: not-allowed; }
+.pp-app .pagination button:not(:disabled):hover { border-color: var(--violet); color: var(--violet); background: var(--violet-tint); }
+.pp-app .pagination .pageinfo { font-size: 13px; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ---------- estados ---------- */
+.pp-app .state-box { text-align: center; padding: 80px 20px; color: var(--muted); }
+.pp-app .spinner {
+  width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 16px;
+  border: 3px solid var(--hairline); border-top-color: var(--violet); animation: pp-spin .7s linear infinite;
+}
+@keyframes pp-spin { to { transform: rotate(360deg); } }
+.pp-app .skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--hairline) 37%, var(--surface-2) 63%);
+  background-size: 400% 100%; animation: pp-shimmer 1.4s ease infinite;
+}
+@keyframes pp-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+.pp-app .skel-card { border-radius: 0; aspect-ratio: 16 / 10; }
+
+.pp-app .notfound {
+  min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 40px 20px; gap: 12px;
+}
+.pp-app .notfound svg { color: var(--hairline-strong); }
+.pp-app .notfound p { color: var(--muted); max-width: 44ch; }
+
+/* ---------- ficha ---------- */
+.pp-app .detail { padding-top: 28px; padding-bottom: 80px; }
+.pp-app .back {
+  display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;
+  color: var(--muted); font-weight: 600; font-size: 14px; background: none; border: none;
+}
+.pp-app .back:hover { color: var(--violet); }
+.pp-app .detail-grid { display: grid; grid-template-columns: 1.65fr 1fr; gap: 40px; align-items: start; }
+.pp-app .gallery-main {
+  aspect-ratio: 16 / 10; border-radius: var(--r); overflow: hidden;
+  background: var(--surface-2); border: 1px solid var(--hairline); box-shadow: var(--e1);
+}
+.pp-app .gallery-main img { width: 100%; height: 100%; object-fit: cover; }
+.pp-app .thumbs { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.pp-app .thumbs button { padding: 0; border: 2px solid transparent; border-radius: var(--r-sm); background: none; line-height: 0; opacity: .65; transition: .15s; }
+.pp-app .thumbs img { width: 84px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer; }
+.pp-app .thumbs button.on, .pp-app .thumbs button:hover { opacity: 1; border-color: var(--violet); }
+.pp-app .dcontent { margin-top: 32px; }
+.pp-app .dcontent h2 { font-size: clamp(22px, 2.6vw, 28px); }
+.pp-app .dattrs {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  margin: 26px 0; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r);
+}
+/* Las divisiones se dibujan con sombras salientes de cada celda, no con un gap
+   sobre fondo gris: así las celdas sobrantes de la última fila quedan del color
+   de la tarjeta y no del de la línea, y el recorte del contenedor evita que la
+   última fila/columna duplique el borde. */
+.pp-app .dattr {
+  display: flex; flex-direction: column; gap: 4px; padding: 16px;
+  box-shadow: 1px 0 0 var(--hairline), 0 1px 0 var(--hairline);
+}
+.pp-app .dattr .k { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pp-app .dattr .v { font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pp-app .dcontent h4 { font-size: 16px; margin: 28px 0 12px; }
+.pp-app .dcontent p { color: var(--muted); line-height: 1.75; white-space: pre-line; }
+.pp-app .feature-list {
+  list-style: none; padding: 0; margin: 14px 0 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 10px;
+}
+.pp-app .feature-list li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); }
+.pp-app .feature-list svg { color: var(--wa); flex-shrink: 0; }
+.pp-app .mapbox {
+  margin-top: 28px; height: 240px; border-radius: var(--r); border: 1px solid var(--hairline);
+  overflow: hidden; position: relative;
+  background:
+    linear-gradient(var(--hairline) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, var(--hairline) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--surface-2);
+}
+.pp-app .mapbox .pin { position: absolute; left: 50%; top: 48%; transform: translate(-50%, -100%); color: var(--violet); }
+.pp-app .mapbox .maplabel {
+  position: absolute; left: 16px; bottom: 14px; display: flex; align-items: center; gap: 7px;
+  padding: 8px 12px; background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: var(--r-sm); font-size: 12.5px; color: var(--muted); box-shadow: var(--e1);
+}
+
+/* tarjeta de contacto */
+/* La columna entera queda pegajosa, no sólo la tarjeta de precio: si sólo lo
+   estuviera la tarjeta, al bajar se despegaría y se montaría sobre el formulario
+   de consulta que va debajo. */
+.pp-app .detail-side { position: sticky; top: 88px; }
+.pp-app .contact-card {
+  overflow: hidden;
+  background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r); box-shadow: var(--e2);
+}
+/* La cabecera de precio va en el tono del tema, no en pizarra fija: con la página en
+   claro, un bloque oscuro acá se leía como si esa parte hubiera quedado en modo oscuro.
+   Es además lo que hace el modelo de diseño (precio en el acento sobre superficie clara). */
+.pp-app .cc-head {
+  background: var(--violet-tint); color: var(--ink); padding: 22px;
+  border-bottom: 1px solid var(--violet-edge);
+}
+.pp-app .cc-head .op { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--violet); }
+.pp-app .cc-head .p {
+  font-size: 30px; font-weight: 800; letter-spacing: -.03em; margin-top: 8px; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.pp-app .cc-head .p .cur { font-size: 16px; font-weight: 700; color: var(--muted); }
+.pp-app .cc-head .exp { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.pp-app .cc-body { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.pp-app .cc-body .code {
+  font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em;
+  margin-bottom: 4px;
+}
+.pp-app .agent { display: flex; align-items: center; gap: 12px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--hairline); }
+.pp-app .agent .av {
+  width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(145deg, var(--violet-bright), var(--violet-deep));
+  display: grid; place-items: center; color: var(--on-violet); font-weight: 800;
+}
+.pp-app .agent .nm { font-weight: 700; font-size: 14px; }
+.pp-app .agent .rl { font-size: 12.5px; color: var(--muted); }
+
+/* ---------- servicios (tasaciones y demás) ---------- */
+.pp-app .svc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+.pp-app .svc {
+  padding: 26px; background: var(--ground); border: 1px solid var(--hairline); border-radius: var(--r);
+  transition: .18s;
+}
+.pp-app .svc:hover { border-color: var(--violet-edge); box-shadow: var(--e2); }
+.pp-app .svc .ico {
+  width: 46px; height: 46px; border-radius: var(--r-sm); margin-bottom: 16px;
+  background: var(--violet-tint); border: 1px solid var(--violet-edge);
+  color: var(--violet); display: grid; place-items: center;
+}
+.pp-app .svc h3 { font-size: 17px; margin-bottom: 8px; }
+.pp-app .svc p { color: var(--muted); font-size: 14px; line-height: 1.65; margin: 0; }
+
+/* ---------- franja de tasación (Servicio Técnico Profesional) ---------- */
+.pp-app .ctaband {
+  display: flex; align-items: center; justify-content: space-between; gap: 40px;
+  padding: 40px; background: var(--surface);
+  border: 1px solid var(--hairline); border-radius: var(--r-lg); box-shadow: var(--e1);
+}
+.pp-app .ctaband-copy { max-width: 62ch; }
+.pp-app .ctaband .kicker {
+  display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--violet);
+}
+.pp-app .ctaband h2 { font-size: clamp(22px, 2.6vw, 29px); }
+.pp-app .ctaband p { color: var(--muted); font-size: 15px; line-height: 1.7; margin: 12px 0 0; }
+.pp-app .claims {
+  display: flex; flex-wrap: wrap; gap: 10px 24px; margin: 20px 0 0; padding: 0; list-style: none;
+}
+.pp-app .claims li {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 600; color: var(--ink);
+}
+.pp-app .claims svg { color: var(--violet); flex-shrink: 0; }
+.pp-app .ctaband-actions {
+  display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; width: 262px;
+}
+.pp-app .ctaband-actions .btn { height: 48px; }
+
+/* ---------- franja institucional (Identidad Corporativa) ---------- */
+.pp-app .identity { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+.pp-app .identity-copy .kicker {
+  font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--violet); margin-bottom: 12px;
+}
+.pp-app .identity-copy h2 { font-size: clamp(22px, 2.8vw, 30px); }
+.pp-app .identity-copy > p {
+  color: var(--muted); font-size: 15px; line-height: 1.75; margin: 16px 0 0;
+  /* La inmobiliaria escribe este texto en un textarea del panel: sus saltos de línea valen. */
+  white-space: pre-line;
+}
+.pp-app .identity-data {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px 28px;
+  margin: 26px 0; padding-top: 22px; border-top: 1px solid var(--hairline);
+}
+.pp-app .identity-data .v {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: -.01em;
+}
+.pp-app .identity-data .v svg { color: var(--violet); flex-shrink: 0; }
+.pp-app .identity-data .k { font-size: 13px; color: var(--muted); line-height: 1.55; margin-top: 5px; }
+.pp-app .identity-media {
+  display: flex; flex-direction: column; gap: 22px;
+  padding: 34px; border: 1px solid var(--hairline); border-radius: var(--r-lg);
+  background: linear-gradient(160deg, var(--violet-tint), var(--ground) 62%);
+  box-shadow: var(--e1);
+}
+.pp-app .identity-brand { text-align: center; }
+.pp-app .identity-logo { max-height: 76px; max-width: 100%; width: auto; margin: 0 auto 14px; object-fit: contain; }
+.pp-app .identity-mono {
+  width: 68px; height: 68px; margin: 0 auto 14px; border-radius: var(--r);
+  background: linear-gradient(145deg, var(--violet-bright), var(--violet-deep));
+  color: var(--on-violet); display: grid; place-items: center;
+  font-size: 30px; font-weight: 800; letter-spacing: -.04em;
+}
+.pp-app .identity-brand .n {
+  font-family: var(--font-headings); font-size: 19px; font-weight: 700;
+  letter-spacing: -.02em; color: var(--ink); line-height: 1.25;
+}
+.pp-app .identity-brand .s {
+  font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); margin-top: 5px;
+}
+.pp-app .identity-pledges {
+  display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 22px 0 0;
+  list-style: none; border-top: 1px solid var(--hairline);
+}
+.pp-app .identity-pledges li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 14px; line-height: 1.5; color: var(--ink);
+}
+.pp-app .identity-pledges svg { color: var(--violet); flex-shrink: 0; margin-top: 3px; }
+
+/* ---------- footer ---------- */
+.pp-app .foot { background: var(--surface); border-top: 1px solid var(--hairline); padding: 56px 0 28px; margin-top: auto; }
+.pp-app .foot .cols { display: grid; grid-template-columns: 2fr 1fr 1fr 1.4fr; gap: 40px; }
+.pp-app .foot h4 { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.pp-app .foot a { display: block; color: var(--ink); font-size: 14px; font-weight: 500; padding: 5px 0; transition: color .15s; }
+.pp-app .foot a:hover { color: var(--violet); }
+.pp-app .foot .about p { color: var(--muted); font-size: 13.5px; line-height: 1.7; margin: 14px 0 0; max-width: 38ch; }
+.pp-app .foot .contact-line { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 14px; padding: 5px 0; }
+.pp-app .foot .contact-line svg { color: var(--faint); flex-shrink: 0; }
+.pp-app .foot-bottom {
+  margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairline);
+  display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--muted);
+}
+.pp-app .foot-legal { max-width: 78ch; font-size: 11.5px; line-height: 1.6; color: var(--faint); }
+
+/* ---------- whatsapp flotante ---------- */
+.pp-app .wa-float {
+  position: fixed; right: 24px; bottom: 24px; z-index: 60;
+  width: 56px; height: 56px; border-radius: 50%; background: var(--wa); color: #fff;
+  border: none; display: grid; place-items: center;
+  box-shadow: 0 8px 26px rgba(5, 150, 105, .4); transition: transform .16s;
+}
+.pp-app .wa-float:hover { transform: scale(1.07); }
+.pp-app .wa-float .pulse {
+  position: absolute; inset: 0; border-radius: 50%; background: var(--wa);
+  opacity: .45; animation: pp-pulse 2.4s ease-out infinite; z-index: -1;
+}
+@keyframes pp-pulse { 0% { transform: scale(1); opacity: .45; } 70% { transform: scale(1.7); opacity: 0; } 100% { opacity: 0; } }
+
+/* ---------- páginas simples ---------- */
+.pp-app .simple-page { padding-top: 56px; padding-bottom: 80px; }
+.pp-app .simple-page h1 { font-size: clamp(26px, 3.4vw, 36px); margin-bottom: 16px; }
+.pp-app .simple-page p { color: var(--muted); max-width: 64ch; line-height: 1.75; white-space: pre-line; }
+.pp-app .contact-info { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
+.pp-app .contact-info a { color: var(--violet); font-weight: 700; }
+
+/* ---------- formulario de consulta (lead) ---------- */
+.pp-app .lead-card {
+  margin-top: 20px; padding: 22px;
+  background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r); box-shadow: var(--e1);
+}
+.pp-app .lead-card h3 { font-size: 17px; margin-bottom: 4px; }
+.pp-app .lead-form { display: flex; flex-direction: column; gap: 16px; max-width: 520px; }
+.pp-app .lead-form h3 { font-size: 17px; }
+.pp-app .lead-form > p { color: var(--muted); font-size: 14px; margin: 0; }
+.pp-app .lead-form .lf-field { display: flex; flex-direction: column; gap: 7px; }
+.pp-app .lead-form label { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+.pp-app .lead-form input, .pp-app .lead-form textarea {
+  width: 100%; padding: 11px 13px; resize: vertical;
+  border: 1px solid var(--hairline); background: var(--surface); border-radius: var(--r-sm);
+  font-family: inherit; font-size: 14.5px; color: var(--ink); outline: none; transition: .15s;
+}
+.pp-app .lead-form input::placeholder, .pp-app .lead-form textarea::placeholder { color: var(--faint); }
+.pp-app .lead-form input:focus, .pp-app .lead-form textarea:focus {
+  border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124, 58, 237, .15);
+}
+.pp-app .lead-form textarea { min-height: 112px; }
+.pp-app .lead-form .lf-err { font-size: 12.5px; color: var(--danger); }
+.pp-app .lead-form .lf-submit {
+  align-self: flex-start; height: 46px; padding: 0 28px; border: none; border-radius: var(--r-sm);
+  background: var(--violet); color: var(--on-violet); font-weight: 700; font-size: 15px;
+  display: inline-flex; align-items: center; gap: 9px;
+  box-shadow: 0 1px 2px rgba(109, 40, 217, .2); transition: .15s;
+}
+.pp-app .lead-form .lf-submit:hover { background: var(--violet-deep); }
+.pp-app .lead-form .lf-submit:disabled { opacity: .6; cursor: not-allowed; }
+.pp-app .lead-form .lf-status {
+  display: flex; align-items: flex-start; gap: 11px; padding: 16px;
+  border-radius: var(--r-sm); font-size: 14px; line-height: 1.55; border: 1px solid transparent;
+}
+.pp-app .lead-form .lf-status.ok { background: var(--mint); color: var(--mint-ink); border-color: var(--mint-edge); }
+.pp-app .lead-form .lf-status.ok svg { flex-shrink: 0; margin-top: 2px; }
+.pp-app .lead-form .lf-status.error { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
+.pp-app[data-theme="dark"] .lead-form .lf-status.error { background: #2d1418; color: #fda4af; border-color: #4c1d24; }
+
+/* Placeholder para propiedades sin fotos */
+.pp-app .media-empty {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px; color: var(--faint);
+  background: repeating-linear-gradient(135deg, var(--surface-2), var(--surface-2) 12px, var(--surface) 12px, var(--surface) 24px);
+}
+.pp-app .media-empty span { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.pp-app .gallery-main .media-empty { position: static; height: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-app .wa-float .pulse, .pp-app .hero-pill .live { animation: none; }
+  .pp-app .card, .pp-app .card-media img { transition: none; }
+  .pp-app .card:hover { transform: none; }
+  .pp-app .card:hover .card-media img { transform: none; }
+  .pp-app .skeleton { animation: none; }
+  .pp-app .segg-indicator { transition: opacity .18s ease; }
+  .pp-app .spinner { animation-duration: 1.4s; }
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 1100px) {
+  .pp-app .search-grid { grid-template-columns: 1fr 1fr; }
+  .pp-app .search-btn { grid-column: 1 / -1; }
+  .pp-app .trustband .cols { grid-template-columns: repeat(2, 1fr); row-gap: 20px; }
+  .pp-app .metric:nth-child(odd) { padding-left: 0; }
+  .pp-app .metric:nth-child(3) { border-left: none; }
+  .pp-app .metric:nth-child(n + 3) { padding-top: 20px; border-top: 1px solid var(--hairline); }
+}
+@media (max-width: 960px) {
+  .pp-app .listado { grid-template-columns: 1fr; }
+  .pp-app .filters {
+    position: fixed; inset: 0; top: 0; z-index: 80; max-height: none;
+    border-radius: 0; border: none; box-shadow: none;
+    transform: translateX(-100%); transition: transform .25s;
+  }
+  .pp-app .filters.open { transform: none; box-shadow: var(--e3); }
+  .pp-app .filter-toggle {
+    display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px;
+    border: 1px solid var(--hairline); background: var(--surface); color: var(--ink);
+    border-radius: var(--r-sm); font-family: inherit; font-weight: 700; font-size: 14px;
+  }
+  .pp-app .filters-h .close-f { display: inline-flex; }
+  .pp-app .detail-grid { grid-template-columns: 1fr; }
+  .pp-app .detail-side { position: static; }
+  .pp-app .foot .cols { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .pp-app .ctaband { flex-direction: column; align-items: stretch; gap: 28px; padding: 32px; }
+  .pp-app .ctaband-actions { width: auto; flex-direction: row; }
+  .pp-app .ctaband-actions .btn { flex: 1; }
+  /* La foto institucional pasa arriba del texto: es lo que da contexto antes de leer. */
+  .pp-app .identity { grid-template-columns: 1fr; gap: 32px; }
+  .pp-app .identity-media { order: -1; }
+}
+@media (max-width: 760px) {
+  .pp-app .nav { display: none; }
+  .pp-app .burger { display: grid; }
+  .pp-app .top-cta { display: none; }
+  .pp-app .topbar .wrap { height: 64px; gap: 12px; }
+  .pp-app .hero { padding: 44px 0 52px; }
+  .pp-app .searchcard { padding: 18px; }
+  .pp-app .search-grid { grid-template-columns: 1fr; }
+  .pp-app .section { padding: 48px 0; }
+  .pp-app .grid { grid-template-columns: 1fr; gap: 20px; }
+  .pp-app .wrap { padding: 0 18px; }
+  .pp-app .ctaband { padding: 24px; }
+  .pp-app .ctaband-actions { flex-direction: column; }
+  .pp-app .claims { gap: 10px 18px; }
+}
+@media (max-width: 520px) {
+  .pp-app .trustband .cols { grid-template-columns: 1fr; }
+  .pp-app .metric { padding: 0; border-left: none !important; }
+  .pp-app .metric:nth-child(n + 2) { padding-top: 16px; border-top: 1px solid var(--hairline); }
+  .pp-app .foot .cols { grid-template-columns: 1fr; }
+}
+.pp-app .close-f { display: none; background: none; border: none; color: var(--muted); font-size: 22px; line-height: 1; padding: 0; }

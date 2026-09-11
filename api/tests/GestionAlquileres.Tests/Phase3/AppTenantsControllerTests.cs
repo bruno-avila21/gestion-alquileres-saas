@@ -133,8 +133,15 @@ public class AppTenantsControllerTests : IClassFixture<Phase3ApiFactory>
         Assert.NotNull(result.Tenant.UserId);
     }
 
+    /// <summary>
+    /// Re-invitar ahora regenera la contraseña temporal en vez de rechazar con 409.
+    ///
+    /// El contrato anterior ("este inquilino ya tiene acceso al portal") dejaba sin ninguna vía
+    /// para rotar una credencial perdida o filtrada: había que tocar la base a mano. El detalle
+    /// del comportamiento nuevo está en Phase7/ChangePasswordTests.
+    /// </summary>
     [Fact]
-    public async Task T7_Invite_already_invited_returns_400()
+    public async Task T7_Invite_twice_regenerates_the_temp_password()
     {
         var c = await _factory.AuthedClientAsync("tnt-t7");
         var createR = await c.PostAsJsonAsync("/api/v1/tenants", new
@@ -144,9 +151,17 @@ public class AppTenantsControllerTests : IClassFixture<Phase3ApiFactory>
         });
         var created = await createR.Content.ReadFromJsonAsync<AppTenantDto>(JsonOpts);
 
-        await c.PostAsync($"/api/v1/tenants/{created!.Id}/invite", null);
+        var r1 = await c.PostAsync($"/api/v1/tenants/{created!.Id}/invite", null);
+        r1.EnsureSuccessStatusCode();
+        var primera = (await r1.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>())
+            .GetProperty("tempPassword").GetString();
+
         var r2 = await c.PostAsync($"/api/v1/tenants/{created.Id}/invite", null);
-        Assert.Equal(HttpStatusCode.Conflict, r2.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, r2.StatusCode);
+        var segunda = (await r2.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>())
+            .GetProperty("tempPassword").GetString();
+
+        Assert.NotEqual(primera, segunda);
     }
 
     [Fact]

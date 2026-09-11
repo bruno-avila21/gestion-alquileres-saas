@@ -53,11 +53,11 @@ public class Phase10Tests : IClassFixture<Phase7ApiFactory>
             notes = "Ajuste septiembre me/history",
         })).EnsureSuccessStatusCode();
 
-        // Admin can see the adjustment via org-wide endpoint
+        // Admin can see the adjustment via org-wide endpoint (paged envelope since audit M10)
         var adjResp = await adminClient.GetAsync("/api/v1/rent-adjustments");
         Assert.Equal(HttpStatusCode.OK, adjResp.StatusCode);
-        var adjArr = await adjResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        Assert.True(adjArr.GetArrayLength() >= 1);
+        var adjBody = await adjResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.True(adjBody.GetProperty("items").GetArrayLength() >= 1);
 
         // Admin user has no linked AppTenant → me/history returns empty (not 5xx)
         var meHistResp = await adminClient.GetAsync("/api/v1/me/history");

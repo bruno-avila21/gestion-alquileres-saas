@@ -1,3 +1,4 @@
+using GestionAlquileres.Application.Features.Properties.DTOs;
 using GestionAlquileres.Domain.Enums;
 
 namespace GestionAlquileres.API.Contracts;
@@ -10,4 +11,5 @@ public record CreatePropertyRequest(
     decimal? AreaM2,
     string? Notes,
     Guid? OwnerId,
-    decimal? CommissionPct);
+    decimal? CommissionPct,
+    PropertyListingDetails? Details = null);

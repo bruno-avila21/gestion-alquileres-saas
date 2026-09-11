@@ -20,6 +20,8 @@ public class GetAdjustmentProjectionQueryTests
         public Task<Contract?> GetByIdRawAsync(Guid id, Guid orgId, CancellationToken ct) => throw new NotImplementedException();
         public Task<IReadOnlyList<Contract>> ListActiveRawAsync(CancellationToken ct) => throw new NotImplementedException();
         public Task<IReadOnlyList<Contract>> GetExpiringRawAsync(int d, CancellationToken ct) => throw new NotImplementedException();
+        public Task<(int ActiveCount, decimal MonthlyRevenue, int ExpiringCount)> GetDashboardStatsAsync(
+            DateOnly today, DateOnly until, CancellationToken ct) => throw new NotImplementedException();
     }
 
     private sealed class StubHistory : IRentHistoryRepository
@@ -28,10 +30,13 @@ public class GetAdjustmentProjectionQueryTests
         public Task<IReadOnlyList<Domain.Entities.RentHistory>> GetByContractAsync(Guid id, CancellationToken ct) => Task.FromResult(Items);
         public Task<Domain.Entities.RentHistory?> GetLastByContractAsync(Guid id, CancellationToken ct) => throw new NotImplementedException();
         public Task<IReadOnlyList<Domain.Entities.RentHistory>> GetAllAsync(CancellationToken ct) => throw new NotImplementedException();
+        public Task<(IReadOnlyList<Domain.Entities.RentHistory> Items, int Total)> GetPagedAsync(
+            Domain.Enums.AdjustmentType? type, string? search, int page, int pageSize, CancellationToken ct) => throw new NotImplementedException();
         public Task AddAsync(Domain.Entities.RentHistory r, CancellationToken ct) => throw new NotImplementedException();
         public Task SaveChangesAsync(CancellationToken ct) => throw new NotImplementedException();
         public Task<bool> ExistsForPeriodAsync(Guid id, DateOnly d, CancellationToken ct) => throw new NotImplementedException();
         public Task<Domain.Entities.RentHistory?> GetLastByContractRawAsync(Guid id, CancellationToken ct) => throw new NotImplementedException();
+        public Task<int> CountByContractRawAsync(Guid id, CancellationToken ct) => throw new NotImplementedException();
     }
 
     private sealed class StubCalculator : IIndicesCalculator

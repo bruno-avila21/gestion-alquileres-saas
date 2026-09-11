@@ -1,0 +1,23 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "instrument sans",
+        "createdAt": "2026-09-08T20:59:39.893Z",
+        "reason": "same body-face choice, lowercase instance in index.html Google Fonts link."
+      },
+      {
+        "rule": "codex-grid-background",
+        "value": "*",
+        "files": [
+          "src/portal-publico/publico.css"
+        ],
+        "createdAt": "2026-09-08T20:59:40.145Z",
+        "reason": "grid is the property-location map placeholder in the ficha (stands in until Leaflet/real map is wired) — sanctioned map/measurement surface."
+      }
+    ]
+  }
+}

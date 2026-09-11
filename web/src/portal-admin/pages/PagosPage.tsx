@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { AdminTopbar } from '../layouts/AdminTopbar'
-import { IcCash, IcDownload } from '@/shared/components/ui/Icons'
+import { IcCash, IcDownload, IcReceipt } from '@/shared/components/ui/Icons'
+import { QueryError } from '@/shared/components/ui/QueryError'
 import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
-import { useAllTransactions } from '@/features/contracts/hooks/useContracts'
+import { downloadBlob } from '@/shared/lib/downloadFile'
+import { useAllTransactions, useContracts } from '@/features/contracts/hooks/useContracts'
 import { contractService } from '@/features/contracts/services/contractService'
 import type { TransactionType } from '@/features/contracts/types/contract.types'
 import { PaginationBar } from '@/shared/components/ui/PaginationBar'
+import { useDebounce } from '@/shared/hooks/useDebounce'
+import { SearchInput } from '@/shared/components/ui/SearchInput'
 
 const PAGE_SIZE = 20
 
@@ -14,6 +18,7 @@ const TX_LABELS: Record<TransactionType, string> = {
   Payment: 'Pago',
   ManualDebit: 'Débito manual',
   ManualCredit: 'Crédito manual',
+  LateFee: 'Punitorio',
 }
 
 const TX_CHIP: Record<TransactionType, string> = {
@@ -21,35 +26,50 @@ const TX_CHIP: Record<TransactionType, string> = {
   Payment: 'chip--ok',
   ManualDebit: 'chip--danger',
   ManualCredit: 'chip--warn',
+  LateFee: 'chip--danger',
 }
 
 type Filter = 'all' | TransactionType
 
 export default function PagosPage() {
-  const { data: transactions, isLoading } = useAllTransactions()
+  const { data: contracts } = useContracts()
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
+  const debouncedSearch = useDebounce(search)
+  const [downloadingReceiptId, setDownloadingReceiptId] = useState<string | null>(null)
+  const [receiptError, setReceiptError] = useState('')
 
-  const filtered = (transactions ?? []).filter((t) => {
-    if (filter !== 'all' && t.type !== filter) return false
-    if (search) {
-      const q = search.toLowerCase()
-      return (
-        t.contractId.toLowerCase().includes(q) ||
-        (t.notes ?? '').toLowerCase().includes(q)
-      )
+  async function handleDownloadReceipt(transactionId: string) {
+    setReceiptError('')
+    setDownloadingReceiptId(transactionId)
+    try {
+      const { blob, fileName } = await contractService.downloadReceiptPdf(transactionId)
+      downloadBlob(blob, fileName)
+    } catch {
+      setReceiptError('No pudimos generar el recibo. Probá de nuevo.')
+    } finally {
+      setDownloadingReceiptId(null)
     }
-    return true
+  }
+
+  // Server-side pagination + filter + search + net balance (audit M10): the filter/search run in the
+  // API (joined to contract), so they span the whole dataset, and the net balance is summed server-side
+  // over the full filtered set — a single page couldn't produce it.
+  const { data, isLoading, isError, refetch } = useAllTransactions({
+    page: page + 1, pageSize: PAGE_SIZE,
+    type: filter === 'all' ? undefined : filter,
+    search: debouncedSearch || undefined,
   })
+  const transactions = data?.items ?? []
+  const total = data?.total ?? 0
+  const netBalance = data?.netBalance ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-
-  const total = filtered.reduce((sum, t) => {
-    if (t.type === 'Payment' || t.type === 'ManualCredit') return sum + t.amount
-    return sum - t.amount
-  }, 0)
+  // contractId -> tenant + address, for display in the row (audit B13).
+  const contractLabel = new Map(
+    (contracts ?? []).map((c) => [c.id, `${c.appTenantFullName} · ${c.propertyAddress}`]),
+  )
 
   const FILTERS: { key: Filter; label: string }[] = [
     { key: 'all', label: 'Todos' },
@@ -57,6 +77,7 @@ export default function PagosPage() {
     { key: 'RentCharge', label: 'Cargos' },
     { key: 'ManualDebit', label: 'Débitos' },
     { key: 'ManualCredit', label: 'Créditos' },
+    { key: 'LateFee', label: 'Punitorios' },
   ]
 
   return (
@@ -94,18 +115,24 @@ export default function PagosPage() {
               {f.label}
             </button>
           ))}
-          <input
-            className="input input--sm"
-            style={{ marginLeft: 'auto', width: 220 }}
-            placeholder="Buscar por notas…"
+          <SearchInput
+            className="ml-auto"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0) }}
+            onChange={(v) => { setSearch(v); setPage(0) }}
+            placeholder="Buscar por inquilino, dirección o notas…"
+            ariaLabel="Buscar pagos"
           />
         </div>
 
+        {receiptError && (
+          <div role="alert" style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger)' }}>{receiptError}</div>
+        )}
+
         {isLoading ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Cargando…</div>
-        ) : filtered.length === 0 ? (
+        ) : isError ? (
+          <QueryError onRetry={() => refetch()} message="No pudimos cargar las transacciones." />
+        ) : transactions.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
             <IcCash size={32} style={{ margin: '0 auto 8px', display: 'block' }} />
             Sin transacciones
@@ -122,10 +149,11 @@ export default function PagosPage() {
                   <th>Contrato</th>
                   <th>Notas</th>
                   <th>Fecha</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((t) => (
+                {transactions.map((t) => (
                   <tr key={t.id}>
                     <td>
                       <span className={`chip ${TX_CHIP[t.type]}`}>
@@ -136,8 +164,8 @@ export default function PagosPage() {
                     <td>{formatPeriod(t.period)}</td>
                     <td className="num"><b>{formatARS(t.amount)}</b></td>
                     <td>{t.currency}</td>
-                    <td className="muted" style={{ fontSize: 'var(--fs-xs)', fontFamily: 'monospace' }}>
-                      {t.contractId.slice(0, 8)}…
+                    <td className="muted" style={{ fontSize: 'var(--fs-xs)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {contractLabel.get(t.contractId) ?? `${t.contractId.slice(0, 8)}…`}
                     </td>
                     <td className="muted" style={{ fontSize: 'var(--fs-xs)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {t.notes ?? '—'}
@@ -145,20 +173,33 @@ export default function PagosPage() {
                     <td className="muted" style={{ fontSize: 'var(--fs-xs)' }}>
                       {formatDate(t.createdAt.split('T')[0])}
                     </td>
+                    <td>
+                      {t.type === 'Payment' && (
+                        <button
+                          className="btn btn--ghost btn--sm btn--icon"
+                          title="Descargar recibo"
+                          aria-label="Descargar recibo"
+                          disabled={downloadingReceiptId === t.id}
+                          onClick={() => handleDownloadReceipt(t.id)}
+                        >
+                          <IcReceipt size={13} />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr>
                   <td colSpan={2} style={{ fontWeight: 600, paddingLeft: 12 }}>Balance neto</td>
-                  <td className="num" style={{ fontWeight: 700, color: total >= 0 ? 'var(--ok)' : 'var(--danger)' }}>
-                    {formatARS(Math.abs(total))}
+                  <td className="num" style={{ fontWeight: 700, color: netBalance >= 0 ? 'var(--ok)' : 'var(--danger)' }}>
+                    {formatARS(Math.abs(netBalance))}
                   </td>
-                  <td colSpan={4} />
+                  <td colSpan={5} />
                 </tr>
               </tfoot>
             </table>
-            <PaginationBar page={page} totalPages={totalPages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+            <PaginationBar page={page} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
           </div>
         )}
       </div>

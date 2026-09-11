@@ -3,10 +3,16 @@ import { AdminTopbar } from '../layouts/AdminTopbar'
 import {
   IcDoc, IcAlert, IcCash, IcTrend, IcPlus,
   IcCalendar, IcChevDown, IcDownload, IcArrowUp,
-  IcChev, IcShield, IcBell, Spark,
+  IcChev, IcShield, IcBell,
 } from '@/shared/components/ui/Icons'
-import { formatARS, formatDate } from '@/shared/lib/formatters'
+import { formatARS, formatDate, formatPeriod } from '@/shared/lib/formatters'
+import { downloadCsv } from '@/shared/lib/exportCsv'
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard'
+import type { TransactionType } from '@/features/contracts/types/contract.types'
+
+const TX_LABEL: Record<TransactionType, string> = {
+  Payment: 'Pago', RentCharge: 'Cargo', ManualDebit: 'Débito', ManualCredit: 'Crédito', LateFee: 'Punitorio',
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -17,15 +23,30 @@ export default function DashboardPage() {
   const expiring = dashboard?.expiringIn30DaysCount ?? 0
   const recentTx = dashboard?.recentTransactions ?? []
 
-  const REVENUE_SERIES = [4.2, 4.4, 4.5, 4.7, 4.9, 5.1, 5.3, 5.4, 5.7, 5.9, 6.2, activeContracts || 6.5]
-  const OVERDUE_SERIES = [9, 12, 15, 18, 16, 14, 17, 15, 16, 14, 15, expiring || 0]
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Buen día' : hour < 20 ? 'Buenas tardes' : 'Buenas noches'
+
+  function handleExport() {
+    downloadCsv(
+      'transacciones-recientes.csv',
+      ['Tipo', 'Período', 'Importe', 'Moneda', 'Estado'],
+      recentTx.map((t) => [TX_LABEL[t.type], t.period, t.amount, t.currency, t.status]),
+    )
+  }
+
+  // Cada tarjeta lleva un pie con un dato real, no una tendencia inventada. Antes
+  // había un sparkline sobre una serie fija ([4.2, 4.4, 4.5…]) con el valor de hoy
+  // pegado al final, rotulado "tendencia (ilustrativa)": en una demo, cuatro
+  // gráficos que anuncian que son falsos son justo lo que se le va el ojo al cliente.
+  const avgPerContract = activeContracts > 0 ? monthlyRevenue / activeContracts : null
+  const lastTxDate = recentTx[0]?.createdAt?.split('T')[0] ?? null
 
   const stats = [
     {
       lbl: 'Contratos vigentes',
       val: isLoading ? '…' : String(activeContracts),
       delta: null,
-      series: REVENUE_SERIES,
+      hint: 'Cartera administrada hoy',
       icon: <IcDoc size={18} />,
       color: 'var(--brand)',
       to: '/admin/contratos',
@@ -34,7 +55,7 @@ export default function DashboardPage() {
       lbl: 'Vencen en 30 días',
       val: isLoading ? '…' : String(expiring),
       delta: null,
-      series: OVERDUE_SERIES,
+      hint: 'A renovar o ajustar',
       icon: <IcAlert size={18} />,
       color: 'var(--danger)',
       to: '/admin/contratos',
@@ -43,7 +64,7 @@ export default function DashboardPage() {
       lbl: 'Ingresos mensuales',
       val: isLoading ? '…' : formatARS(monthlyRevenue),
       delta: null,
-      series: REVENUE_SERIES,
+      hint: avgPerContract === null ? 'Sin contratos vigentes' : `${formatARS(avgPerContract)} por contrato`,
       icon: <IcCash size={18} />,
       color: 'var(--ok)',
       to: '/admin/pagos',
@@ -52,7 +73,7 @@ export default function DashboardPage() {
       lbl: 'Trans. recientes',
       val: isLoading ? '…' : String(recentTx.length),
       delta: null,
-      series: REVENUE_SERIES,
+      hint: lastTxDate ? `Última: ${formatDate(lastTxDate)}` : 'Sin movimientos aún',
       icon: <IcTrend size={18} />,
       color: 'var(--icl)',
       to: '/admin/pagos',
@@ -75,14 +96,14 @@ export default function DashboardPage() {
       <div className="page">
         <div className="page-h">
           <div>
-            <h1>Buen día</h1>
+            <h1>{greeting}</h1>
             <div className="lead">Vista consolidada de la operación</div>
           </div>
           <div className="row">
-            <button className="btn btn--sm">
+            <button className="btn btn--sm" disabled title="Filtro por fecha (próximamente)">
               <IcCalendar size={12} /> Hoy <IcChevDown size={12} />
             </button>
-            <button className="btn btn--sm">
+            <button className="btn btn--sm" onClick={handleExport} disabled={recentTx.length === 0}>
               <IcDownload size={12} /> Exportar
             </button>
           </div>
@@ -97,9 +118,8 @@ export default function DashboardPage() {
                 <span style={{ color: s.color, opacity: 0.8 }}>{s.icon}</span>
               </div>
               <div className="val">{s.val}</div>
-              <div className="between" style={{ marginTop: 8 }}>
-                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>tendencia (ilustrativa)</span>
-                <Spark data={s.series} color={s.color} w={84} h={22} />
+              <div style={{ marginTop: 8, fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>
+                {isLoading ? '…' : s.hint}
               </div>
             </div>
           ))}
@@ -139,10 +159,10 @@ export default function DashboardPage() {
                       <td>
                         <span className={`chip ${t.type === 'Payment' ? 'chip--ok' : t.type === 'RentCharge' ? '' : 'chip--warn'}`}>
                           <span className="dot" />
-                          {t.type === 'Payment' ? 'Pago' : t.type === 'RentCharge' ? 'Cargo' : t.type === 'ManualDebit' ? 'Débito' : 'Crédito'}
+                          {TX_LABEL[t.type] ?? t.type}
                         </span>
                       </td>
-                      <td>{formatDate(t.period)}</td>
+                      <td>{formatPeriod(t.period)}</td>
                       <td className="num"><b>{formatARS(t.amount)}</b></td>
                       <td>{t.currency}</td>
                       <td className="muted" style={{ fontSize: 'var(--fs-xs)' }}>{formatDate(t.createdAt.split('T')[0])}</td>

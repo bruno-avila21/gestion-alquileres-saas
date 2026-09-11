@@ -13,12 +13,30 @@ RUN dotnet restore src/GestionAlquileres.API/GestionAlquileres.API.csproj
 COPY . .
 RUN dotnet publish src/GestionAlquileres.API/GestionAlquileres.API.csproj -c Release -o /app/publish /p:UseAppHost=false
 
+# Stage de migraciones. Se usa como un contenedor de un solo uso (`docker compose run --rm migrate`)
+# o como dependencia previa al arranque de la API.
+#
+# AppDbContextFactory trae una cadena de conexión de marcador —las migraciones se generan desde el
+# modelo, no desde una base viva— así que aplicar contra una base real EXIGE pasar --connection.
+FROM build AS migrate
+RUN dotnet tool install --global dotnet-ef --version 8.*
+ENV PATH="$PATH:/root/.dotnet/tools"
+WORKDIR /src
+ENTRYPOINT ["sh", "-c", "dotnet ef database update \
+    --project src/GestionAlquileres.Infrastructure \
+    --startup-project src/GestionAlquileres.API \
+    --connection \"$ConnectionStrings__DefaultConnection\""]
+
+# El runtime queda último a propósito: `docker build ./api` sin --target debe producir la imagen
+# de la API, no la de migraciones.
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# curl is needed for the container HEALTHCHECK below.
+# curl is needed for the container HEALTHCHECK below. libfontconfig1 is needed by SkiaSharp
+# (QuestPDF's rendering backend) — without it, generating a PDF (recibos/liquidaciones) can fail to
+# load on this Debian slim image.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl libfontconfig1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish ./

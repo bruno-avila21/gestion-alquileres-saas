@@ -25,6 +25,8 @@ public static class SecuritySettingsValidator
         ValidateConnectionString(config.GetConnectionString("HangfireConnection"), "ConnectionStrings:HangfireConnection", isDev, problems);
 
         ValidateStorageProvider(config["Storage:Provider"], isDev, problems);
+        ValidateRegistrationMode(config["Registration:Mode"], config["Registration:InviteCode"], isDev, problems);
+        ValidateAllowedHosts(config["AllowedHosts"], isDev, problems);
 
         if (problems.Count == 0) return;
 
@@ -68,6 +70,44 @@ public static class SecuritySettingsValidator
 
         if (string.IsNullOrWhiteSpace(provider) || !provider.Equals("S3", StringComparison.OrdinalIgnoreCase))
             problems.Add("Storage:Provider debe ser 'S3' fuera de Development. El almacenamiento local es un punto único de fallo y no se comparte entre instancias.");
+    }
+
+    private static void ValidateRegistrationMode(
+        string? mode, string? inviteCode, bool isDev, List<string> problems)
+    {
+        // El alta de organizaciones es un endpoint anónimo: en modo abierto cualquiera crea
+        // organizaciones ilimitadas con emails que no controla, obtiene un JWT de Admin al instante,
+        // y ocupa slugs de marcas reales de forma irrecuperable. Aceptable sólo en desarrollo, hasta
+        // que exista verificación por email.
+        if (isDev) return;
+
+        if (string.IsNullOrWhiteSpace(mode) || mode.Equals("Open", StringComparison.OrdinalIgnoreCase))
+        {
+            problems.Add(
+                "Registration:Mode debe ser 'InviteCode' o 'Disabled' fuera de Development. " +
+                "El alta abierta permite crear organizaciones sin verificar el email y ocupar slugs de forma irrecuperable.");
+            return;
+        }
+
+        if (mode.Equals("InviteCode", StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(inviteCode))
+        {
+            problems.Add("Registration:InviteCode no está configurado, pero Registration:Mode es 'InviteCode'.");
+        }
+    }
+
+    private static void ValidateAllowedHosts(string? allowedHosts, bool isDev, List<string> problems)
+    {
+        // Con AllowedHosts en "*" el filtrado de host queda desactivado y la API refleja cualquier
+        // encabezado Host que le manden. La URL absoluta de descarga de documentos se arma con ese
+        // valor, así que con un CDN delante una respuesta envenenada puede servirse a otros usuarios
+        // con el token adentro.
+        if (isDev) return;
+
+        if (string.IsNullOrWhiteSpace(allowedHosts) || allowedHosts.Trim() == "*")
+            problems.Add(
+                "AllowedHosts debe listar los dominios reales fuera de Development. " +
+                "Con '*' la API refleja cualquier encabezado Host, y la URL de descarga de documentos se arma con él.");
     }
 
     private static void ValidateConnectionString(string? value, string key, bool isDev, List<string> problems)
