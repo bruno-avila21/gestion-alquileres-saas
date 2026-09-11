@@ -4,6 +4,7 @@ import '../publico.css'
 import { usePpTheme } from '../hooks/usePpTheme'
 import { useSiteFonts } from '../hooks/useSiteFonts'
 import { accentVars, FONT_PAIRINGS } from '@/features/public/utils/siteTheme'
+import { publicLogoUrl } from '@/features/public/utils/resolvePublicPhotoUrl'
 import { WhatsAppFloat } from '../components/WhatsAppFloat'
 import { BurgerIcon, MailIcon, PhoneIcon, PinIcon, ThemeIcon } from '../components/icons'
 import { PublicoNotFound } from '../pages/PublicoNotFound'
@@ -13,6 +14,26 @@ function NavItem({ to, active, children }: { to: string; active: boolean; childr
     <Link to={to} className={active ? 'active' : undefined}>
       {children}
     </Link>
+  )
+}
+
+/**
+ * La marca: el logo que cargó la inmobiliaria, o el monograma con su inicial mientras no
+ * haya cargado ninguno. El mismo bloque va en el encabezado y en el pie.
+ */
+function Marca({ org, slug }: { org: { name: string; hasLogo: boolean }; slug: string }) {
+  return (
+    <>
+      {org.hasLogo ? (
+        <img className="brand-logo" src={publicLogoUrl(slug)} alt={org.name} />
+      ) : (
+        <div className="brand-mark" aria-hidden="true">{org.name.charAt(0).toUpperCase()}</div>
+      )}
+      <div className="brand-name">
+        {org.name}
+        <small>Inmobiliaria</small>
+      </div>
+    </>
   )
 }
 
@@ -47,7 +68,6 @@ export default function PublicoLayout() {
     )
   }
 
-  const initial = org.name.charAt(0).toUpperCase()
   const telHref = org.phone ? `tel:${org.phone.replace(/[^\d+]/g, '')}` : null
 
   // El acento y las familias tipográficas se pisan como variables en el nodo raíz del sitio,
@@ -55,7 +75,7 @@ export default function PublicoLayout() {
   // color, así que teñir la raíz les cambiaría el aspecto a ellos también.
   const fonts = FONT_PAIRINGS[org.site.fontPairing ?? 'jakarta']
   const themeVars = {
-    ...accentVars(org.site.accentColor),
+    ...accentVars(org.site.accentColor, theme),
     '--font-headings': fonts.headings,
     '--font-body': fonts.body,
   } as React.CSSProperties
@@ -67,11 +87,7 @@ export default function PublicoLayout() {
       <header className="topbar">
         <div className="wrap">
           <Link className="brand" to={base}>
-            <div className="brand-mark" aria-hidden="true">{initial}</div>
-            <div className="brand-name">
-              {org.name}
-              <small>Inmobiliaria</small>
-            </div>
+            <Marca org={org} slug={slug as string} />
           </Link>
 
           <nav className="nav" aria-label="Principal">
@@ -109,11 +125,7 @@ export default function PublicoLayout() {
           <div className="cols">
             <div className="about">
               <div className="brand" style={{ margin: 0 }}>
-                <div className="brand-mark" aria-hidden="true">{initial}</div>
-                <div className="brand-name">
-                  {org.name}
-                  <small>Inmobiliaria</small>
-                </div>
+                <Marca org={org} slug={slug as string} />
               </div>
               <p>
                 {org.site.footerTagline

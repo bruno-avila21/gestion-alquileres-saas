@@ -168,6 +168,11 @@
   font-weight: 800; font-size: 18px; letter-spacing: -.03em;
   box-shadow: 0 1px 2px rgba(109, 40, 217, .28);
 }
+/* El logo se encaja en la misma caja que el monograma, con `contain`: un logo apaisado o
+   uno cuadrado entran los dos sin deformarse ni empujar la barra. */
+.pp-app .brand-logo {
+  height: 40px; width: auto; max-width: 168px; object-fit: contain; flex-shrink: 0;
+}
 .pp-app .brand-name { font-weight: 700; font-size: 17px; letter-spacing: -.02em; line-height: 1.2; }
 .pp-app .brand-name small {
   display: block; font-size: 10px; font-weight: 700; letter-spacing: .12em;
@@ -209,15 +214,19 @@
   border-bottom: 1px solid var(--hairline);
 }
 .pp-app .hero-bg { position: absolute; inset: 0; z-index: 0; }
+/* La foto del hero se ve. El scrim de antes (brillo .42 + dos degradados al 58% y 82%)
+   dejaba pasar menos del 5% de la imagen: era un fondo negro con una foto adentro que
+   nadie distinguía. Ahora el velo alcanza para que el título se lea —con su sombra de
+   texto— y la propiedad se reconozca. */
 .pp-app .hero-bg img {
   width: 100%; height: 100%; object-fit: cover;
-  filter: brightness(.42) contrast(1.08); transform: scale(1.05);
+  filter: brightness(.72) contrast(1.04); transform: scale(1.05);
 }
 .pp-app .hero-bg::after {
   content: ""; position: absolute; inset: 0;
   background:
-    linear-gradient(to top, var(--slate) 4%, rgba(33, 49, 69, .58) 48%, rgba(33, 49, 69, .18) 100%),
-    linear-gradient(to right, rgba(33, 49, 69, .82), rgba(33, 49, 69, .1) 55%, rgba(33, 49, 69, .7));
+    linear-gradient(to top, rgba(33, 49, 69, .9) 0%, rgba(33, 49, 69, .44) 34%, rgba(33, 49, 69, .12) 78%, rgba(33, 49, 69, .04) 100%),
+    linear-gradient(to right, rgba(33, 49, 69, .52), rgba(33, 49, 69, .04) 58%, rgba(33, 49, 69, .22));
 }
 .pp-app .hero .wrap { position: relative; z-index: 1; }
 .pp-app .hero-pill {
@@ -234,11 +243,13 @@
 @keyframes pp-live { 50% { opacity: .45; } }
 .pp-app .hero h1 {
   color: #fff; font-size: clamp(32px, 4.6vw, 48px); font-weight: 800;
-  max-width: 20ch; line-height: 1.1; text-shadow: 0 1px 12px rgba(0, 0, 0, .3);
+  max-width: 20ch; line-height: 1.1;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, .55), 0 1px 3px rgba(0, 0, 0, .35);
 }
 .pp-app .hero .lede {
-  color: rgba(234, 241, 255, .92); font-size: 16px; line-height: 1.65;
+  color: rgba(234, 241, 255, .94); font-size: 16px; line-height: 1.65;
   max-width: 58ch; margin: 20px 0 0;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, .5);
 }
 .pp-app .hero .lede b { color: #d3bbff; font-weight: 700; }
 
@@ -267,10 +278,22 @@
   border: none; background: none; padding: 8px 18px; border-radius: var(--r-xs);
   font-size: 14px; font-weight: 600; color: var(--muted); transition: .15s; white-space: nowrap;
 }
-.pp-app .seg button:hover { color: var(--ink); }
+/* El hover no toca la opción elegida: pintarla con el color de las otras la hacía
+   parpadear como si se hubiera deseleccionado al pasar el mouse por encima. */
+.pp-app .seg button:hover:not(.on) { color: var(--ink); background: var(--surface); }
 .pp-app .seg button.on {
   background: var(--surface); color: var(--violet); font-weight: 700;
   border: 1px solid var(--hairline); box-shadow: var(--e1);
+}
+.pp-app .seg button.on:hover { background: var(--surface); color: var(--violet); }
+/* En oscuro la opción elegida va con tinta casi blanca, no con el acento: el violeta
+   aclarado sobre la superficie oscura se lee como un texto más, no como lo seleccionado.
+   Se usa `--ink` y no `#fff` porque el acento lo elige la inmobiliaria y el blanco fijo
+   se rompe con un acento claro. */
+.pp-app[data-theme="dark"] .seg button.on,
+.pp-app[data-theme="dark"] .seg button.on:hover {
+  background: var(--surface-3); color: var(--ink);
+  border-color: var(--hairline-strong);
 }
 .pp-app .search-hint { font-size: 12.5px; color: var(--muted); font-weight: 500; }
 
@@ -293,6 +316,14 @@
   transform: translateY(-2px) rotate(45deg);
 }
 .pp-app .field .ctrl:not(:has(select))::after { display: none; }
+/* Importe + moneda en un solo control: el presupuesto sin moneda mezclaba dólares con
+   pesos en el listado. El selector va pegado a la derecha del número, no en otro campo. */
+.pp-app .field .ctrl--money { gap: 8px; }
+.pp-app .field .ctrl--money input { flex: 1; min-width: 0; }
+.pp-app .field .cur-select {
+  flex: 0 0 auto; width: auto; min-width: 98px; padding-left: 12px; padding-right: 30px;
+  color: var(--muted); font-weight: 600;
+}
 .pp-app .field input::placeholder { color: var(--faint); }
 .pp-app .field input:focus, .pp-app .field select:focus {
   border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124, 58, 237, .15);
@@ -488,6 +519,9 @@
    en la barra lateral el segmentado va en dos filas de dos. */
 .pp-app .fgroup .seg { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
 .pp-app .fgroup .seg button { padding: 8px 6px; font-size: 12.5px; }
+/* Un tercer botón que queda solo en su fila ocupa las dos columnas (el "ARS" de Precio):
+   a media fila parecía un control a medio dibujar. */
+.pp-app .fgroup .seg button:nth-child(3):last-child { grid-column: span 2; }
 
 .pp-app .results-top {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -610,14 +644,20 @@
   overflow: hidden;
   background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r); box-shadow: var(--e2);
 }
-.pp-app .cc-head { background: var(--slate); color: var(--on-slate); padding: 22px; }
-.pp-app .cc-head .op { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #d3bbff; }
+/* La cabecera de precio va en el tono del tema, no en pizarra fija: con la página en
+   claro, un bloque oscuro acá se leía como si esa parte hubiera quedado en modo oscuro.
+   Es además lo que hace el modelo de diseño (precio en el acento sobre superficie clara). */
+.pp-app .cc-head {
+  background: var(--violet-tint); color: var(--ink); padding: 22px;
+  border-bottom: 1px solid var(--violet-edge);
+}
+.pp-app .cc-head .op { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--violet); }
 .pp-app .cc-head .p {
-  font-size: 30px; font-weight: 800; letter-spacing: -.03em; margin-top: 8px; color: #fff;
+  font-size: 30px; font-weight: 800; letter-spacing: -.03em; margin-top: 8px; color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-.pp-app .cc-head .p .cur { font-size: 16px; font-weight: 700; color: var(--on-slate-soft); }
-.pp-app .cc-head .exp { font-size: 13px; color: var(--on-slate-soft); margin-top: 6px; }
+.pp-app .cc-head .p .cur { font-size: 16px; font-weight: 700; color: var(--muted); }
+.pp-app .cc-head .exp { font-size: 13px; color: var(--muted); margin-top: 6px; }
 .pp-app .cc-body { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
 .pp-app .cc-body .code {
   font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em;
@@ -646,6 +686,87 @@
 }
 .pp-app .svc h3 { font-size: 17px; margin-bottom: 8px; }
 .pp-app .svc p { color: var(--muted); font-size: 14px; line-height: 1.65; margin: 0; }
+
+/* ---------- franja de tasación (Servicio Técnico Profesional) ---------- */
+.pp-app .ctaband {
+  display: flex; align-items: center; justify-content: space-between; gap: 40px;
+  padding: 40px; background: var(--surface);
+  border: 1px solid var(--hairline); border-radius: var(--r-lg); box-shadow: var(--e1);
+}
+.pp-app .ctaband-copy { max-width: 62ch; }
+.pp-app .ctaband .kicker {
+  display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--violet);
+}
+.pp-app .ctaband h2 { font-size: clamp(22px, 2.6vw, 29px); }
+.pp-app .ctaband p { color: var(--muted); font-size: 15px; line-height: 1.7; margin: 12px 0 0; }
+.pp-app .claims {
+  display: flex; flex-wrap: wrap; gap: 10px 24px; margin: 20px 0 0; padding: 0; list-style: none;
+}
+.pp-app .claims li {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 600; color: var(--ink);
+}
+.pp-app .claims svg { color: var(--violet); flex-shrink: 0; }
+.pp-app .ctaband-actions {
+  display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; width: 262px;
+}
+.pp-app .ctaband-actions .btn { height: 48px; }
+
+/* ---------- franja institucional (Identidad Corporativa) ---------- */
+.pp-app .identity { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+.pp-app .identity-copy .kicker {
+  font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--violet); margin-bottom: 12px;
+}
+.pp-app .identity-copy h2 { font-size: clamp(22px, 2.8vw, 30px); }
+.pp-app .identity-copy > p {
+  color: var(--muted); font-size: 15px; line-height: 1.75; margin: 16px 0 0;
+  /* La inmobiliaria escribe este texto en un textarea del panel: sus saltos de línea valen. */
+  white-space: pre-line;
+}
+.pp-app .identity-data {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px 28px;
+  margin: 26px 0; padding-top: 22px; border-top: 1px solid var(--hairline);
+}
+.pp-app .identity-data .v {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: -.01em;
+}
+.pp-app .identity-data .v svg { color: var(--violet); flex-shrink: 0; }
+.pp-app .identity-data .k { font-size: 13px; color: var(--muted); line-height: 1.55; margin-top: 5px; }
+.pp-app .identity-media {
+  display: flex; flex-direction: column; gap: 22px;
+  padding: 34px; border: 1px solid var(--hairline); border-radius: var(--r-lg);
+  background: linear-gradient(160deg, var(--violet-tint), var(--ground) 62%);
+  box-shadow: var(--e1);
+}
+.pp-app .identity-brand { text-align: center; }
+.pp-app .identity-logo { max-height: 76px; max-width: 100%; width: auto; margin: 0 auto 14px; object-fit: contain; }
+.pp-app .identity-mono {
+  width: 68px; height: 68px; margin: 0 auto 14px; border-radius: var(--r);
+  background: linear-gradient(145deg, var(--violet-bright), var(--violet-deep));
+  color: var(--on-violet); display: grid; place-items: center;
+  font-size: 30px; font-weight: 800; letter-spacing: -.04em;
+}
+.pp-app .identity-brand .n {
+  font-family: var(--font-headings); font-size: 19px; font-weight: 700;
+  letter-spacing: -.02em; color: var(--ink); line-height: 1.25;
+}
+.pp-app .identity-brand .s {
+  font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); margin-top: 5px;
+}
+.pp-app .identity-pledges {
+  display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 22px 0 0;
+  list-style: none; border-top: 1px solid var(--hairline);
+}
+.pp-app .identity-pledges li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 14px; line-height: 1.5; color: var(--ink);
+}
+.pp-app .identity-pledges svg { color: var(--violet); flex-shrink: 0; margin-top: 3px; }
 
 /* ---------- footer ---------- */
 .pp-app .foot { background: var(--surface); border-top: 1px solid var(--hairline); padding: 56px 0 28px; margin-top: auto; }
@@ -767,6 +888,12 @@
   .pp-app .detail-grid { grid-template-columns: 1fr; }
   .pp-app .detail-side { position: static; }
   .pp-app .foot .cols { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .pp-app .ctaband { flex-direction: column; align-items: stretch; gap: 28px; padding: 32px; }
+  .pp-app .ctaband-actions { width: auto; flex-direction: row; }
+  .pp-app .ctaband-actions .btn { flex: 1; }
+  /* La foto institucional pasa arriba del texto: es lo que da contexto antes de leer. */
+  .pp-app .identity { grid-template-columns: 1fr; gap: 32px; }
+  .pp-app .identity-media { order: -1; }
 }
 @media (max-width: 760px) {
   .pp-app .nav { display: none; }
@@ -779,6 +906,9 @@
   .pp-app .section { padding: 48px 0; }
   .pp-app .grid { grid-template-columns: 1fr; gap: 20px; }
   .pp-app .wrap { padding: 0 18px; }
+  .pp-app .ctaband { padding: 24px; }
+  .pp-app .ctaband-actions { flex-direction: column; }
+  .pp-app .claims { gap: 10px 18px; }
 }
 @media (max-width: 520px) {
   .pp-app .trustband .cols { grid-template-columns: 1fr; }

@@ -91,6 +91,15 @@ export function shade(hex: string, amount: number): string {
   return rgbToHex(mix(rgb.r), mix(rgb.g), mix(rgb.b))
 }
 
+/** Mezcla dos hex. `amount` 0 = todo `from`, 1 = todo `to`. */
+function mixHex(from: string, to: string, amount: number): string {
+  const a = hexToRgb(from)
+  const b = hexToRgb(to)
+  if (!a || !b) return from
+  const mix = (x: number, y: number) => Math.round(x + (y - x) * amount)
+  return rgbToHex(mix(a.r, b.r), mix(a.g, b.g), mix(a.b, b.b))
+}
+
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
   if (!m) return null
@@ -102,14 +111,42 @@ function rgbToHex(r: number, g: number, b: number): string {
   return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`
 }
 
+/** La superficie del tema oscuro (`--surface` de publico.css). Los tintes oscuros se mezclan
+ *  contra ella y no contra negro: un violeta mezclado con negro se ensucia y pierde el tono. */
+const DARK_SURFACE = '#17202c'
+
 /**
  * Las variables CSS que hay que pisar en `.pp-app` para aplicar el acento elegido.
  * Devuelve un objeto de estilo, no toca el DOM: así el editor puede usarlo para la vista
  * previa sin ensuciar el documento del panel.
+ *
+ * Recibe el tema porque estas variables se inyectan EN LÍNEA en el nodo raíz del sitio, y un
+ * estilo en línea le gana a cualquier regla de la hoja: si devolviéramos siempre las
+ * derivaciones claras, el bloque `[data-theme="dark"]` de publico.css no podría redefinirlas
+ * y el modo oscuro se quedaba con los tintes casi blancos del modo claro (texto blanco sobre
+ * fondo lila ilegible en la cabecera de precio de la ficha).
  */
-export function accentVars(accent: string | null | undefined): React.CSSProperties {
+export function accentVars(
+  accent: string | null | undefined,
+  theme?: 'light' | 'dark' | null,
+): React.CSSProperties {
   const base = accent?.trim() || DEFAULT_ACCENT
   if (!/^#[0-9a-f]{6}$/i.test(base)) return {}
+
+  if (theme === 'dark') {
+    // En oscuro el acento se aclara para separarse del fondo, y los tintes se hunden hacia
+    // la superficie. Es la misma relación que tiene la paleta oscura de publico.css.
+    const violet = shade(base, 0.45)
+    return {
+      '--violet': violet,
+      '--violet-deep': shade(base, 0.3),
+      '--violet-bright': shade(base, 0.62),
+      '--violet-tint': mixHex(base, DARK_SURFACE, 0.84),
+      '--violet-edge': mixHex(base, DARK_SURFACE, 0.62),
+      '--on-violet': inkOn(violet),
+    } as React.CSSProperties
+  }
+
   return {
     '--violet': base,
     '--violet-deep': shade(base, -0.18),

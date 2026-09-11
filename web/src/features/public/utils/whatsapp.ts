@@ -17,3 +17,7 @@ export function waConsultaPropiedad(code: string | null, title: string): string 
 export function waGenerico(orgName: string): string {
   return waLink(`Hola, quería hacer una consulta a ${orgName}.`)
 }
+
+export function waTasacion(orgName: string): string {
+  return waLink(`Hola, quiero coordinar una tasación con ${orgName}.`)
+}

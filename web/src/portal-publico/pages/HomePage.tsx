@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { useNavigate, useOutletContext } from 'react-router'
+import { Link, useNavigate, useOutletContext } from 'react-router'
 import { usePublicListings } from '@/features/public/hooks/usePublic'
-import type { PublicOperationType, PublicPropertyType } from '@/features/public/types/public.types'
+import type { PublicCurrency, PublicOperationType, PublicPropertyType } from '@/features/public/types/public.types'
 import { PROPERTY_TYPE_LABELS } from '@/features/public/utils/labels'
-import { resolvePublicPhotoUrl } from '@/features/public/utils/resolvePublicPhotoUrl'
+import { publicLogoUrl, resolvePublicPhotoUrl } from '@/features/public/utils/resolvePublicPhotoUrl'
+import { waTasacion } from '@/features/public/utils/whatsapp'
 import { LeadForm } from '@/features/public/components/LeadForm'
 import type { PublicoOutletContext } from '../types'
 import { ListingCard, ListingCardSkeleton } from '../components/ListingCard'
 import {
-  ArrowRightIcon, BuildingIcon, ChartIcon, KeyIcon, PinIcon,
-  SearchIcon, ShieldIcon, TagIcon,
+  ArrowRightIcon, BuildingIcon, ChartIcon, ChatIcon, CheckIcon, KeyIcon, MailIcon, PhoneIcon,
+  PinIcon, SearchIcon, ShieldIcon, TagIcon,
 } from '../components/icons'
 
 const FEATURED_PAGE_SIZE = 6
@@ -17,6 +18,17 @@ const OPERATION_TABS: { value: '' | PublicOperationType; label: string }[] = [
   { value: '', label: 'Todas' },
   { value: 'Sale', label: 'Comprar' },
   { value: 'Rent', label: 'Alquilar' },
+]
+
+/** Lo que la inmobiliaria garantiza en una tasación. Texto del modelo de diseño. */
+const TASACION_CLAIMS = ['Sin costo inicial', 'Informe por escrito', 'Presencial o digital']
+
+/** Compromisos del panel institucional. Describen lo que el producto habilita, no títulos
+ *  ni matrículas: son el texto por defecto de CUALQUIER inmobiliaria del SaaS. */
+const IDENTITY_PLEDGES = [
+  'Contrato redactado y firma acompañada',
+  'Rendición mensual al propietario, con recibo',
+  'Ajustes ICL e IPC calculados y avisados a tiempo',
 ]
 
 const SERVICES = [
@@ -45,6 +57,9 @@ export default function HomePage() {
   const [type, setType] = useState<'' | PublicPropertyType>('')
   const [zone, setZone] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
+  // Sin moneda, un presupuesto de "130.000" mezcla dólares con pesos y el listado
+  // devuelve cualquier cosa. Por eso la moneda viaja al lado del importe, no aparte.
+  const [currency, setCurrency] = useState<'' | PublicCurrency>('')
 
   const { data, isLoading, isError } = usePublicListings(slug, { pageSize: FEATURED_PAGE_SIZE })
   const neighborhoods = data?.facets.neighborhoods ?? []
@@ -68,6 +83,7 @@ export default function HomePage() {
     if (match) params.set('neighborhood', match.value)
     const max = Number(maxPrice.replace(/\D/g, ''))
     if (max > 0) params.set('maxPrice', String(max))
+    if (currency) params.set('currency', currency)
     for (const [k, v] of Object.entries(extra)) params.set(k, v)
     navigate(`/sitio/${slug}/propiedades${params.toString() ? `?${params}` : ''}`)
   }
@@ -166,7 +182,7 @@ export default function HomePage() {
 
               <div className="field">
                 <label htmlFor="h-max">Presupuesto máximo</label>
-                <div className="ctrl">
+                <div className="ctrl ctrl--money">
                   <TagIcon size={17} />
                   <input
                     id="h-max"
@@ -175,6 +191,16 @@ export default function HomePage() {
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
                   />
+                  <select
+                    className="cur-select"
+                    aria-label="Moneda del presupuesto"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value as '' | PublicCurrency)}
+                  >
+                    <option value="">Ambas</option>
+                    <option value="USD">US$</option>
+                    <option value="ARS">$</option>
+                  </select>
                 </div>
               </div>
 
@@ -264,6 +290,115 @@ export default function HomePage() {
                 <p>{body}</p>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Servicio Técnico Profesional — la tasación es la puerta de entrada del propietario,
+          y es la única acción de la portada que no depende de que haya publicado algo. */}
+      <section className="section" id="tasaciones">
+        <div className="wrap">
+          <div className="ctaband">
+            <div className="ctaband-copy">
+              <div className="kicker">
+                <ChartIcon size={17} />
+                Servicio Técnico Profesional
+              </div>
+              <h2>¿Querés saber cuánto vale tu propiedad?</h2>
+              <p>
+                Tasamos con comparables reales de la zona, valores de cierre efectivo y la oferta
+                publicada al día de hoy. Te entregamos el informe por escrito, sin compromiso.
+              </p>
+              <ul className="claims">
+                {TASACION_CLAIMS.map((claim) => (
+                  <li key={claim}>
+                    <CheckIcon size={16} />
+                    {claim}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="ctaband-actions">
+              <Link className="btn btn--primary btn--block" to={`/sitio/${slug}/contacto`}>
+                <ChartIcon size={18} />
+                Solicitar tasación
+              </Link>
+              <a
+                className="btn btn--ghost btn--block"
+                href={waTasacion(org.name)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ChatIcon />
+                Coordinar por WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Identidad Corporativa — quién atiende del otro lado. El texto lo edita la
+          inmobiliaria desde el panel (el mismo que se ve en /nosotros). */}
+      <section className="section section--alt" id="empresa">
+        <div className="wrap">
+          <div className="identity">
+            <div className="identity-copy">
+              <div className="kicker">Identidad Corporativa</div>
+              <h2>Detrás de cada operación hay un equipo que responde.</h2>
+              <p>
+                {org.site.aboutText
+                  ?? `En ${org.name} acompañamos a propietarios e inquilinos en cada etapa: tasación, publicación, contrato y administración mensual. Los ajustes ICL e IPC se calculan solos y se avisan a tiempo, así nadie se entera del aumento tarde.`}
+              </p>
+              {org.address || org.phone || org.email ? (
+                <div className="identity-data">
+                  {org.address ? (
+                    <div>
+                      <div className="v"><PinIcon size={15} />{org.address}</div>
+                      <div className="k">Oficinas comerciales. Atención personalizada con turno previo.</div>
+                    </div>
+                  ) : null}
+                  {org.phone ? (
+                    <div>
+                      <div className="v"><PhoneIcon />{org.phone}</div>
+                      <div className="k">Consultas por venta, alquiler y tasaciones.</div>
+                    </div>
+                  ) : null}
+                  {org.email && !org.phone ? (
+                    <div>
+                      <div className="v"><MailIcon />{org.email}</div>
+                      <div className="k">Te contestamos el mismo día hábil.</div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              <Link className="link-btn" to={`/sitio/${slug}/nosotros`}>
+                Conocer la empresa
+                <ArrowRightIcon />
+              </Link>
+            </div>
+
+            {/* Panel de marca, no una foto de la cartera: la segunda propiedad publicada puede
+                ser una persiana con graffiti, y acá la imagen representa a la inmobiliaria.
+                Con el logo cargado se ve el logo; sin él, el monograma de la inicial. */}
+            <div className="identity-media">
+              <div className="identity-brand">
+                {org.hasLogo ? (
+                  <img className="identity-logo" src={publicLogoUrl(slug)} alt={org.name} />
+                ) : (
+                  <div className="identity-mono" aria-hidden="true">{org.name.charAt(0).toUpperCase()}</div>
+                )}
+                <div className="n">{org.name}</div>
+                <div className="s">Inmobiliaria</div>
+              </div>
+              <ul className="identity-pledges">
+                {IDENTITY_PLEDGES.map((pledge) => (
+                  <li key={pledge}>
+                    <CheckIcon size={16} />
+                    {pledge}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
