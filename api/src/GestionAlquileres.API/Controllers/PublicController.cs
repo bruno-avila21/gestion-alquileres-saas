@@ -73,6 +73,18 @@ public class PublicController : ControllerBase
     }
 
     /// <summary>
+    /// Logo de la inmobiliaria, para el encabezado y el pie de su sitio. Se cachea un día como
+    /// las fotos: cambia cuando la inmobiliaria lo reemplaza, no en cada visita.
+    /// </summary>
+    [HttpGet("logo")]
+    [ResponseCache(Duration = 86_400, Location = ResponseCacheLocation.Any)]
+    public async Task<IActionResult> GetLogo(string slug, CancellationToken ct)
+    {
+        var file = await _mediator.Send(new GetPublicLogoQuery(slug), ct);
+        return file is null ? NotFound() : File(file.Content, file.MimeType);
+    }
+
+    /// <summary>
     /// Consulta desde el formulario público (ficha de una publicación o "Contacto" del home).
     /// <paramref name="request"/>.Website es el honeypot: si viene con contenido, se descarta en
     /// silencio (204) sin tocar la base ni revelar que fue detectado como bot.

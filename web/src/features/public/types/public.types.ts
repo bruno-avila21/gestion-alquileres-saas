@@ -15,6 +15,8 @@ export interface PublicOrgDto {
   address: string | null
   phone: string | null
   email: string | null
+  /** Si cargó su logo en Configuración → Marca. El archivo se pide por `/public/{slug}/logo`. */
+  hasLogo: boolean
   /** Aspecto y textos elegidos por la inmobiliaria. Campos en null = usar el diseño por defecto. */
   site: SiteSettingsDto
 }

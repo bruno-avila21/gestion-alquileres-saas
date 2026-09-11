@@ -29,6 +29,7 @@ public class GetPublicOrganizationQueryHandler : IRequestHandler<GetPublicOrgani
         var site = await _site.GetAsync(ct);
 
         return new PublicOrganizationDto(
-            org.Name, org.Slug, org.Address, org.Phone, org.Email, SiteSettingsDto.From(site));
+            org.Name, org.Slug, org.Address, org.Phone, org.Email,
+            !string.IsNullOrWhiteSpace(org.LogoStorageKey), SiteSettingsDto.From(site));
     }
 }

@@ -13,6 +13,12 @@ public record PublicOrganizationDto(
     string? Address,
     string? Phone,
     string? Email,
+    /// <summary>
+    /// Si la inmobiliaria cargó su logo en Configuración → Marca. El archivo se pide por
+    /// <c>GET /public/{slug}/logo</c>; acá sólo viaja el booleano para que el sitio sepa si
+    /// dibujar la imagen o el monograma con la inicial.
+    /// </summary>
+    bool HasLogo,
     /// <summary>Aspecto y textos elegidos por la inmobiliaria. Campos en null = usar el diseño por defecto.</summary>
     SiteSettingsDto Site);
 

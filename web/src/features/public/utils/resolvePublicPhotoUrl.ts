@@ -13,3 +13,13 @@ export function resolvePublicPhotoUrl(url: string): string {
   const origin = new URL(base, window.location.origin).origin
   return new URL(url, origin).toString()
 }
+
+/**
+ * URL del logo de la inmobiliaria. Es un `<img src>` directo y no una descarga por axios a
+ * propósito: el navegador lo cachea con el `Cache-Control` de un día que manda el endpoint,
+ * y no hace falta un blob que se regenere en cada montaje del layout.
+ */
+export function publicLogoUrl(slug: string): string {
+  const base = publicApi.defaults.baseURL ?? window.location.origin
+  return new URL(`${base.replace(/\/$/, '')}/public/${encodeURIComponent(slug)}/logo`, window.location.origin).toString()
+}

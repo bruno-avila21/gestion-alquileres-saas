@@ -202,8 +202,9 @@ export default function SitioPage() {
             <div className="card-h"><h3>Logo y datos de contacto</h3></div>
             <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
-                El logo, la dirección, el teléfono y el email del pie del sitio salen de la marca
-                de la inmobiliaria, la misma que va impresa en los recibos.
+                El logo del encabezado y del pie, la dirección, el teléfono y el email salen de
+                la marca de la inmobiliaria — la misma que va impresa en los recibos. Sin logo
+                cargado, el sitio muestra un monograma con la inicial del nombre.
               </div>
               <Link className="btn" to="/admin/configuracion/marca" style={{ alignSelf: 'flex-start' }}>
                 Editar marca
